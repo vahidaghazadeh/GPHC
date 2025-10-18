@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: ['1.19', '1.20', '1.21']
+        go-version: ['1.21', '1.22', '1.23']
     
     steps:
     - name: Checkout code
@@ -71,7 +71,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.23'
         
     - name: Run gofmt
       run: |
@@ -100,7 +100,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.23'
         
     - name: Run Gosec Security Scanner
       run: |
@@ -125,7 +125,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.23'
         
     - name: Build for Linux
       run: |
@@ -163,7 +163,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.23'
         
     - name: Build GPHC
       run: go build -o gphc cmd/gphc/main.go
