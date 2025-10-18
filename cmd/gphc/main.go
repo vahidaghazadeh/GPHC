@@ -106,7 +106,7 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 	// Run quick checks
 	issues := 0
-	
+
 	// Check 1: File formatting
 	if !checkFileFormatting(path, stagedFiles) {
 		fmt.Println("❌ Some files are not properly formatted")
@@ -339,16 +339,16 @@ func main() {
 func getStagedFiles(repoPath string) ([]string, error) {
 	cmd := exec.Command("git", "diff", "--cached", "--name-only")
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if len(output) == 0 {
 		return []string{}, nil
 	}
-	
+
 	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 }
 
@@ -359,46 +359,46 @@ func checkFileFormatting(repoPath string, files []string) bool {
 			goFiles = append(goFiles, file)
 		}
 	}
-	
+
 	if len(goFiles) == 0 {
 		return true
 	}
-	
+
 	cmd := exec.Command("gofmt", "-l")
 	cmd.Dir = repoPath
 	cmd.Args = append(cmd.Args, goFiles...)
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return false
 	}
-	
+
 	return len(output) == 0
 }
 
 func checkCommitMessage(repoPath string) bool {
 	cmd := exec.Command("git", "log", "-1", "--pretty=%s")
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return false
 	}
-	
+
 	message := strings.TrimSpace(string(output))
-	
+
 	// Check conventional commit format
 	conventionalPrefixes := []string{
 		"feat:", "fix:", "docs:", "style:", "refactor:", "test:", "chore:",
 		"perf:", "ci:", "build:", "revert:", "feat!", "fix!",
 	}
-	
+
 	for _, prefix := range conventionalPrefixes {
 		if strings.HasPrefix(message, prefix) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -408,13 +408,13 @@ func checkLargeFiles(files []string) bool {
 		if err != nil {
 			continue
 		}
-		
+
 		// Check if file is larger than 1MB
 		if info.Size() > 1024*1024 {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -425,7 +425,7 @@ func checkSensitiveFiles(files []string) bool {
 		"*.key", "*.pem", "*.p12", "*.pfx",
 		"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519",
 	}
-	
+
 	for _, file := range files {
 		for _, pattern := range sensitivePatterns {
 			if strings.Contains(file, pattern) || strings.HasSuffix(file, pattern[1:]) {
@@ -433,6 +433,6 @@ func checkSensitiveFiles(files []string) bool {
 			}
 		}
 	}
-	
+
 	return true
 }
