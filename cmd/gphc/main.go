@@ -106,6 +106,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewLocalBranchChecker(),
 		checkers.NewStaleBranchChecker(),
 		checkers.NewBareRepoChecker(),
+		checkers.NewStashChecker(),
 	}
 
 	// Run all checkers
