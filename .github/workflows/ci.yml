@@ -54,7 +54,7 @@ jobs:
         ./gphc check || true  # Allow to fail for now since we don't have tests yet
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gphc-binary-${{ matrix.go-version }}
         path: gphc
@@ -141,7 +141,7 @@ jobs:
         GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o gphc-windows-amd64.exe cmd/gphc/main.go
         
     - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-binaries
         path: |
