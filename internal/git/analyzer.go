@@ -95,7 +95,7 @@ func (ra *RepositoryAnalyzer) analyzeCommits() ([]types.CommitInfo, error) {
 
 		// Calculate diff stats
 		var linesAdded, linesDeleted int
-		if count > 0 {
+		if count > 0 && len(c.ParentHashes) > 0 {
 			parent := c.ParentHashes[0]
 			pCommit, err := ra.repo.CommitObject(parent)
 			if err == nil {
