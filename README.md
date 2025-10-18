@@ -22,6 +22,7 @@
 - **Local Branch Cleanup**: Identifies merged branches that should be deleted
 - **Stale Branch Detection**: Finds branches with no activity for 60+ days
 - **Branch Protection**: Checks for main branch protection (requires GitHub API)
+- **Stash Management**: Analyzes Git stash entries and warns about old stashes (>30 days)
 
 ## 🚀 Installation
 
@@ -131,10 +132,14 @@ chmod +x $(go env GOPATH)/bin/gphc
 ---------------------------------------------------
    ❌ CLEAN-401: 3 local branches are merged but not deleted (Deduct: -10)
    ⚠️ CLEAN-402: Branch 'experiment-beta' is stale (last activity: 95 days ago) (Deduct: -5)
+   ⚠️ STASH-501: Found 2 stash entries (1 old) (Deduct: -5)
+      ⚠️ Old stash@{0}: WIP on feature-branch (45 days ago) [feature-branch]
+      ✅ Recent stash@{1}: Quick fix attempt (2 days ago) [main]
 
 💡 Next Steps:
    1. Create CONTRIBUTING.md
    2. Delete 3 stale local branches
+   3. Review and clean up old stash entries
 ```
 
 ## ⚙️ Configuration
