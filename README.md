@@ -29,30 +29,77 @@
 - Go 1.19 or higher
 - Git repository
 
-### Build from Source
+### Method 1: Install Globally (Recommended)
 ```bash
-git clone https://github.com/opsource/gphc.git
+# Install from GitHub
+go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+
+# Or install from local source
+git clone https://github.com/vahidaghazadeh/gphc.git
 cd gphc
-go build -o gphc cmd/gphc/main.go
+go install ./cmd/gphc
 ```
 
-### Install Globally
+**Note:** Make sure your `$GOPATH/bin` is in your `$PATH`. Add this to your shell profile:
 ```bash
-go install github.com/opsource/gphc/cmd/gphc@latest
+# For zsh (macOS/Linux)
+echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.zshrc
+source ~/.zshrc
+
+# For bash (Linux)
+echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Method 2: Build from Source
+```bash
+git clone https://github.com/vahidaghazadeh/gphc.git
+cd gphc
+go build -o gphc cmd/gphc/main.go
+
+# Use with full path
+./gphc check
+```
+
+### Verify Installation
+```bash
+gphc version
+# Should output: GPHC (Git Project Health Checker) v1.0.0
 ```
 
 ## 📖 Usage
 
 ### Basic Usage
 ```bash
-# Check current directory
+# Check current directory (must be a git repository)
 gphc check
 
 # Check specific repository
 gphc check /path/to/repository
 
-# Show version
+# Show version information
 gphc version
+
+# Show help
+gphc --help
+```
+
+### Troubleshooting
+
+**Command not found error:**
+```bash
+# If you get "command not found: gphc"
+# Make sure GOPATH/bin is in your PATH
+echo $PATH | grep -q "$(go env GOPATH)/bin" || echo "PATH issue detected"
+
+# Add to PATH if missing
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+**Permission denied:**
+```bash
+# If you get permission errors, make sure the binary is executable
+chmod +x $(go env GOPATH)/bin/gphc
 ```
 
 ### Example Output
@@ -141,6 +188,25 @@ Reporter: Colorful terminal output with structured results
 
 ## 🔧 Development
 
+### Setting Up Development Environment
+```bash
+# Clone the repository
+git clone https://github.com/vahidaghazadeh/gphc.git
+cd gphc
+
+# Install dependencies
+go mod download
+
+# Build the project
+go build -o gphc cmd/gphc/main.go
+
+# Test locally
+./gphc check
+
+# Install for development
+go install ./cmd/gphc
+```
+
 ### Project Structure
 ```
 gphc/
@@ -154,7 +220,24 @@ gphc/
 │   ├── types/         # Core data structures
 │   └── config/        # Configuration management
 ├── gphc.yml          # Default configuration
+├── .gitignore        # Git ignore patterns
 └── README.md
+```
+
+### Building and Testing
+```bash
+# Build binary
+go build -o gphc cmd/gphc/main.go
+
+# Run tests (when available)
+go test ./...
+
+# Run with race detection
+go run -race cmd/gphc/main.go check
+
+# Cross-platform builds
+GOOS=linux GOARCH=amd64 go build -o gphc-linux cmd/gphc/main.go
+GOOS=windows GOARCH=amd64 go build -o gphc.exe cmd/gphc/main.go
 ```
 
 ### Adding New Checkers
