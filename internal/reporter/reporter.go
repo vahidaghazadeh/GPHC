@@ -40,28 +40,23 @@ func createDefaultStyle() Style {
 	return Style{
 		Header: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00FF00")).
-			Bold(true).
-			Margin(1, 0),
+			Bold(true),
 		
 		Title: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Bold(true).
-			Margin(0, 0, 1, 0),
+			Bold(true),
 		
 		Score: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
-			Bold(true).
-			Margin(0, 0, 1, 0),
+			Bold(true),
 		
 		Grade: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
-			Bold(true).
-			Margin(0, 0, 1, 0),
+			Bold(true),
 		
 		Category: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#87CEEB")).
-			Bold(true).
-			Margin(1, 0, 0, 0),
+			Bold(true),
 		
 		Pass: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00FF00")).
@@ -76,17 +71,14 @@ func createDefaultStyle() Style {
 			Bold(true),
 		
 		Detail: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#CCCCCC")).
-			Margin(0, 0, 0, 3),
+			Foreground(lipgloss.Color("#CCCCCC")),
 		
 		Separator: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#666666")).
-			Margin(0, 0, 1, 0),
+			Foreground(lipgloss.Color("#666666")),
 		
 		NextSteps: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
-			Bold(true).
-			Margin(1, 0, 0, 0),
+			Bold(true),
 	}
 }
 
@@ -101,7 +93,7 @@ func (r *Reporter) Report(report *types.HealthReport) string {
 	// Overall Score
 	scoreText := fmt.Sprintf("🌟 Overall Health Score: %d/100 (%s)", report.OverallScore, report.Grade)
 	output.WriteString(r.style.Score.Render(scoreText))
-	output.WriteString("\n\n")
+	output.WriteString("\n")
 
 	// Separator
 	output.WriteString(r.style.Separator.Render(strings.Repeat("-", 50)))
@@ -161,7 +153,6 @@ func (r *Reporter) renderCategory(category types.Category, results []types.Check
 	// Results
 	for _, result := range results {
 		output.WriteString(r.renderResult(result))
-		output.WriteString("\n")
 	}
 	
 	return output.String()
@@ -198,9 +189,12 @@ func (r *Reporter) renderResult(result types.CheckResult) string {
 	
 	// Details
 	for _, detail := range result.Details {
-		output.WriteString(r.style.Detail.Render(detail))
+		output.WriteString("   " + r.style.Detail.Render(detail))
 		output.WriteString("\n")
 	}
+	
+	// Add spacing between results
+	output.WriteString("\n")
 	
 	return output.String()
 }
