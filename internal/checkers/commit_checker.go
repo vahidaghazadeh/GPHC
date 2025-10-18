@@ -39,7 +39,7 @@ func (ccc *ConventionalCommitChecker) Check(data *types.RepositoryData) *types.C
 
 	// Conventional commit pattern: type(scope): subject
 	pattern := regexp.MustCompile(`^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+`)
-	
+
 	validCommits := 0
 	totalCommits := len(data.Commits)
 	var invalidCommits []string
@@ -56,7 +56,7 @@ func (ccc *ConventionalCommitChecker) Check(data *types.RepositoryData) *types.C
 	score := int(percentage)
 
 	var details []string
-	details = append(details, fmt.Sprintf("📊 %d of %d commits follow conventional format (%.1f%%)", 
+	details = append(details, fmt.Sprintf("📊 %d of %d commits follow conventional format (%.1f%%)",
 		validCommits, totalCommits, percentage))
 
 	if len(invalidCommits) > 0 {
@@ -125,7 +125,7 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 	for _, commit := range data.Commits {
 		length := len(commit.Subject)
 		totalLength += length
-		
+
 		if length <= maxLength {
 			validCommits++
 		} else {
@@ -139,7 +139,7 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 
 	var details []string
 	details = append(details, fmt.Sprintf("📏 Average commit message length: %.1f characters", avgLength))
-	details = append(details, fmt.Sprintf("✅ %d of %d commits are within %d character limit", 
+	details = append(details, fmt.Sprintf("✅ %d of %d commits are within %d character limit",
 		validCommits, len(data.Commits), maxLength))
 
 	if len(longCommits) > 0 {
@@ -217,11 +217,11 @@ func (csc *CommitSizeChecker) Check(data *types.RepositoryData) *types.CheckResu
 
 	var details []string
 	details = append(details, fmt.Sprintf("📊 Average commit size: %.1f lines", avgLines))
-	details = append(details, fmt.Sprintf("✅ %d of %d commits are reasonably sized", 
+	details = append(details, fmt.Sprintf("✅ %d of %d commits are reasonably sized",
 		len(data.Commits)-largeCommits, len(data.Commits)))
 
 	if largeCommits > 0 {
-		details = append(details, fmt.Sprintf("⚠️ %d commits exceed %d lines (may indicate 'God Commits')", 
+		details = append(details, fmt.Sprintf("⚠️ %d commits exceed %d lines (may indicate 'God Commits')",
 			largeCommits, maxLines))
 	}
 

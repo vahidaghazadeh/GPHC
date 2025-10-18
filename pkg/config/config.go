@@ -10,16 +10,16 @@ import (
 type Config struct {
 	// Commit analysis settings
 	MaxCommitsToAnalyze int `mapstructure:"max_commits_to_analyze"`
-	
+
 	// Branch analysis settings
 	StaleBranchThresholdDays int `mapstructure:"stale_branch_threshold_days"`
-	
+
 	// Commit message settings
 	MaxCommitMessageLength int `mapstructure:"max_commit_message_length"`
-	
+
 	// Commit size settings
 	MaxCommitSizeLines int `mapstructure:"max_commit_size_lines"`
-	
+
 	// Scoring weights
 	Weights Weights `mapstructure:"weights"`
 }
@@ -34,7 +34,7 @@ type Weights struct {
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
-		MaxCommitsToAnalyze:     50,
+		MaxCommitsToAnalyze:      50,
 		StaleBranchThresholdDays: 60,
 		MaxCommitMessageLength:   72,
 		MaxCommitSizeLines:       500,

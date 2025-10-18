@@ -146,7 +146,7 @@ func (ra *RepositoryAnalyzer) analyzeBranches() ([]types.BranchInfo, error) {
 	err = branches.ForEach(func(ref *plumbing.Reference) error {
 		if ref.Name().IsBranch() {
 			branchName := ref.Name().Short()
-			
+
 			// Get branch commit
 			commit, err := ra.repo.CommitObject(ref.Hash())
 			if err != nil {
@@ -179,36 +179,36 @@ func (ra *RepositoryAnalyzer) analyzeBranches() ([]types.BranchInfo, error) {
 // analyzeFiles gets a list of files in the repository
 func (ra *RepositoryAnalyzer) analyzeFiles() ([]string, error) {
 	var files []string
-	
+
 	err := filepath.Walk(ra.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Skip .git directory
 		if info.IsDir() && info.Name() == ".git" {
 			return filepath.SkipDir
 		}
-		
+
 		if !info.IsDir() {
 			relPath, err := filepath.Rel(ra.path, path)
 			if err == nil {
 				files = append(files, relPath)
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	return files, err
 }
 
 // checkEssentialFiles checks for essential project files
 func (ra *RepositoryAnalyzer) checkEssentialFiles(data *types.RepositoryData) {
 	essentialFiles := map[string]*bool{
-		"README.md":           &data.HasReadme,
-		"LICENSE":             &data.HasLicense,
-		"CONTRIBUTING.md":     &data.HasContributing,
+		"README.md":          &data.HasReadme,
+		"LICENSE":            &data.HasLicense,
+		"CONTRIBUTING.md":    &data.HasContributing,
 		"CODE_OF_CONDUCT.md": &data.HasCodeOfConduct,
 	}
 

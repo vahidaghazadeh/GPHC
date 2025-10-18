@@ -6,14 +6,14 @@ import (
 
 // CheckResult represents the result of a single check
 type CheckResult struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Status      Status    `json:"status"`
-	Score       int       `json:"score"`
-	Message     string    `json:"message"`
-	Details     []string  `json:"details,omitempty"`
-	Category    Category  `json:"category"`
-	Timestamp   time.Time `json:"timestamp"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Status    Status    `json:"status"`
+	Score     int       `json:"score"`
+	Message   string    `json:"message"`
+	Details   []string  `json:"details,omitempty"`
+	Category  Category  `json:"category"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Status represents the status of a check
@@ -66,7 +66,7 @@ type HealthReport struct {
 	Grade        string        `json:"grade"`
 	Results      []CheckResult `json:"results"`
 	Summary      ReportSummary `json:"summary"`
-	Timestamp    time.Time    `json:"timestamp"`
+	Timestamp    time.Time     `json:"timestamp"`
 }
 
 // ReportSummary provides a summary of the health check
@@ -79,35 +79,35 @@ type ReportSummary struct {
 
 // RepositoryData contains the analyzed repository data
 type RepositoryData struct {
-	Path           string
-	Commits        []CommitInfo
-	Branches        []BranchInfo
-	Files           []string
-	HasReadme       bool
-	HasLicense      bool
-	HasContributing bool
+	Path             string
+	Commits          []CommitInfo
+	Branches         []BranchInfo
+	Files            []string
+	HasReadme        bool
+	HasLicense       bool
+	HasContributing  bool
 	HasCodeOfConduct bool
-	HasGitignore    bool
+	HasGitignore     bool
 	GitignoreContent string
 }
 
 // CommitInfo contains information about a commit
 type CommitInfo struct {
-	Hash        string
-	Message     string
-	Subject     string
-	Body        string
-	Author      string
-	Date        time.Time
-	LinesAdded  int
+	Hash         string
+	Message      string
+	Subject      string
+	Body         string
+	Author       string
+	Date         time.Time
+	LinesAdded   int
 	LinesDeleted int
 }
 
 // BranchInfo contains information about a branch
 type BranchInfo struct {
-	Name         string
-	IsMerged     bool
-	LastCommit   time.Time
-	CommitCount  int
-	IsStale      bool
+	Name        string
+	IsMerged    bool
+	LastCommit  time.Time
+	CommitCount int
+	IsStale     bool
 }

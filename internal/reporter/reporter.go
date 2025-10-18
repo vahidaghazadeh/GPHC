@@ -15,17 +15,17 @@ type Reporter struct {
 
 // Style contains all the styling definitions
 type Style struct {
-	Header      lipgloss.Style
-	Title       lipgloss.Style
-	Score       lipgloss.Style
-	Grade       lipgloss.Style
-	Category    lipgloss.Style
-	Pass        lipgloss.Style
-	Fail        lipgloss.Style
-	Warning     lipgloss.Style
-	Detail      lipgloss.Style
-	Separator   lipgloss.Style
-	NextSteps   lipgloss.Style
+	Header    lipgloss.Style
+	Title     lipgloss.Style
+	Score     lipgloss.Style
+	Grade     lipgloss.Style
+	Category  lipgloss.Style
+	Pass      lipgloss.Style
+	Fail      lipgloss.Style
+	Warning   lipgloss.Style
+	Detail    lipgloss.Style
+	Separator lipgloss.Style
+	NextSteps lipgloss.Style
 }
 
 // NewReporter creates a new reporter with default styling
@@ -41,41 +41,41 @@ func createDefaultStyle() Style {
 		Header: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00FF00")).
 			Bold(true),
-		
+
 		Title: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Bold(true),
-		
+
 		Score: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
 			Bold(true),
-		
+
 		Grade: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
 			Bold(true),
-		
+
 		Category: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#87CEEB")).
 			Bold(true),
-		
+
 		Pass: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00FF00")).
 			Bold(true),
-		
+
 		Fail: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF0000")).
 			Bold(true),
-		
+
 		Warning: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFA500")).
 			Bold(true),
-		
+
 		Detail: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#CCCCCC")),
-		
+
 		Separator: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#666666")),
-		
+
 		NextSteps: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
 			Bold(true),
@@ -117,18 +117,18 @@ func (r *Reporter) Report(report *types.HealthReport) string {
 // groupResultsByCategory groups results by category
 func (r *Reporter) groupResultsByCategory(results []types.CheckResult) map[types.Category][]types.CheckResult {
 	categories := make(map[types.Category][]types.CheckResult)
-	
+
 	for _, result := range results {
 		categories[result.Category] = append(categories[result.Category], result)
 	}
-	
+
 	return categories
 }
 
 // renderCategory renders a category section
 func (r *Reporter) renderCategory(category types.Category, results []types.CheckResult) string {
 	var output strings.Builder
-	
+
 	// Category header
 	passed := 0
 	for _, result := range results {
@@ -136,36 +136,36 @@ func (r *Reporter) renderCategory(category types.Category, results []types.Check
 			passed++
 		}
 	}
-	
+
 	categoryHeader := fmt.Sprintf("[%s] %s (Passed: %d/%d)",
 		getCategoryLetter(category),
 		category.String(),
 		passed,
 		len(results))
-	
+
 	output.WriteString(r.style.Category.Render(categoryHeader))
 	output.WriteString("\n")
-	
+
 	// Separator
 	output.WriteString(r.style.Separator.Render(strings.Repeat("-", 50)))
 	output.WriteString("\n")
-	
+
 	// Results
 	for _, result := range results {
 		output.WriteString(r.renderResult(result))
 	}
-	
+
 	return output.String()
 }
 
 // renderResult renders a single check result
 func (r *Reporter) renderResult(result types.CheckResult) string {
 	var output strings.Builder
-	
+
 	// Status icon and ID
 	var statusIcon string
 	var statusStyle lipgloss.Style
-	
+
 	switch result.Status {
 	case types.StatusPass:
 		statusIcon = "✅"
@@ -177,49 +177,49 @@ func (r *Reporter) renderResult(result types.CheckResult) string {
 		statusIcon = "⚠️"
 		statusStyle = r.style.Warning
 	}
-	
+
 	statusText := fmt.Sprintf("%s %s: %s (Score: %+d)",
 		statusIcon,
 		result.ID,
 		result.Message,
 		result.Score)
-	
+
 	output.WriteString(statusStyle.Render(statusText))
 	output.WriteString("\n")
-	
+
 	// Details
 	for _, detail := range result.Details {
 		output.WriteString("   " + r.style.Detail.Render(detail))
 		output.WriteString("\n")
 	}
-	
+
 	// Add spacing between results
 	output.WriteString("\n")
-	
+
 	return output.String()
 }
 
 // renderNextSteps renders the next steps section
 func (r *Reporter) renderNextSteps(report *types.HealthReport) string {
 	var output strings.Builder
-	
+
 	output.WriteString(r.style.NextSteps.Render("💡 Next Steps:"))
 	output.WriteString("\n")
-	
+
 	// Generate next steps based on failed checks
 	nextSteps := r.generateNextSteps(report.Results)
-	
+
 	for i, step := range nextSteps {
 		output.WriteString(fmt.Sprintf("   %d. %s\n", i+1, step))
 	}
-	
+
 	return output.String()
 }
 
 // generateNextSteps generates actionable next steps
 func (r *Reporter) generateNextSteps(results []types.CheckResult) []string {
 	var steps []string
-	
+
 	for _, result := range results {
 		if result.Status == types.StatusFail {
 			switch result.ID {
@@ -250,7 +250,7 @@ func (r *Reporter) generateNextSteps(results []types.CheckResult) []string {
 			}
 		}
 	}
-	
+
 	return steps
 }
 

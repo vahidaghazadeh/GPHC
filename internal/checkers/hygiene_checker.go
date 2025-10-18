@@ -126,7 +126,7 @@ func (sbc *StaleBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 		if branch.IsStale && branch.Name != "main" && branch.Name != "master" {
 			staleBranches++
 			daysSinceLastCommit := int(time.Since(branch.LastCommit).Hours() / 24)
-			staleBranchNames = append(staleBranchNames, 
+			staleBranchNames = append(staleBranchNames,
 				fmt.Sprintf("%s (%d days ago)", branch.Name, daysSinceLastCommit))
 		}
 	}
@@ -136,7 +136,7 @@ func (sbc *StaleBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 	details = append(details, fmt.Sprintf("✅ %d branches are active", len(data.Branches)-staleBranches))
 
 	if staleBranches > 0 {
-		details = append(details, fmt.Sprintf("⚠️ %d branches are stale (older than %d days):", 
+		details = append(details, fmt.Sprintf("⚠️ %d branches are stale (older than %d days):",
 			staleBranches, staleThreshold))
 		for i, branchInfo := range staleBranchNames {
 			if i < 5 { // Show only first 5 stale branches
@@ -200,7 +200,7 @@ func (brc *BareRepoChecker) Check(data *types.RepositoryData) *types.CheckResult
 	// - GitHub branch protection rules (requires API)
 	// - Pre-commit hooks
 	// - CI/CD integration
-	
+
 	var details []string
 	details = append(details, "ℹ️ This check requires GitHub API integration")
 	details = append(details, "ℹ️ Consider enabling branch protection rules")
