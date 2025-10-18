@@ -86,19 +86,19 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 	// Check if path is a git repository
 	if !isGitRepository(path) {
-		fmt.Printf("Error: %s is not a Git repository\n", path)
+		fmt.Printf("💥 Error: %s is not a Git repository\n", path)
 		os.Exit(1)
 	}
 
 	// Check if there are staged files
 	stagedFiles, err := getStagedFiles(path)
 	if err != nil {
-		fmt.Printf("Error checking staged files: %v\n", err)
+		fmt.Printf("💥 Error checking staged files: %v\n", err)
 		os.Exit(1)
 	}
 
 	if len(stagedFiles) == 0 {
-		fmt.Println("✅ No staged files to check")
+		fmt.Println("✨ No staged files to check")
 		return
 	}
 
@@ -109,32 +109,32 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 	// Check 1: File formatting
 	if !checkFileFormatting(path, stagedFiles) {
-		fmt.Println("❌ Some files are not properly formatted")
+		fmt.Println("💥 Some files are not properly formatted")
 		issues++
 	}
 
 	// Check 2: Commit message (if committing)
 	if !checkCommitMessage(path) {
-		fmt.Println("❌ Commit message doesn't follow conventional format")
+		fmt.Println("💥 Commit message doesn't follow conventional format")
 		issues++
 	}
 
 	// Check 3: Large files
 	if !checkLargeFiles(stagedFiles) {
-		fmt.Println("❌ Some files are too large")
+		fmt.Println("💥 Some files are too large")
 		issues++
 	}
 
 	// Check 4: Sensitive files
 	if !checkSensitiveFiles(stagedFiles) {
-		fmt.Println("❌ Sensitive files detected in staging area")
+		fmt.Println("💥 Sensitive files detected in staging area")
 		issues++
 	}
 
 	if issues == 0 {
-		fmt.Println("✅ All pre-commit checks passed")
+		fmt.Println("✨ All pre-commit checks passed")
 	} else {
-		fmt.Printf("❌ %d pre-commit check(s) failed\n", issues)
+		fmt.Printf("💥 %d pre-commit check(s) failed\n", issues)
 		os.Exit(1)
 	}
 }
@@ -154,7 +154,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 
 	// Check if path is a git repository
 	if !isGitRepository(path) {
-		fmt.Printf("Error: %s is not a Git repository\n", path)
+		fmt.Printf("💥 Error: %s is not a Git repository\n", path)
 		os.Exit(1)
 	}
 
@@ -163,14 +163,14 @@ func runCheck(cmd *cobra.Command, args []string) {
 	// Initialize analyzer
 	analyzer, err := git.NewRepositoryAnalyzer(path)
 	if err != nil {
-		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		fmt.Printf("💥 Error initializing repository analyzer: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Analyze repository
 	data, err := analyzer.Analyze()
 	if err != nil {
-		fmt.Printf("Error analyzing repository: %v\n", err)
+		fmt.Printf("💥 Error analyzing repository: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -205,49 +205,49 @@ func runCheck(cmd *cobra.Command, args []string) {
 }
 
 func runUpdate(cmd *cobra.Command, args []string) {
-	fmt.Println("🔄 Updating GPHC...")
+	fmt.Println("🚀 Updating GPHC...")
 
 	// Find the GPHC source directory
 	sourceDir := findGPHCSourceDir()
 	if sourceDir == "" {
-		fmt.Println("❌ Error: Could not find GPHC source directory")
+		fmt.Println("💥 Error: Could not find GPHC source directory")
 		fmt.Println("💡 Please run this command from the GPHC project directory")
 		os.Exit(1)
 	}
 
-	fmt.Printf("📁 Found GPHC source at: %s\n", sourceDir)
+	fmt.Printf("📂 Found GPHC source at: %s\n", sourceDir)
 
 	// Change to source directory
 	if err := os.Chdir(sourceDir); err != nil {
-		fmt.Printf("❌ Error changing to source directory: %v\n", err)
+		fmt.Printf("💥 Error changing to source directory: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Pull latest changes
-	fmt.Println("📥 Pulling latest changes...")
+	fmt.Println("⬇️ Pulling latest changes...")
 	pullCmd := exec.Command("git", "pull", "origin", "main")
 	pullCmd.Stdout = os.Stdout
 	pullCmd.Stderr = os.Stderr
 
 	if err := pullCmd.Run(); err != nil {
-		fmt.Printf("❌ Error pulling changes: %v\n", err)
+		fmt.Printf("💥 Error pulling changes: %v\n", err)
 		fmt.Println("💡 Make sure you have internet connection and git access")
 		os.Exit(1)
 	}
 
 	// Rebuild and reinstall
-	fmt.Println("🔨 Building and installing GPHC...")
+	fmt.Println("🔧 Building and installing GPHC...")
 	installCmd := exec.Command("go", "install", "./cmd/gphc")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 
 	if err := installCmd.Run(); err != nil {
-		fmt.Printf("❌ Error installing GPHC: %v\n", err)
+		fmt.Printf("💥 Error installing GPHC: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("✅ GPHC updated successfully!")
-	fmt.Println("📊 New version:")
+	fmt.Println("✨ GPHC updated successfully!")
+	fmt.Println("🎯 New version:")
 
 	// Show new version
 	versionCmd := exec.Command("gphc", "version")

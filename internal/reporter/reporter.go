@@ -87,11 +87,11 @@ func (r *Reporter) Report(report *types.HealthReport) string {
 	var output strings.Builder
 
 	// Header
-	output.WriteString(r.style.Header.Render("✅ Repository Health Check (GPHC v1.0.0)"))
+	output.WriteString(r.style.Header.Render("🚀 Repository Health Check (GPHC v1.0.0)"))
 	output.WriteString("\n\n")
 
 	// Overall Score
-	scoreText := fmt.Sprintf("🌟 Overall Health Score: %d/100 (%s)", report.OverallScore, report.Grade)
+	scoreText := fmt.Sprintf("🎯 Overall Health Score: %d/100 (%s)", report.OverallScore, report.Grade)
 	output.WriteString(r.style.Score.Render(scoreText))
 	output.WriteString("\n")
 
@@ -168,13 +168,13 @@ func (r *Reporter) renderResult(result types.CheckResult) string {
 
 	switch result.Status {
 	case types.StatusPass:
-		statusIcon = "✅"
+		statusIcon = "✨"
 		statusStyle = r.style.Pass
 	case types.StatusFail:
-		statusIcon = "❌"
+		statusIcon = "💥"
 		statusStyle = r.style.Fail
 	case types.StatusWarning:
-		statusIcon = "⚠️"
+		statusIcon = "⚡"
 		statusStyle = r.style.Warning
 	}
 
