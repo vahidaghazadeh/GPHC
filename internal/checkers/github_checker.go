@@ -120,7 +120,7 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 	} else if protection != nil {
 		score += 25
 		result.Details = append(result.Details, "✅ Branch protection is enabled")
-		
+
 		if protection.RequiredPullRequestReviews != nil {
 			if protection.RequiredPullRequestReviews.RequiredApprovingReviewCount > 0 {
 				score += 15
@@ -131,7 +131,7 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 				result.Details = append(result.Details, "✅ Code owner reviews required")
 			}
 		}
-		
+
 		if protection.RequiredStatusChecks != nil && len(protection.RequiredStatusChecks.Contexts) > 0 {
 			score += 10
 			result.Details = append(result.Details, fmt.Sprintf("✅ Required status checks: %s", strings.Join(protection.RequiredStatusChecks.Contexts, ", ")))
@@ -148,14 +148,14 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 	} else if len(workflows) > 0 {
 		score += 20
 		result.Details = append(result.Details, fmt.Sprintf("✅ Found %d workflow(s)", len(workflows)))
-		
+
 		activeWorkflows := 0
 		for _, workflow := range workflows {
 			if workflow.State == "active" {
 				activeWorkflows++
 			}
 		}
-		
+
 		if activeWorkflows > 0 {
 			score += 10
 			result.Details = append(result.Details, fmt.Sprintf("✅ %d active workflow(s)", activeWorkflows))
@@ -171,7 +171,7 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 		result.Details = append(result.Details, fmt.Sprintf("⚠️ Could not check contributors: %v", err))
 	} else {
 		result.Details = append(result.Details, fmt.Sprintf("📊 Found %d contributor(s)", len(contributors)))
-		
+
 		if len(contributors) > 1 {
 			score += 10
 			result.Details = append(result.Details, "✅ Multiple contributors")
@@ -204,12 +204,12 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 func (c *GitHubIntegrationChecker) getRemoteURL(repoPath string) (string, error) {
 	cmd := exec.Command("git", "remote", "get-url", "origin")
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(string(output)), nil
 }
 
@@ -219,6 +219,6 @@ func (c *GitHubIntegrationChecker) isGitHubRepository(repoPath string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	return strings.Contains(remoteURL, "github.com")
 }

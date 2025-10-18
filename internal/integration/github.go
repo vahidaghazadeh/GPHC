@@ -18,12 +18,12 @@ type GitHubClient struct {
 
 // GitHubBranchProtection represents branch protection rules
 type GitHubBranchProtection struct {
-	RequiredStatusChecks     *RequiredStatusChecks `json:"required_status_checks"`
-	EnforceAdmins            bool                  `json:"enforce_admins"`
+	RequiredStatusChecks       *RequiredStatusChecks       `json:"required_status_checks"`
+	EnforceAdmins              bool                        `json:"enforce_admins"`
 	RequiredPullRequestReviews *RequiredPullRequestReviews `json:"required_pull_request_reviews"`
-	Restrictions             *Restrictions          `json:"restrictions"`
-	AllowForcePushes         bool                  `json:"allow_force_pushes"`
-	AllowDeletions           bool                  `json:"allow_deletions"`
+	Restrictions               *Restrictions               `json:"restrictions"`
+	AllowForcePushes           bool                        `json:"allow_force_pushes"`
+	AllowDeletions             bool                        `json:"allow_deletions"`
 }
 
 type RequiredStatusChecks struct {
@@ -33,8 +33,8 @@ type RequiredStatusChecks struct {
 
 type RequiredPullRequestReviews struct {
 	RequiredApprovingReviewCount int  `json:"required_approving_review_count"`
-	DismissStaleReviews         bool `json:"dismiss_stale_reviews"`
-	RequireCodeOwnerReviews     bool `json:"require_code_owner_reviews"`
+	DismissStaleReviews          bool `json:"dismiss_stale_reviews"`
+	RequireCodeOwnerReviews      bool `json:"require_code_owner_reviews"`
 }
 
 type Restrictions struct {
@@ -209,8 +209,8 @@ func (c *GitHubClient) GetWorkflows(owner, repo string) ([]GitHubWorkflow, error
 	}
 
 	var response struct {
-		TotalCount int               `json:"total_count"`
-		Workflows  []GitHubWorkflow  `json:"workflows"`
+		TotalCount int              `json:"total_count"`
+		Workflows  []GitHubWorkflow `json:"workflows"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {

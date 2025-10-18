@@ -365,7 +365,7 @@ func runGitHub(cmd *cobra.Command, args []string) {
 
 	// Initialize GitHub checker
 	checker := checkers.NewGitHubIntegrationChecker()
-	
+
 	// Create minimal repository data for the checker
 	data := &types.RepositoryData{
 		Path: path,
