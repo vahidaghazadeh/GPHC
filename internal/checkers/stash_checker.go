@@ -25,13 +25,13 @@ func NewStashChecker() *StashChecker {
 // Check analyzes Git stash entries
 func (c *StashChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	result := &types.CheckResult{
-		ID:      c.ID(),
-		Name:    c.Name(),
+		ID:       c.ID(),
+		Name:     c.Name(),
 		Category: c.Category(),
-		Status:  types.StatusPass,
-		Score:   100,
-		Message: "No stash entries found",
-		Details: []string{},
+		Status:   types.StatusPass,
+		Score:    100,
+		Message:  "No stash entries found",
+		Details:  []string{},
 	}
 
 	// Check if we're in a git repository
@@ -59,7 +59,7 @@ func (c *StashChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	// Analyze stash entries
 	oldStashes := 0
 	totalStashes := len(stashEntries)
-	
+
 	for _, entry := range stashEntries {
 		if entry.IsOld() {
 			oldStashes++
@@ -98,13 +98,13 @@ func (s *StashEntry) IsOld() bool {
 func (s *StashEntry) String() string {
 	age := time.Since(s.Timestamp)
 	ageStr := formatDuration(age)
-	
+
 	status := "✅ Recent"
 	if s.IsOld() {
 		status = "⚠️ Old"
 	}
-	
-	return fmt.Sprintf("%s stash@{%d}: %s (%s ago) [%s]", 
+
+	return fmt.Sprintf("%s stash@{%d}: %s (%s ago) [%s]",
 		status, s.Index, s.Message, ageStr, s.Branch)
 }
 
@@ -112,7 +112,7 @@ func (s *StashEntry) String() string {
 func getStashEntries(repoPath string) ([]StashEntry, error) {
 	cmd := exec.Command("git", "stash", "list", "--format=%gd|%gs|%ct")
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
