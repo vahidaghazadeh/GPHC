@@ -4,7 +4,11 @@
 *.dll
 *.so
 *.dylib
+
+# GPHC binary (built with go build -o gphc cmd/gphc/main.go)
 gphc
+gphc.exe
+gphc.exe~
 
 # Test binary, built with `go test -c`
 *.test
@@ -44,6 +48,14 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+bin/
+out/
+
+# Go build cache
+go-build/
+
+# Go test cache
+go-test/
 
 # Configuration files with sensitive data
 config.local.yml
