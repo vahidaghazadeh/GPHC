@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/opsource/gphc/internal/checkers"
+	"github.com/opsource/gphc/internal/exporter"
 	"github.com/opsource/gphc/internal/git"
 	"github.com/opsource/gphc/internal/reporter"
 	"github.com/opsource/gphc/internal/scorer"
@@ -26,12 +27,31 @@ and repository hygiene. It assigns a Health Score and provides actionable feedba
 	}
 )
 
+var badgeCmd = &cobra.Command{
+	Use:   "badge [path]",
+	Short: "Generate health badge for a Git repository",
+	Long: `Generate a health badge (shields.io style) for the repository.
+This command runs a quick health check and generates a badge URL and markdown.`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runBadge,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(preCommitCmd)
+	rootCmd.AddCommand(badgeCmd)
+
+	// Add export format flags
+	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
+	checkCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (default: stdout)")
 }
+
+var (
+	exportFormat string
+	outputFile   string
+)
 
 var checkCmd = &cobra.Command{
 	Use:   "check [path]",
@@ -86,19 +106,19 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 	// Check if path is a git repository
 	if !isGitRepository(path) {
-		fmt.Printf("💥 Error: %s is not a Git repository\n", path)
+		fmt.Printf("❌ Error: %s is not a Git repository\n", path)
 		os.Exit(1)
 	}
 
 	// Check if there are staged files
 	stagedFiles, err := getStagedFiles(path)
 	if err != nil {
-		fmt.Printf("💥 Error checking staged files: %v\n", err)
+		fmt.Printf("❌ Error checking staged files: %v\n", err)
 		os.Exit(1)
 	}
 
 	if len(stagedFiles) == 0 {
-		fmt.Println("✨ No staged files to check")
+		fmt.Println("✅ No staged files to check")
 		return
 	}
 
@@ -109,32 +129,32 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 	// Check 1: File formatting
 	if !checkFileFormatting(path, stagedFiles) {
-		fmt.Println("💥 Some files are not properly formatted")
+		fmt.Println("❌ Some files are not properly formatted")
 		issues++
 	}
 
 	// Check 2: Commit message (if committing)
 	if !checkCommitMessage(path) {
-		fmt.Println("💥 Commit message doesn't follow conventional format")
+		fmt.Println("❌ Commit message doesn't follow conventional format")
 		issues++
 	}
 
 	// Check 3: Large files
 	if !checkLargeFiles(stagedFiles) {
-		fmt.Println("💥 Some files are too large")
+		fmt.Println("❌ Some files are too large")
 		issues++
 	}
 
 	// Check 4: Sensitive files
 	if !checkSensitiveFiles(stagedFiles) {
-		fmt.Println("💥 Sensitive files detected in staging area")
+		fmt.Println("❌ Sensitive files detected in staging area")
 		issues++
 	}
 
 	if issues == 0 {
-		fmt.Println("✨ All pre-commit checks passed")
+		fmt.Println("✅ All pre-commit checks passed")
 	} else {
-		fmt.Printf("💥 %d pre-commit check(s) failed\n", issues)
+		fmt.Printf("❌ %d pre-commit check(s) failed\n", issues)
 		os.Exit(1)
 	}
 }
@@ -154,7 +174,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 
 	// Check if path is a git repository
 	if !isGitRepository(path) {
-		fmt.Printf("💥 Error: %s is not a Git repository\n", path)
+		fmt.Printf("❌ Error: %s is not a Git repository\n", path)
 		os.Exit(1)
 	}
 
@@ -163,14 +183,14 @@ func runCheck(cmd *cobra.Command, args []string) {
 	// Initialize analyzer
 	analyzer, err := git.NewRepositoryAnalyzer(path)
 	if err != nil {
-		fmt.Printf("💥 Error initializing repository analyzer: %v\n", err)
+		fmt.Printf("❌ Error initializing repository analyzer: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Analyze repository
 	data, err := analyzer.Analyze()
 	if err != nil {
-		fmt.Printf("💥 Error analyzing repository: %v\n", err)
+		fmt.Printf("❌ Error analyzing repository: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -198,19 +218,109 @@ func runCheck(cmd *cobra.Command, args []string) {
 	// Generate report
 	healthReport := scorer.CalculateHealthReport()
 
-	// Display results
-	reporter := reporter.NewReporter()
-	output := reporter.Report(healthReport)
-	fmt.Println(output)
+	// Handle different output formats
+	if exportFormat == "terminal" {
+		// Display results in terminal format
+		reporter := reporter.NewReporter()
+		output := reporter.Report(healthReport)
+		fmt.Println(output)
+	} else {
+		// Export in specified format
+		exp := exporter.NewExporter()
+		format := exporter.ExportFormat(exportFormat)
+		output, err := exp.Export(healthReport, format)
+		if err != nil {
+			fmt.Printf("❌ Error exporting report: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Write to file or stdout
+		if outputFile != "" {
+			err := os.WriteFile(outputFile, []byte(output), 0644)
+			if err != nil {
+				fmt.Printf("❌ Error writing to file: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✅ Report exported to: %s\n", outputFile)
+		} else {
+			fmt.Print(output)
+		}
+	}
+}
+
+func runBadge(cmd *cobra.Command, args []string) {
+	var path string
+	if len(args) > 0 {
+		path = args[0]
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("❌ Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if path is a git repository
+	if !isGitRepository(path) {
+		fmt.Printf("❌ Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Analyzing repository: %s\n", path)
+
+	// Initialize analyzer
+	analyzer, err := git.NewRepositoryAnalyzer(path)
+	if err != nil {
+		fmt.Printf("❌ Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Analyze repository
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("❌ Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Initialize checkers
+	allCheckers := []checkers.Checker{
+		checkers.NewDocChecker(),
+		checkers.NewIgnoreChecker(),
+		checkers.NewConventionalCommitChecker(),
+		checkers.NewMsgLengthChecker(),
+		checkers.NewLocalBranchChecker(),
+		checkers.NewStaleBranchChecker(),
+		checkers.NewStashChecker(),
+	}
+
+	// Run all checkers
+	scorer := scorer.NewScorer()
+	for _, checker := range allCheckers {
+		result := checker.Check(data)
+		scorer.AddResult(*result)
+	}
+
+	// Generate report
+	healthReport := scorer.CalculateHealthReport()
+
+	// Generate badge
+	exp := exporter.NewExporter()
+	badgeURL := exp.GenerateBadgeURL(healthReport.OverallScore)
+	markdownBadge := exp.GenerateMarkdownBadge(healthReport.OverallScore)
+
+	fmt.Printf("📊 Health Score: %d/100 (%s)\n\n", healthReport.OverallScore, healthReport.Grade)
+	fmt.Printf("🔗 Badge URL:\n%s\n\n", badgeURL)
+	fmt.Printf("📝 Markdown Badge:\n%s\n", markdownBadge)
 }
 
 func runUpdate(cmd *cobra.Command, args []string) {
-	fmt.Println("🚀 Updating GPHC...")
+	fmt.Println("🔄 Updating GPHC...")
 
 	// Find the GPHC source directory
 	sourceDir := findGPHCSourceDir()
 	if sourceDir == "" {
-		fmt.Println("💥 Error: Could not find GPHC source directory")
+		fmt.Println("❌ Error: Could not find GPHC source directory")
 		fmt.Println("💡 Please run this command from the GPHC project directory")
 		os.Exit(1)
 	}
@@ -219,7 +329,7 @@ func runUpdate(cmd *cobra.Command, args []string) {
 
 	// Change to source directory
 	if err := os.Chdir(sourceDir); err != nil {
-		fmt.Printf("💥 Error changing to source directory: %v\n", err)
+		fmt.Printf("❌ Error changing to source directory: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -230,24 +340,24 @@ func runUpdate(cmd *cobra.Command, args []string) {
 	pullCmd.Stderr = os.Stderr
 
 	if err := pullCmd.Run(); err != nil {
-		fmt.Printf("💥 Error pulling changes: %v\n", err)
+		fmt.Printf("❌ Error pulling changes: %v\n", err)
 		fmt.Println("💡 Make sure you have internet connection and git access")
 		os.Exit(1)
 	}
 
 	// Rebuild and reinstall
-	fmt.Println("🔧 Building and installing GPHC...")
+	fmt.Println("🔨 Building and installing GPHC...")
 	installCmd := exec.Command("go", "install", "./cmd/gphc")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 
 	if err := installCmd.Run(); err != nil {
-		fmt.Printf("💥 Error installing GPHC: %v\n", err)
+		fmt.Printf("❌ Error installing GPHC: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("✨ GPHC updated successfully!")
-	fmt.Println("🎯 New version:")
+	fmt.Println("✅ GPHC updated successfully!")
+	fmt.Println("📊 New version:")
 
 	// Show new version
 	versionCmd := exec.Command("gphc", "version")

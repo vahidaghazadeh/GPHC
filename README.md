@@ -98,6 +98,40 @@ GPHC includes a fast pre-commit mode designed for integration with pre-commit fr
 ```bash
 # Run pre-commit checks on staged files
 gphc pre-commit
+gphc badge
+```
+
+**Export Formats:**
+```bash
+# JSON output
+gphc check --format json
+
+# YAML output  
+gphc check --format yaml
+
+# Markdown output (perfect for README)
+gphc check --format markdown --output health-report.md
+
+# HTML output
+gphc check --format html --output health-report.html
+```
+
+**Health Badge:**
+```bash
+# Generate badge URL and markdown
+gphc badge
+
+# Output example:
+# 🔗 Badge URL:
+# https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github
+# 
+# 📝 Markdown Badge:
+# ![Health Score](https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github)
+```
+
+**Pre-Commit Hook Mode:**
+```bash
+gphc pre-commit
 ```
 
 **Features:**
@@ -190,6 +224,72 @@ chmod +x $(go env GOPATH)/bin/gphc
    1. Create CONTRIBUTING.md
    2. Delete 3 stale local branches
    3. Review and clean up old stash entries
+```
+
+## 📊 Export Formats & Badges
+
+GPHC supports multiple output formats for integration with CI/CD pipelines, documentation, and reporting systems.
+
+### Export Formats
+
+**JSON Output:**
+```bash
+gphc check --format json
+```
+Perfect for CI/CD integration and automated processing.
+
+**YAML Output:**
+```bash
+gphc check --format yaml
+```
+Human-readable format for configuration files.
+
+**Markdown Output:**
+```bash
+gphc check --format markdown --output health-report.md
+```
+Ready-to-use markdown for README files or documentation.
+
+**HTML Output:**
+```bash
+gphc check --format html --output health-report.html
+```
+Beautiful HTML reports for web dashboards.
+
+### Health Badges
+
+Generate shields.io-style badges for your repository:
+
+```bash
+gphc badge
+```
+
+**Output:**
+```
+📊 Health Score: 85/100 (B+)
+
+🔗 Badge URL:
+https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github
+
+📝 Markdown Badge:
+![Health Score](https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github)
+```
+
+**Badge Colors:**
+- 🟢 **90-100:** `brightgreen` (A+)
+- 🟢 **80-89:** `green` (A, B+)
+- 🟡 **70-79:** `yellowgreen` (B, B-)
+- 🟡 **60-69:** `yellow` (C+, C)
+- 🟠 **50-59:** `orange` (C-, D+)
+- 🔴 **0-49:** `red` (D, F)
+
+**Add to README:**
+```markdown
+# My Project
+
+![Health Score](https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github)
+
+A well-maintained project with excellent health metrics.
 ```
 
 ## ⚙️ Configuration
