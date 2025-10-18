@@ -99,6 +99,7 @@ GPHC includes a fast pre-commit mode designed for integration with pre-commit fr
 # Run pre-commit checks on staged files
 gphc pre-commit
 gphc badge
+gphc github
 ```
 
 **Export Formats:**
@@ -291,6 +292,81 @@ https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&log
 
 A well-maintained project with excellent health metrics.
 ```
+
+## 🔗 GitHub Integration
+
+GPHC provides deep integration with GitHub repositories to check advanced features and configurations.
+
+### Setup
+
+Set your GitHub Personal Access Token:
+
+```bash
+# Option 1: Using GPHC_TOKEN (recommended)
+export GPHC_TOKEN=your_github_token
+
+# Option 2: Using GITHUB_TOKEN (also supported)
+export GITHUB_TOKEN=your_github_token
+```
+
+**Required Token Permissions:**
+- `repo` (Full control of private repositories)
+- `read:org` (Read org and team membership)
+
+### GitHub Integration Check
+
+```bash
+# Check GitHub integration features
+gphc github
+
+# Check specific repository
+gphc github /path/to/repository
+```
+
+**Features Checked:**
+- ✅ **Branch Protection:** Required reviewers, status checks, code owner reviews
+- ✅ **GitHub Actions:** Workflow configuration and status
+- ✅ **Repository Settings:** Issues, projects, wiki enabled
+- ✅ **Contributors:** Multi-contributor analysis
+- ✅ **Repository Info:** Stars, forks, activity metrics
+
+**Example Output:**
+```
+🔍 Checking GitHub integration: /path/to/repo
+✅ GitHub token found
+
+📊 GitHub Integration Check Results:
+Status: PASS
+Score: 85
+Message: Excellent GitHub integration and configuration
+
+Details:
+  Repository: owner/repository
+  ✅ Issues are enabled
+  ✅ Projects are enabled
+  ✅ Wiki is enabled
+  ✅ Branch protection is enabled
+  ✅ Required 2 reviewer(s)
+  ✅ Code owner reviews required
+  ✅ Required status checks: ci, test, build
+  ✅ Found 3 workflow(s)
+  ✅ 2 active workflow(s)
+  📊 Found 5 contributor(s)
+  ✅ Multiple contributors
+```
+
+### Integration with Health Check
+
+GitHub integration is automatically included in the main health check:
+
+```bash
+gphc check
+```
+
+The GitHub integration checker (`GH-601`) will appear in the results when:
+- Repository is hosted on GitHub
+- GitHub token is available
+- Repository is accessible via GitHub API
 
 ## ⚙️ Configuration
 

@@ -12,6 +12,7 @@ import (
 	"github.com/opsource/gphc/internal/git"
 	"github.com/opsource/gphc/internal/reporter"
 	"github.com/opsource/gphc/internal/scorer"
+	"github.com/opsource/gphc/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -36,12 +37,22 @@ This command runs a quick health check and generates a badge URL and markdown.`,
 	Run:  runBadge,
 }
 
+var githubCmd = &cobra.Command{
+	Use:   "github [path]",
+	Short: "Check GitHub integration and configuration",
+	Long: `Check GitHub-specific features like branch protection, workflows, and repository settings.
+Requires GPHC_TOKEN or GITHUB_TOKEN environment variable for full functionality.`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runGitHub,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(preCommitCmd)
 	rootCmd.AddCommand(badgeCmd)
+	rootCmd.AddCommand(githubCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
@@ -206,6 +217,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewStaleBranchChecker(),
 		checkers.NewBareRepoChecker(),
 		checkers.NewStashChecker(),
+		checkers.NewGitHubIntegrationChecker(),
 	}
 
 	// Run all checkers
@@ -292,6 +304,7 @@ func runBadge(cmd *cobra.Command, args []string) {
 		checkers.NewLocalBranchChecker(),
 		checkers.NewStaleBranchChecker(),
 		checkers.NewStashChecker(),
+		checkers.NewGitHubIntegrationChecker(),
 	}
 
 	// Run all checkers
@@ -312,6 +325,67 @@ func runBadge(cmd *cobra.Command, args []string) {
 	fmt.Printf("📊 Health Score: %d/100 (%s)\n\n", healthReport.OverallScore, healthReport.Grade)
 	fmt.Printf("🔗 Badge URL:\n%s\n\n", badgeURL)
 	fmt.Printf("📝 Markdown Badge:\n%s\n", markdownBadge)
+}
+
+func runGitHub(cmd *cobra.Command, args []string) {
+	var path string
+	if len(args) > 0 {
+		path = args[0]
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("❌ Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if path is a git repository
+	if !isGitRepository(path) {
+		fmt.Printf("❌ Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Checking GitHub integration: %s\n", path)
+
+	// Check GitHub token
+	token := os.Getenv("GPHC_TOKEN")
+	if token == "" {
+		token = os.Getenv("GITHUB_TOKEN")
+	}
+
+	if token == "" {
+		fmt.Println("⚠️ No GitHub token found")
+		fmt.Println("Set GPHC_TOKEN or GITHUB_TOKEN environment variable for full GitHub integration")
+		fmt.Println("Example: export GPHC_TOKEN=your_github_token")
+		return
+	}
+
+	fmt.Println("✅ GitHub token found")
+
+	// Initialize GitHub checker
+	checker := checkers.NewGitHubIntegrationChecker()
+	
+	// Create minimal repository data for the checker
+	data := &types.RepositoryData{
+		Path: path,
+	}
+
+	// Run GitHub integration check
+	result := checker.Check(data)
+
+	// Display results
+	fmt.Printf("\n📊 GitHub Integration Check Results:\n")
+	fmt.Printf("Status: %s\n", result.Status.String())
+	fmt.Printf("Score: %d\n", result.Score)
+	fmt.Printf("Message: %s\n\n", result.Message)
+
+	if len(result.Details) > 0 {
+		fmt.Println("Details:")
+		for _, detail := range result.Details {
+			fmt.Printf("  %s\n", detail)
+		}
+	}
 }
 
 func runUpdate(cmd *cobra.Command, args []string) {
