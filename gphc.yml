@@ -1,0 +1,20 @@
+# GPHC Configuration File
+# Git Project Health Checker settings
+
+# Commit analysis settings
+max_commits_to_analyze: 50
+
+# Branch analysis settings
+stale_branch_threshold_days: 60
+
+# Commit message settings
+max_commit_message_length: 72
+
+# Commit size settings
+max_commit_size_lines: 500
+
+# Scoring weights (1-10)
+weights:
+  documentation: 3
+  commits: 4
+  hygiene: 2
