@@ -308,12 +308,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [LipGloss](https://github.com/charmbracelet/lipgloss) for terminal styling
 - [Viper](https://github.com/spf13/viper) for configuration management
 
-## 📞 Support
-
-- 📧 Email: support@gphc.dev
-- 🐛 Issues: [GitHub Issues](https://github.com/opsource/gphc/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/opsource/gphc/discussions)
-
 ---
 
 **Made with ❤️ for the Open Source community**
