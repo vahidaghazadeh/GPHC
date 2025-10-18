@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build for Linux
+      run: |
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o gphc-linux-amd64 cmd/gphc/main.go
+        
+    - name: Build for macOS
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o gphc-darwin-amd64 cmd/gphc/main.go
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o gphc-darwin-arm64 cmd/gphc/main.go
+        
+    - name: Build for Windows
+      run: |
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o gphc-windows-amd64.exe cmd/gphc/main.go
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          gphc-linux-amd64
+          gphc-darwin-amd64
+          gphc-darwin-arm64
+          gphc-windows-amd64.exe
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
