@@ -13,6 +13,7 @@ func TestNewScorer(t *testing.T) {
 
 	if scorer == nil {
 		t.Error("Expected scorer, got nil")
+		return
 	}
 
 	if len(scorer.results) != 0 {
