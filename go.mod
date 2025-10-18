@@ -1,6 +1,8 @@
 module github.com/opsource/gphc
 
-go 1.23
+go 1.23.0
+
+toolchain go1.24.9
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
