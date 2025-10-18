@@ -30,6 +30,7 @@ func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(preCommitCmd)
 }
 
 var checkCmd = &cobra.Command{
@@ -58,6 +59,84 @@ This command will:
 2. Rebuild and reinstall GPHC
 3. Show the new version`,
 	Run: runUpdate,
+}
+
+var preCommitCmd = &cobra.Command{
+	Use:   "pre-commit",
+	Short: "Run quick pre-commit checks on staged files",
+	Long: `Run quick health checks suitable for pre-commit hooks.
+This command performs fast checks on staged files and current commit.
+Designed for integration with pre-commit framework and Husky.
+Returns non-zero exit code if issues are found.`,
+	Run: runPreCommit,
+}
+
+func runPreCommit(cmd *cobra.Command, args []string) {
+	var path string
+	if len(args) > 0 {
+		path = args[0]
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if path is a git repository
+	if !isGitRepository(path) {
+		fmt.Printf("Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	// Check if there are staged files
+	stagedFiles, err := getStagedFiles(path)
+	if err != nil {
+		fmt.Printf("Error checking staged files: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(stagedFiles) == 0 {
+		fmt.Println("✅ No staged files to check")
+		return
+	}
+
+	fmt.Printf("🔍 Pre-commit check on %d staged files\n", len(stagedFiles))
+
+	// Run quick checks
+	issues := 0
+	
+	// Check 1: File formatting
+	if !checkFileFormatting(path, stagedFiles) {
+		fmt.Println("❌ Some files are not properly formatted")
+		issues++
+	}
+
+	// Check 2: Commit message (if committing)
+	if !checkCommitMessage(path) {
+		fmt.Println("❌ Commit message doesn't follow conventional format")
+		issues++
+	}
+
+	// Check 3: Large files
+	if !checkLargeFiles(stagedFiles) {
+		fmt.Println("❌ Some files are too large")
+		issues++
+	}
+
+	// Check 4: Sensitive files
+	if !checkSensitiveFiles(stagedFiles) {
+		fmt.Println("❌ Sensitive files detected in staging area")
+		issues++
+	}
+
+	if issues == 0 {
+		fmt.Println("✅ All pre-commit checks passed")
+	} else {
+		fmt.Printf("❌ %d pre-commit check(s) failed\n", issues)
+		os.Exit(1)
+	}
 }
 
 func runCheck(cmd *cobra.Command, args []string) {
@@ -253,4 +332,107 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+// Helper functions for pre-commit checks
+
+func getStagedFiles(repoPath string) ([]string, error) {
+	cmd := exec.Command("git", "diff", "--cached", "--name-only")
+	cmd.Dir = repoPath
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	
+	if len(output) == 0 {
+		return []string{}, nil
+	}
+	
+	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
+}
+
+func checkFileFormatting(repoPath string, files []string) bool {
+	goFiles := []string{}
+	for _, file := range files {
+		if strings.HasSuffix(file, ".go") {
+			goFiles = append(goFiles, file)
+		}
+	}
+	
+	if len(goFiles) == 0 {
+		return true
+	}
+	
+	cmd := exec.Command("gofmt", "-l")
+	cmd.Dir = repoPath
+	cmd.Args = append(cmd.Args, goFiles...)
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	
+	return len(output) == 0
+}
+
+func checkCommitMessage(repoPath string) bool {
+	cmd := exec.Command("git", "log", "-1", "--pretty=%s")
+	cmd.Dir = repoPath
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	
+	message := strings.TrimSpace(string(output))
+	
+	// Check conventional commit format
+	conventionalPrefixes := []string{
+		"feat:", "fix:", "docs:", "style:", "refactor:", "test:", "chore:",
+		"perf:", "ci:", "build:", "revert:", "feat!", "fix!",
+	}
+	
+	for _, prefix := range conventionalPrefixes {
+		if strings.HasPrefix(message, prefix) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+func checkLargeFiles(files []string) bool {
+	for _, file := range files {
+		info, err := os.Stat(file)
+		if err != nil {
+			continue
+		}
+		
+		// Check if file is larger than 1MB
+		if info.Size() > 1024*1024 {
+			return false
+		}
+	}
+	
+	return true
+}
+
+func checkSensitiveFiles(files []string) bool {
+	sensitivePatterns := []string{
+		".env", ".env.local", ".env.production", ".env.staging",
+		"config.json", "secrets.json", "credentials.json",
+		"*.key", "*.pem", "*.p12", "*.pfx",
+		"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519",
+	}
+	
+	for _, file := range files {
+		for _, pattern := range sensitivePatterns {
+			if strings.Contains(file, pattern) || strings.HasSuffix(file, pattern[1:]) {
+				return false
+			}
+		}
+	}
+	
+	return true
 }
