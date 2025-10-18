@@ -78,11 +78,61 @@ gphc check
 # Check specific repository
 gphc check /path/to/repository
 
+# Run pre-commit checks on staged files
+gphc pre-commit
+
+# Update GPHC to latest version
+gphc update
+
 # Show version information
 gphc version
 
 # Show help
 gphc --help
+```
+
+### Pre-Commit Hook Mode
+
+GPHC includes a fast pre-commit mode designed for integration with pre-commit frameworks and Husky:
+
+```bash
+# Run pre-commit checks on staged files
+gphc pre-commit
+```
+
+**Features:**
+- ✅ **Fast execution:** Only checks staged files
+- ✅ **File formatting:** Validates Go code formatting
+- ✅ **Commit message:** Checks conventional commit format
+- ✅ **Large files:** Prevents files >1MB from being committed
+- ✅ **Sensitive files:** Blocks .env, keys, credentials
+- ✅ **Exit codes:** Returns non-zero for failed checks
+
+**Integration Examples:**
+
+**Pre-commit framework:**
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: gphc-pre-commit
+        name: GPHC Pre-commit Check
+        entry: gphc pre-commit
+        language: system
+        pass_filenames: false
+```
+
+**Husky (Node.js):**
+```json
+// package.json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "gphc pre-commit"
+    }
+  }
+}
 ```
 
 ### Troubleshooting
