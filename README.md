@@ -17,36 +17,33 @@ go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
 git clone https://github.com/vahidaghazadeh/gphc.git
 cd gphc
 go install ./cmd/gphc
+
+# Setup as git subcommand (optional)
+./setup-git-hc.sh
 ```
 
 ### Basic Usage
 ```bash
-# Check current directory (must be a git repository)
-gphc check
+# Using gphc directly
+gphc check                    # Check current directory (must be a git repository)
+gphc check /path/to/repository # Check specific repository
+gphc pre-commit               # Run pre-commit checks on staged files
+gphc tui                      # Launch interactive terminal UI
+gphc serve                    # Start web dashboard server
+gphc scan ~/projects --recursive # Scan multiple repositories
+gphc update                   # Update GPHC to latest version
+gphc version                  # Show version information
+gphc --help                   # Show help
 
-# Check specific repository
-gphc check /path/to/repository
-
-# Run pre-commit checks on staged files
-gphc pre-commit
-
-# Launch interactive terminal UI
-gphc tui
-
-# Start web dashboard server
-gphc serve
-
-# Scan multiple repositories
-gphc scan ~/projects --recursive
-
-# Update GPHC to latest version
-gphc update
-
-# Show version information
-gphc version
-
-# Show help
-gphc --help
+# Using git hc (after running setup-git-hc.sh)
+git hc check                  # Check current directory
+git hc pre-commit             # Run pre-commit checks
+git hc tui                    # Launch interactive terminal UI
+git hc serve                  # Start web dashboard server
+git hc scan ~/projects --recursive # Scan multiple repositories
+git hc update                 # Update GPHC to latest version
+git hc version                # Show version information
+git hc --help                 # Show help
 ```
 
 ## Features Overview
@@ -72,6 +69,7 @@ gphc --help
 Detailed documentation for each feature is available in the `docs/` directory:
 
 - [📋 Basic Usage](docs/basic-usage.md) - Getting started with GPHC
+- [🔧 Git HC Integration](docs/git-hc-integration.md) - Using GPHC as git subcommand
 - [📊 Health Checks](docs/health-checks.md) - Understanding health check categories
 - [🔧 Pre-commit Hooks](docs/pre-commit-hooks.md) - Pre-commit integration guide
 - [📈 Historical Tracking](docs/historical-tracking.md) - Health trend analysis
