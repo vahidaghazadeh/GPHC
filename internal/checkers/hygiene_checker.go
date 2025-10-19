@@ -32,7 +32,7 @@ func (lbc *LocalBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 		result.Status = types.StatusWarning
 		result.Score = 0
 		result.Message = "No branches found to analyze"
-		result.Details = []string{"⚠️ No branches available for analysis"}
+		result.Details = []string{"No branches available for analysis"}
 		return result
 	}
 
@@ -47,11 +47,11 @@ func (lbc *LocalBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 	}
 
 	var details []string
-	details = append(details, fmt.Sprintf("📊 Found %d local branches", len(data.Branches)))
-	details = append(details, fmt.Sprintf("✅ %d branches are active", len(data.Branches)-mergedBranches))
+	details = append(details, fmt.Sprintf("Found %d local branches", len(data.Branches)))
+	details = append(details, fmt.Sprintf("%d branches are active", len(data.Branches)-mergedBranches))
 
 	if mergedBranches > 0 {
-		details = append(details, fmt.Sprintf("⚠️ %d branches are merged but not deleted:", mergedBranches))
+		details = append(details, fmt.Sprintf("%d branches are merged but not deleted:", mergedBranches))
 		for i, branchName := range mergedBranchNames {
 			if i < 5 { // Show only first 5 merged branches
 				details = append(details, "   - "+branchName)
@@ -114,7 +114,7 @@ func (sbc *StaleBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 		result.Status = types.StatusWarning
 		result.Score = 0
 		result.Message = "No branches found to analyze"
-		result.Details = []string{"⚠️ No branches available for analysis"}
+		result.Details = []string{"No branches available for analysis"}
 		return result
 	}
 
@@ -132,11 +132,11 @@ func (sbc *StaleBranchChecker) Check(data *types.RepositoryData) *types.CheckRes
 	}
 
 	var details []string
-	details = append(details, fmt.Sprintf("📊 Found %d local branches", len(data.Branches)))
-	details = append(details, fmt.Sprintf("✅ %d branches are active", len(data.Branches)-staleBranches))
+	details = append(details, fmt.Sprintf("Found %d local branches", len(data.Branches)))
+	details = append(details, fmt.Sprintf("%d branches are active", len(data.Branches)-staleBranches))
 
 	if staleBranches > 0 {
-		details = append(details, fmt.Sprintf("⚠️ %d branches are stale (older than %d days):",
+		details = append(details, fmt.Sprintf("%d branches are stale (older than %d days):",
 			staleBranches, staleThreshold))
 		for i, branchInfo := range staleBranchNames {
 			if i < 5 { // Show only first 5 stale branches
@@ -202,9 +202,9 @@ func (brc *BareRepoChecker) Check(data *types.RepositoryData) *types.CheckResult
 	// - CI/CD integration
 
 	var details []string
-	details = append(details, "ℹ️ This check requires GitHub API integration")
-	details = append(details, "ℹ️ Consider enabling branch protection rules")
-	details = append(details, "ℹ️ Set up pre-commit hooks for additional safety")
+	details = append(details, "This check requires GitHub API integration")
+	details = append(details, "Consider enabling branch protection rules")
+	details = append(details, "Set up pre-commit hooks for additional safety")
 
 	result.Status = types.StatusWarning
 	result.Score = 50

@@ -36,12 +36,12 @@ func (ic *IgnoreChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		result.Status = types.StatusFail
 		result.Score = 0
 		result.Message = ".gitignore file is missing"
-		result.Details = []string{"❌ .gitignore file is missing"}
+		result.Details = []string{".gitignore file is missing"}
 		return result
 	}
 
 	score += 10
-	details = append(details, "✅ .gitignore file is present")
+	details = append(details, ".gitignore file is present")
 
 	// Check for common patterns
 	commonPatterns := []string{
@@ -61,7 +61,7 @@ func (ic *IgnoreChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	for _, pattern := range commonPatterns {
 		if strings.Contains(gitignoreContent, pattern) {
 			patternsFound++
-			details = append(details, "✅ Contains "+pattern)
+			details = append(details, "Contains "+pattern)
 		}
 	}
 

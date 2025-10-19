@@ -99,9 +99,9 @@ func (s *StashEntry) String() string {
 	age := time.Since(s.Timestamp)
 	ageStr := formatDuration(age)
 
-	status := "✅ Recent"
+	status := "Recent"
 	if s.IsOld() {
-		status = "⚠️ Old"
+		status = "Old"
 	}
 
 	return fmt.Sprintf("%s stash@{%d}: %s (%s ago) [%s]",

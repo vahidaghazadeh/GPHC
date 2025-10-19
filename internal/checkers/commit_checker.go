@@ -33,7 +33,7 @@ func (ccc *ConventionalCommitChecker) Check(data *types.RepositoryData) *types.C
 		result.Status = types.StatusWarning
 		result.Score = 0
 		result.Message = "No commits found to analyze"
-		result.Details = []string{"⚠️ No commits available for analysis"}
+		result.Details = []string{"No commits available for analysis"}
 		return result
 	}
 
@@ -56,11 +56,11 @@ func (ccc *ConventionalCommitChecker) Check(data *types.RepositoryData) *types.C
 	score := int(percentage)
 
 	var details []string
-	details = append(details, fmt.Sprintf("📊 %d of %d commits follow conventional format (%.1f%%)",
+	details = append(details, fmt.Sprintf("%d of %d commits follow conventional format (%.1f%%)",
 		validCommits, totalCommits, percentage))
 
 	if len(invalidCommits) > 0 {
-		details = append(details, "❌ Non-standard commits:")
+		details = append(details, "Non-standard commits:")
 		for i, commit := range invalidCommits {
 			if i < 3 { // Show only first 3 invalid commits
 				details = append(details, "   - "+commit)
@@ -113,7 +113,7 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 		result.Status = types.StatusWarning
 		result.Score = 0
 		result.Message = "No commits found to analyze"
-		result.Details = []string{"⚠️ No commits available for analysis"}
+		result.Details = []string{"No commits available for analysis"}
 		return result
 	}
 
@@ -138,12 +138,12 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 	score := int(percentage)
 
 	var details []string
-	details = append(details, fmt.Sprintf("📏 Average commit message length: %.1f characters", avgLength))
-	details = append(details, fmt.Sprintf("✅ %d of %d commits are within %d character limit",
+	details = append(details, fmt.Sprintf("Average commit message length: %.1f characters", avgLength))
+	details = append(details, fmt.Sprintf("%d of %d commits are within %d character limit",
 		validCommits, len(data.Commits), maxLength))
 
 	if len(longCommits) > 0 {
-		details = append(details, "⚠️ Long commit messages:")
+		details = append(details, "Long commit messages:")
 		for i, commit := range longCommits {
 			if i < 3 { // Show only first 3 long commits
 				details = append(details, fmt.Sprintf("   - %s (%d chars)", commit, len(commit)))
@@ -196,7 +196,7 @@ func (csc *CommitSizeChecker) Check(data *types.RepositoryData) *types.CheckResu
 		result.Status = types.StatusWarning
 		result.Score = 0
 		result.Message = "No commits found to analyze"
-		result.Details = []string{"⚠️ No commits available for analysis"}
+		result.Details = []string{"No commits available for analysis"}
 		return result
 	}
 
@@ -216,12 +216,12 @@ func (csc *CommitSizeChecker) Check(data *types.RepositoryData) *types.CheckResu
 	score := int(percentage)
 
 	var details []string
-	details = append(details, fmt.Sprintf("📊 Average commit size: %.1f lines", avgLines))
-	details = append(details, fmt.Sprintf("✅ %d of %d commits are reasonably sized",
+	details = append(details, fmt.Sprintf("Average commit size: %.1f lines", avgLines))
+	details = append(details, fmt.Sprintf("%d of %d commits are reasonably sized",
 		len(data.Commits)-largeCommits, len(data.Commits)))
 
 	if largeCommits > 0 {
-		details = append(details, fmt.Sprintf("⚠️ %d commits exceed %d lines (may indicate 'God Commits')",
+		details = append(details, fmt.Sprintf("%d commits exceed %d lines (may indicate 'God Commits')",
 			largeCommits, maxLines))
 	}
 

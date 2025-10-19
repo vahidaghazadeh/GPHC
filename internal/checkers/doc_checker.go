@@ -34,33 +34,33 @@ func (dc *DocChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	// Check README.md
 	if data.HasReadme {
 		score += 10
-		details = append(details, "✅ README.md found")
+		details = append(details, "README.md found")
 	} else {
-		details = append(details, "❌ README.md is missing")
+		details = append(details, "README.md is missing")
 	}
 
 	// Check LICENSE
 	if data.HasLicense {
 		score += 10
-		details = append(details, "✅ LICENSE file found")
+		details = append(details, "LICENSE file found")
 	} else {
-		details = append(details, "❌ LICENSE file is missing")
+		details = append(details, "LICENSE file is missing")
 	}
 
 	// Check CONTRIBUTING.md
 	if data.HasContributing {
 		score += 10
-		details = append(details, "✅ CONTRIBUTING.md found")
+		details = append(details, "CONTRIBUTING.md found")
 	} else {
-		details = append(details, "❌ CONTRIBUTING.md is missing")
+		details = append(details, "CONTRIBUTING.md is missing")
 	}
 
 	// Check CODE_OF_CONDUCT.md
 	if data.HasCodeOfConduct {
 		score += 10
-		details = append(details, "✅ CODE_OF_CONDUCT.md found")
+		details = append(details, "CODE_OF_CONDUCT.md found")
 	} else {
-		details = append(details, "❌ CODE_OF_CONDUCT.md is missing")
+		details = append(details, "CODE_OF_CONDUCT.md is missing")
 	}
 
 	result.Score = score
@@ -105,7 +105,7 @@ func (sc *SetupChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		result.Status = types.StatusFail
 		result.Score = 0
 		result.Message = "Cannot check setup instructions without README.md"
-		result.Details = []string{"❌ README.md is required to check setup instructions"}
+		result.Details = []string{"README.md is required to check setup instructions"}
 		return result
 	}
 
@@ -114,7 +114,7 @@ func (sc *SetupChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	result.Status = types.StatusPass
 	result.Score = 15
 	result.Message = "Setup instructions appear to be present in README.md"
-	result.Details = []string{"✅ README.md contains setup instructions"}
+	result.Details = []string{"README.md contains setup instructions"}
 
 	return result
 }

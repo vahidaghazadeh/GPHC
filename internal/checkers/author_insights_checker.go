@@ -67,8 +67,8 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 	})
 
 	// Generate insights
-	result.Details = append(result.Details, fmt.Sprintf("👥 Contributors: %d", len(authorStats)))
-	result.Details = append(result.Details, fmt.Sprintf("📊 Total commits: %d", totalCommits))
+	result.Details = append(result.Details, fmt.Sprintf("Contributors: %d", len(authorStats)))
+	result.Details = append(result.Details, fmt.Sprintf("Total commits: %d", totalCommits))
 
 	// Show top contributors (up to 5)
 	topContributors := authorStats
@@ -92,7 +92,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 			result.Status = types.StatusWarning
 			score = 60
 			result.Message = "Single author dominance detected"
-			result.Details = append(result.Details, fmt.Sprintf("⚠️ Single Author Dominance Detected (>70%%)"))
+			result.Details = append(result.Details, fmt.Sprintf("Single Author Dominance Detected (>70%%)"))
 			result.Details = append(result.Details, fmt.Sprintf("Top author: %s (%.1f%%)", topAuthor.Name, topAuthor.Percentage))
 			result.Details = append(result.Details, "Consider encouraging more team participation")
 		} else if topAuthor.Percentage > 50 {
@@ -106,7 +106,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 			score = 100
 			result.Message = "Excellent contributor distribution"
 			result.Details = append(result.Details, fmt.Sprintf("Top author: %s (%.1f%%)", topAuthor.Name, topAuthor.Percentage))
-			result.Details = append(result.Details, "✅ Well-distributed contributions across team")
+			result.Details = append(result.Details, "Well-distributed contributions across team")
 		}
 
 		// Check for single contributor project
@@ -114,7 +114,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 			result.Status = types.StatusWarning
 			score = 40
 			result.Message = "Single contributor project - high bus factor risk"
-			result.Details = append(result.Details, "⚠️ Single Contributor Project")
+			result.Details = append(result.Details, "Single Contributor Project")
 			result.Details = append(result.Details, "High risk of 'Bus Factor' - project depends on one person")
 			result.Details = append(result.Details, "Consider onboarding additional contributors")
 		}
@@ -124,7 +124,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 			result.Status = types.StatusWarning
 			score = 60
 			result.Message = "Low contributor count - moderate bus factor risk"
-			result.Details = append(result.Details, "⚠️ Low Contributor Count")
+			result.Details = append(result.Details, "Low Contributor Count")
 			result.Details = append(result.Details, "Moderate risk of 'Bus Factor'")
 			result.Details = append(result.Details, "Consider expanding the contributor base")
 		}
@@ -138,16 +138,16 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 		}
 
 		if inactiveContributors > 0 && len(authorStats) > 3 {
-			result.Details = append(result.Details, fmt.Sprintf("ℹ️ %d contributor(s) with minimal activity (<5%%)", inactiveContributors))
+			result.Details = append(result.Details, fmt.Sprintf("%d contributor(s) with minimal activity (<5%%)", inactiveContributors))
 		}
 
 		// Check for email consistency
 		emailConsistency := c.checkEmailConsistency(authorStats)
 		if !emailConsistency {
-			result.Details = append(result.Details, "⚠️ Inconsistent email addresses detected")
+			result.Details = append(result.Details, "Inconsistent email addresses detected")
 			result.Details = append(result.Details, "Consider configuring git config user.email consistently")
 		} else {
-			result.Details = append(result.Details, "✅ Email addresses are consistent")
+			result.Details = append(result.Details, "Email addresses are consistent")
 		}
 
 	} else {

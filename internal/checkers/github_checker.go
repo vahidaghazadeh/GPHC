@@ -89,65 +89,65 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 	// Check if repository has issues enabled
 	if repoInfo.HasIssues {
 		score += 10
-		result.Details = append(result.Details, "✅ Issues are enabled")
+		result.Details = append(result.Details, "Issues are enabled")
 	} else {
-		result.Details = append(result.Details, "⚠️ Issues are disabled")
+		result.Details = append(result.Details, "Issues are disabled")
 	}
 	totalChecks++
 
 	// Check if repository has projects enabled
 	if repoInfo.HasProjects {
 		score += 10
-		result.Details = append(result.Details, "✅ Projects are enabled")
+		result.Details = append(result.Details, "Projects are enabled")
 	} else {
-		result.Details = append(result.Details, "⚠️ Projects are disabled")
+		result.Details = append(result.Details, "Projects are disabled")
 	}
 	totalChecks++
 
 	// Check if repository has wiki enabled
 	if repoInfo.HasWiki {
 		score += 5
-		result.Details = append(result.Details, "✅ Wiki is enabled")
+		result.Details = append(result.Details, "Wiki is enabled")
 	} else {
-		result.Details = append(result.Details, "ℹ️ Wiki is disabled")
+		result.Details = append(result.Details, "Wiki is disabled")
 	}
 	totalChecks++
 
 	// Check branch protection
 	protection, err := githubClient.GetBranchProtection(owner, repo, repoInfo.DefaultBranch)
 	if err != nil {
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Could not check branch protection: %v", err))
+		result.Details = append(result.Details, fmt.Sprintf("Could not check branch protection: %v", err))
 	} else if protection != nil {
 		score += 25
-		result.Details = append(result.Details, "✅ Branch protection is enabled")
+		result.Details = append(result.Details, "Branch protection is enabled")
 
 		if protection.RequiredPullRequestReviews != nil {
 			if protection.RequiredPullRequestReviews.RequiredApprovingReviewCount > 0 {
 				score += 15
-				result.Details = append(result.Details, fmt.Sprintf("✅ Required %d reviewer(s)", protection.RequiredPullRequestReviews.RequiredApprovingReviewCount))
+				result.Details = append(result.Details, fmt.Sprintf("Required %d reviewer(s)", protection.RequiredPullRequestReviews.RequiredApprovingReviewCount))
 			}
 			if protection.RequiredPullRequestReviews.RequireCodeOwnerReviews {
 				score += 10
-				result.Details = append(result.Details, "✅ Code owner reviews required")
+				result.Details = append(result.Details, "Code owner reviews required")
 			}
 		}
 
 		if protection.RequiredStatusChecks != nil && len(protection.RequiredStatusChecks.Contexts) > 0 {
 			score += 10
-			result.Details = append(result.Details, fmt.Sprintf("✅ Required status checks: %s", strings.Join(protection.RequiredStatusChecks.Contexts, ", ")))
+			result.Details = append(result.Details, fmt.Sprintf("Required status checks: %s", strings.Join(protection.RequiredStatusChecks.Contexts, ", ")))
 		}
 	} else {
-		result.Details = append(result.Details, "❌ Branch protection is not enabled")
+		result.Details = append(result.Details, "Branch protection is not enabled")
 	}
 	totalChecks++
 
 	// Check GitHub Actions workflows
 	workflows, err := githubClient.GetWorkflows(owner, repo)
 	if err != nil {
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Could not check workflows: %v", err))
+		result.Details = append(result.Details, fmt.Sprintf("Could not check workflows: %v", err))
 	} else if len(workflows) > 0 {
 		score += 20
-		result.Details = append(result.Details, fmt.Sprintf("✅ Found %d workflow(s)", len(workflows)))
+		result.Details = append(result.Details, fmt.Sprintf("Found %d workflow(s)", len(workflows)))
 
 		activeWorkflows := 0
 		for _, workflow := range workflows {
@@ -158,25 +158,25 @@ func (c *GitHubIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 
 		if activeWorkflows > 0 {
 			score += 10
-			result.Details = append(result.Details, fmt.Sprintf("✅ %d active workflow(s)", activeWorkflows))
+			result.Details = append(result.Details, fmt.Sprintf("%d active workflow(s)", activeWorkflows))
 		}
 	} else {
-		result.Details = append(result.Details, "⚠️ No GitHub Actions workflows found")
+		result.Details = append(result.Details, "No GitHub Actions workflows found")
 	}
 	totalChecks++
 
 	// Check contributors activity
 	contributors, err := githubClient.GetContributors(owner, repo)
 	if err != nil {
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Could not check contributors: %v", err))
+		result.Details = append(result.Details, fmt.Sprintf("Could not check contributors: %v", err))
 	} else {
-		result.Details = append(result.Details, fmt.Sprintf("📊 Found %d contributor(s)", len(contributors)))
+		result.Details = append(result.Details, fmt.Sprintf("Found %d contributor(s)", len(contributors)))
 
 		if len(contributors) > 1 {
 			score += 10
-			result.Details = append(result.Details, "✅ Multiple contributors")
+			result.Details = append(result.Details, "Multiple contributors")
 		} else {
-			result.Details = append(result.Details, "⚠️ Single contributor repository")
+			result.Details = append(result.Details, "Single contributor repository")
 		}
 	}
 	totalChecks++

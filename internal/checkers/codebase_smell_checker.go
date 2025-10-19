@@ -51,10 +51,10 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 	if smells.MissingTestDir {
 		score -= 30
 		warnings++
-		result.Details = append(result.Details, "⚠️ No test directory found")
+		result.Details = append(result.Details, "No test directory found")
 		result.Details = append(result.Details, "Consider adding tests/ or test/ directory")
 	} else {
-		result.Details = append(result.Details, "✅ Test directory found")
+		result.Details = append(result.Details, "Test directory found")
 	}
 	totalChecks++
 
@@ -62,10 +62,10 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 	if smells.OversizedDirs > 0 {
 		score -= 20
 		issues++
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ %d oversized directory(ies) found (>1000 files)", smells.OversizedDirs))
+		result.Details = append(result.Details, fmt.Sprintf("%d oversized directory(ies) found (>1000 files)", smells.OversizedDirs))
 		result.Details = append(result.Details, "Consider splitting large directories into smaller modules")
 	} else {
-		result.Details = append(result.Details, "✅ No oversized directories")
+		result.Details = append(result.Details, "No oversized directories")
 	}
 	totalChecks++
 
@@ -73,24 +73,24 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 	if smells.CodeToTestRatio < 0.1 {
 		score -= 25
 		warnings++
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Low test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
+		result.Details = append(result.Details, fmt.Sprintf("Low test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
 		result.Details = append(result.Details, "Consider adding more test files")
 	} else if smells.CodeToTestRatio < 0.3 {
 		score -= 10
-		result.Details = append(result.Details, fmt.Sprintf("ℹ️ Moderate test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
+		result.Details = append(result.Details, fmt.Sprintf("Moderate test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
 		result.Details = append(result.Details, "Consider improving test coverage")
 	} else {
-		result.Details = append(result.Details, fmt.Sprintf("✅ Good test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
+		result.Details = append(result.Details, fmt.Sprintf("Good test coverage ratio (%.1f%%)", smells.CodeToTestRatio*100))
 	}
 	totalChecks++
 
 	// Check for empty directories
 	if smells.EmptyDirs > 0 {
 		score -= 5
-		result.Details = append(result.Details, fmt.Sprintf("ℹ️ %d empty directory(ies) found", smells.EmptyDirs))
+		result.Details = append(result.Details, fmt.Sprintf("%d empty directory(ies) found", smells.EmptyDirs))
 		result.Details = append(result.Details, "Consider removing empty directories")
 	} else {
-		result.Details = append(result.Details, "✅ No empty directories")
+		result.Details = append(result.Details, "No empty directories")
 	}
 	totalChecks++
 
@@ -98,30 +98,30 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 	if smells.MaxDepth > 6 {
 		score -= 15
 		warnings++
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Deep directory nesting detected (depth: %d)", smells.MaxDepth))
+		result.Details = append(result.Details, fmt.Sprintf("Deep directory nesting detected (depth: %d)", smells.MaxDepth))
 		result.Details = append(result.Details, "Consider flattening directory structure")
 	} else {
-		result.Details = append(result.Details, fmt.Sprintf("✅ Reasonable directory depth (%d)", smells.MaxDepth))
+		result.Details = append(result.Details, fmt.Sprintf("Reasonable directory depth (%d)", smells.MaxDepth))
 	}
 	totalChecks++
 
 	// Check for too many files in root
 	if smells.RootFiles > 20 {
 		score -= 10
-		result.Details = append(result.Details, fmt.Sprintf("⚠️ Too many files in root directory (%d)", smells.RootFiles))
+		result.Details = append(result.Details, fmt.Sprintf("Too many files in root directory (%d)", smells.RootFiles))
 		result.Details = append(result.Details, "Consider organizing files into subdirectories")
 	} else {
-		result.Details = append(result.Details, fmt.Sprintf("✅ Reasonable number of root files (%d)", smells.RootFiles))
+		result.Details = append(result.Details, fmt.Sprintf("Reasonable number of root files (%d)", smells.RootFiles))
 	}
 	totalChecks++
 
 	// Check for missing common directories
 	if !smells.HasSrcDir && !smells.HasLibDir && !smells.HasAppDir {
 		score -= 10
-		result.Details = append(result.Details, "ℹ️ No standard source directories (src/, lib/, app/)")
+		result.Details = append(result.Details, "No standard source directories (src/, lib/, app/)")
 		result.Details = append(result.Details, "Consider organizing code into standard directories")
 	} else {
-		result.Details = append(result.Details, "✅ Standard source directories found")
+		result.Details = append(result.Details, "Standard source directories found")
 	}
 	totalChecks++
 
@@ -129,20 +129,20 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 	if smells.DocFiles == 0 {
 		score -= 15
 		warnings++
-		result.Details = append(result.Details, "⚠️ No documentation files found")
+		result.Details = append(result.Details, "No documentation files found")
 		result.Details = append(result.Details, "Consider adding documentation")
 	} else {
-		result.Details = append(result.Details, fmt.Sprintf("✅ Found %d documentation file(s)", smells.DocFiles))
+		result.Details = append(result.Details, fmt.Sprintf("Found %d documentation file(s)", smells.DocFiles))
 	}
 	totalChecks++
 
 	// Summary
-	result.Details = append(result.Details, fmt.Sprintf("\n📊 Codebase Statistics:"))
-	result.Details = append(result.Details, fmt.Sprintf("  📁 Total directories: %d", smells.TotalDirs))
-	result.Details = append(result.Details, fmt.Sprintf("  📄 Total files: %d", smells.TotalFiles))
-	result.Details = append(result.Details, fmt.Sprintf("  🧪 Test files: %d", smells.TestFiles))
-	result.Details = append(result.Details, fmt.Sprintf("  📝 Documentation files: %d", smells.DocFiles))
-	result.Details = append(result.Details, fmt.Sprintf("  📏 Max directory depth: %d", smells.MaxDepth))
+	result.Details = append(result.Details, fmt.Sprintf("\nCodebase Statistics:"))
+	result.Details = append(result.Details, fmt.Sprintf("  Total directories: %d", smells.TotalDirs))
+	result.Details = append(result.Details, fmt.Sprintf("  Total files: %d", smells.TotalFiles))
+	result.Details = append(result.Details, fmt.Sprintf("  Test files: %d", smells.TestFiles))
+	result.Details = append(result.Details, fmt.Sprintf("  Documentation files: %d", smells.DocFiles))
+	result.Details = append(result.Details, fmt.Sprintf("  Max directory depth: %d", smells.MaxDepth))
 
 	// Determine final status
 	if issues > 0 {
