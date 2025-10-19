@@ -36,6 +36,12 @@
 - **Aggregate Reporting**: Compare health scores across projects
 - **Organization Overview**: Get company-wide code quality insights
 
+### CI/CD Integration
+- **Automated Health Checks**: Integrate with CI/CD pipelines for quality gates
+- **Quality Thresholds**: Set minimum health score requirements
+- **Pipeline Integration**: Fail builds when quality standards aren't met
+- **Continuous Monitoring**: Track project health in every build
+
 ## Installation
 
 ### Prerequisites
@@ -827,6 +833,213 @@ Perfect for automated organization-wide health monitoring:
 - **Consulting Firms**: Maintain quality across client projects
 - **Educational Institutions**: Monitor student project portfolios
 
+## CI/CD Integration
+
+GPHC integrates seamlessly with CI/CD pipelines to ensure code quality standards are maintained throughout the development process.
+
+### Quality Gates
+
+Set minimum health score requirements to prevent low-quality code from being merged:
+
+```bash
+# Fail if health score is below 85
+gphc check --min-score 85
+
+# Fail if any critical checks fail
+gphc check --fail-on-critical
+
+# Fail if health score drops below threshold
+gphc check --min-score 80 --fail-on-decline
+```
+
+### GitHub Actions Integration
+
+**Basic Health Check:**
+```yaml
+name: Health Check
+on: [push, pull_request]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install GPHC
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+        
+      - name: Run Health Check
+        run: gphc check --min-score 85 --format json
+```
+
+**Advanced Pipeline with Quality Gates:**
+```yaml
+name: Quality Pipeline
+on: [push, pull_request]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install GPHC
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+        
+      - name: Run Health Check
+        id: health
+        run: |
+          gphc check --min-score 85 --format json --output health-report.json
+          echo "score=$(jq -r '.summary.score' health-report.json)" >> $GITHUB_OUTPUT
+          
+      - name: Upload Health Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: health-report
+          path: health-report.json
+          
+      - name: Comment PR with Health Score
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const score = '${{ steps.health.outputs.score }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Health Score: ${score}/100`
+            });
+```
+
+### GitLab CI Integration
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - health-check
+
+health-check:
+  stage: health-check
+  image: golang:1.23
+  before_script:
+    - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+  script:
+    - gphc check --min-score 85 --format json --output health-report.json
+  artifacts:
+    reports:
+      junit: health-report.json
+    paths:
+      - health-report.json
+  only:
+    - merge_requests
+    - main
+```
+
+### Jenkins Integration
+
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Health Check') {
+            steps {
+                sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
+                sh 'gphc check --min-score 85 --format json --output health-report.json'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'health-report.json'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'health-report.json',
+                        reportName: 'Health Report'
+                    ])
+                }
+            }
+        }
+    }
+}
+```
+
+### Pre-commit Integration
+
+**pre-commit configuration:**
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: gphc-pre-commit
+        name: GPHC Pre-commit Check
+        entry: gphc pre-commit
+        language: system
+        pass_filenames: false
+        always_run: true
+```
+
+**Husky integration:**
+```json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "gphc pre-commit"
+    }
+  }
+}
+```
+
+### Quality Thresholds
+
+Configure different thresholds for different environments:
+
+```bash
+# Development branch - lower threshold
+gphc check --min-score 70
+
+# Staging branch - medium threshold  
+gphc check --min-score 80
+
+# Production branch - high threshold
+gphc check --min-score 90
+```
+
+### Exit Codes
+
+GPHC provides specific exit codes for CI/CD integration:
+
+- **0**: All checks passed, health score above threshold
+- **1**: Health score below minimum threshold
+- **2**: Critical checks failed
+- **3**: Configuration or system error
+
+### Benefits for Teams
+
+- **Quality Assurance**: Prevent low-quality code from reaching production
+- **Consistent Standards**: Ensure all team members follow quality guidelines
+- **Early Detection**: Catch quality issues before they become problems
+- **Automated Enforcement**: No manual review needed for basic quality checks
+- **Team Accountability**: Everyone contributes to maintaining code quality
+- **Continuous Improvement**: Track quality trends over time
+
+### Advanced CI/CD Features
+
+```bash
+# Generate badges for README
+gphc badge --min-score 85
+
+# Multi-repository health monitoring
+gphc scan ./repos --min-score 80 --format json
+
+# Historical trend analysis in CI
+gphc trend --days 7 --format json
+```
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -977,11 +1190,26 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - [x] Colorful terminal output
 
 ### Phase 2: Enhanced Features
-- [ ] GitHub API integration for branch protection
-- [ ] Pre-commit hook validation
-- [ ] Custom rule definitions
-- [ ] JSON/XML output formats
-- [ ] CI/CD integration
+- [x] GitHub API integration for branch protection
+- [x] Pre-commit hook validation
+- [x] Custom rule definitions
+- [x] JSON/XML output formats
+- [x] CI/CD integration
+
+#### CI/CD Integration
+
+**What it does:**
+Allows CIs to automatically check project health.
+If the score is below the allowed threshold, the pipeline fails.
+
+**Sample GitHub Action:**
+```yaml
+- name: Health Check
+  run: gphc check --min-score 85 --format json
+```
+
+**Why it's important:**
+So that projects pass the minimum required quality before being merged.
 
 ### Phase 3: Team, Trends & Automation
 - [x] Multi-repository analysis
