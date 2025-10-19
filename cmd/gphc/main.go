@@ -138,7 +138,7 @@ func init() {
 	scanCmd.Flags().IntVarP(&parallelJobs, "parallel", "p", 4, "Number of parallel jobs for scanning")
 	scanCmd.Flags().BoolVarP(&detailedReport, "detailed", "d", false, "Generate detailed report")
 	scanCmd.Flags().StringVarP(&scanOutputFile, "output", "o", "", "Output file path (default: stdout)")
-	
+
 	// Add serve command flags
 	serveCmd.Flags().StringVarP(&serverHost, "host", "H", "localhost", "Host to bind the server to")
 	serveCmd.Flags().IntVarP(&serverPort, "port", "p", 8080, "Port to bind the server to")
@@ -1468,7 +1468,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
     </script>
 </body>
 </html>`
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
 }
@@ -1528,7 +1528,7 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// Convert to JSON (simplified)
 	json := fmt.Sprintf(`{
 		"overall_score": %d,
@@ -1541,7 +1541,7 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 		},
 		"timestamp": "%s",
 		"repository": "%s"
-	}`, 
+	}`,
 		healthReport.OverallScore,
 		healthReport.Grade,
 		healthReport.Summary.TotalChecks,
@@ -1550,7 +1550,7 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 		healthReport.Summary.WarningChecks,
 		healthReport.Timestamp.Format(time.RFC3339),
 		filepath.Base(repoPath))
-	
+
 	w.Write([]byte(json))
 }
 
