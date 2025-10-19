@@ -254,17 +254,6 @@ git hc version
 # Replace 'gphc' with 'git hc' in scripts
 ```
 
-### Backward Compatibility
-```bash
-# Both commands work
-gphc check
-git hc check
-
-# Choose based on preference
-# - Use 'gphc' for direct access
-# - Use 'git hc' for Git integration
-```
-
 ## Next Steps
 - [Basic Usage](basic-usage.md) - Getting started with GPHC
 - [Pre-commit Hooks](pre-commit-hooks.md) - Pre-commit integration guide

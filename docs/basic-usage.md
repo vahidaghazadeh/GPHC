@@ -1,6 +1,6 @@
 # Basic Usage Guide
 
-This guide covers the fundamental usage of GPHC for checking Git repository health.
+This guide covers the fundamental usage of GPHC for checking Git repository health using the `git hc` command.
 
 ## Installation
 
@@ -17,6 +17,9 @@ go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
 git clone https://github.com/vahidaghazadeh/gphc.git
 cd gphc
 go install ./cmd/gphc
+
+# Setup as git subcommand
+./setup-git-hc.sh
 ```
 
 **Note:** Make sure your `$GOPATH/bin` is in your `$PATH`. Add this to your shell profile:
@@ -29,25 +32,25 @@ export PATH=$PATH:$(go env GOPATH)/bin
 ### Health Check
 ```bash
 # Check current directory (must be a git repository)
-gphc check
+git hc check
 
 # Check specific repository
-gphc check /path/to/repository
+git hc check /path/to/repository
 
 # Check with custom output format
-gphc check --format json
-gphc check --format yaml
-gphc check --format markdown
-gphc check --format html
+git hc check --format json
+git hc check --format yaml
+git hc check --format markdown
+git hc check --format html
 
 # Save output to file
-gphc check --output health-report.json
+git hc check --output health-report.json
 ```
 
 ### Pre-commit Hooks
 ```bash
 # Run pre-commit checks on staged files
-gphc pre-commit
+git hc pre-commit
 
 # This command will:
 # - Check staged files for formatting issues
@@ -60,51 +63,51 @@ gphc pre-commit
 ### Interactive Terminal UI
 ```bash
 # Launch interactive terminal interface
-gphc tui
+git hc tui
 
 # Start TUI with specific repository
-gphc tui /path/to/repository
+git hc tui /path/to/repository
 ```
 
 ### Web Dashboard
 ```bash
 # Start web dashboard server
-gphc serve
+git hc serve
 
 # Start with custom port
-gphc serve --port 3000
+git hc serve --port 3000
 
 # Start with custom host and port
-gphc serve --host 0.0.0.0 --port 8080
+git hc serve --host 0.0.0.0 --port 8080
 ```
 
 ### Multi-Repository Scan
 ```bash
 # Scan current directory
-gphc scan
+git hc scan
 
 # Scan specific directory
-gphc scan ~/projects
+git hc scan ~/projects
 
 # Recursive scan
-gphc scan ~/projects --recursive
+git hc scan ~/projects --recursive
 
 # Scan with minimum score threshold
-gphc scan ~/projects --min-score 80
+git hc scan ~/projects --min-score 80
 ```
 
 ### Utility Commands
 ```bash
 # Update GPHC to latest version
-gphc update
+git hc update
 
 # Show version information
-gphc version
+git hc version
 
 # Show help
-gphc --help
-gphc check --help
-gphc serve --help
+git hc --help
+git hc check --help
+git hc serve --help
 ```
 
 ## Understanding Health Scores
@@ -125,7 +128,7 @@ gphc serve --help
 ## Example Output
 
 ```bash
-$ gphc check
+$ git hc check
 
 Git Project Health Checker
 ==========================
@@ -179,13 +182,14 @@ server:
 
 #### Command Not Found
 ```bash
-# If gphc command is not found
-export PATH=$PATH:$(go env GOPATH)/bin
+# If git hc command is not found
+git config --global alias.hc
 
-# Add to your shell profile permanently
-echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
-# or
-echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.zshrc
+# If alias is not set, run setup script
+./setup-git-hc.sh
+
+# Check if wrapper script exists
+ls -la ~/.local/bin/git-hc-wrapper
 ```
 
 #### Repository Not Found

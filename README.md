@@ -18,32 +18,38 @@ git clone https://github.com/vahidaghazadeh/gphc.git
 cd gphc
 go install ./cmd/gphc
 
-# Setup as git subcommand (optional)
+# Setup as git subcommand
 ./setup-git-hc.sh
 ```
 
 ### Basic Usage
 ```bash
-# Using gphc directly
-gphc check                    # Check current directory (must be a git repository)
-gphc check /path/to/repository # Check specific repository
-gphc pre-commit               # Run pre-commit checks on staged files
-gphc tui                      # Launch interactive terminal UI
-gphc serve                    # Start web dashboard server
-gphc scan ~/projects --recursive # Scan multiple repositories
-gphc update                   # Update GPHC to latest version
-gphc version                  # Show version information
-gphc --help                   # Show help
+# Check current directory (must be a git repository)
+git hc check
 
-# Using git hc (after running setup-git-hc.sh)
-git hc check                  # Check current directory
-git hc pre-commit             # Run pre-commit checks
-git hc tui                    # Launch interactive terminal UI
-git hc serve                  # Start web dashboard server
-git hc scan ~/projects --recursive # Scan multiple repositories
-git hc update                 # Update GPHC to latest version
-git hc version                # Show version information
-git hc --help                 # Show help
+# Check specific repository
+git hc check /path/to/repository
+
+# Run pre-commit checks on staged files
+git hc pre-commit
+
+# Launch interactive terminal UI
+git hc tui
+
+# Start web dashboard server
+git hc serve
+
+# Scan multiple repositories
+git hc scan ~/projects --recursive
+
+# Update GPHC to latest version
+git hc update
+
+# Show version information
+git hc version
+
+# Show help
+git hc --help
 ```
 
 ## Features Overview
@@ -89,7 +95,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 ## Example Output
 
 ```bash
-$ gphc check
+$ git hc check
 
 Git Project Health Checker
 ==========================
