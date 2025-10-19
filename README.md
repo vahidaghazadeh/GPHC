@@ -24,6 +24,12 @@
 - **Branch Protection**: Checks for main branch protection (requires GitHub API)
 - **Stash Management**: Analyzes Git stash entries and warns about old stashes (>30 days)
 
+### Historical Health Tracking
+- **Health History**: Automatically saves health scores to `.gphc-history.json`
+- **Trend Analysis**: Shows project health improvement over time
+- **CI Integration**: Track quality metrics in continuous integration
+- **Team Insights**: Monitor team progress and code quality trends
+
 ## Installation
 
 ### Prerequisites
@@ -103,6 +109,7 @@ gphc github
 gphc gitlab
 gphc authors
 gphc codebase
+gphc trend
 ```
 
 **Export Formats:**
@@ -607,6 +614,105 @@ The codebase smell checker (`CBS-801`) will appear in the results and provides:
 - Organization recommendations
 - Maintainability insights
 
+## Historical Health Tracking
+
+GPHC automatically tracks your project's health score over time, providing valuable insights into code quality trends and team progress.
+
+### Health History Storage
+
+Every time you run `gphc check`, the results are automatically saved to `.gphc-history.json` in your repository root:
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "score": 85,
+  "grade": "B+",
+  "checks_passed": 12,
+  "checks_failed": 2,
+  "checks_warning": 3,
+  "repository": "owner/repository"
+}
+```
+
+### Trend Analysis
+
+View your project's health improvement over time:
+
+```bash
+# Show health trends
+gphc trend
+
+# Show trends for specific time period
+gphc trend --days 30
+gphc trend --weeks 12
+gphc trend --months 6
+```
+
+**Example Output:**
+```
+Health Trend Analysis (Last 30 days)
+
+Score Progression:
+  Jan 01: 72/100 (C+)
+  Jan 08: 75/100 (B-)
+  Jan 15: 78/100 (B-)
+  Jan 22: 82/100 (B+)
+  Jan 29: 85/100 (B+)
+
+Improvement: +13 points (+18.1%)
+Trend: Improving
+Average Score: 78.4/100
+
+Key Improvements:
+  PASS Added comprehensive test coverage (+8 points)
+  PASS Improved commit message quality (+3 points)
+  PASS Cleaned up stale branches (+2 points)
+
+Recommendations:
+  • Continue current improvement trajectory
+  • Focus on documentation completeness
+  • Consider adding more contributors
+```
+
+### CI/CD Integration
+
+Perfect for continuous integration pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Run GPHC Health Check
+  run: |
+    gphc check --format json --output health-report.json
+    gphc trend --days 7 --format json --output trend-report.json
+
+- name: Upload Health Reports
+  uses: actions/upload-artifact@v3
+  with:
+    name: health-reports
+    path: |
+      health-report.json
+      trend-report.json
+      .gphc-history.json
+```
+
+### Team Benefits
+
+- **Progress Tracking**: See how your team's efforts improve code quality
+- **Goal Setting**: Set health score targets and track progress
+- **Quality Metrics**: Monitor technical debt reduction over time
+- **Team Motivation**: Visualize improvements and celebrate progress
+- **CI Insights**: Integrate health trends into your deployment pipeline
+
+### Integration with Health Check
+
+Historical tracking is automatically included in the main health check:
+
+```bash
+gphc check
+```
+
+The trend data will be referenced in recommendations and next steps when available.
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -763,11 +869,26 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - [ ] JSON/XML output formats
 - [ ] CI/CD integration
 
-### Phase 3: Advanced Features
+### Phase 3: Team, Trends & Automation
 - [ ] Multi-repository analysis
 - [ ] Historical trend analysis
 - [ ] Team collaboration metrics
 - [ ] Integration with popular Git hosting platforms
+
+#### Historical Health Tracking
+
+**What it does:**
+Every time GPHC runs, it saves the result to `.gphc-history.json`.
+With the command:
+
+```bash
+gphc trend
+```
+
+It shows how the project score has changed over time (e.g., improvement from 72 → 85 in one month).
+
+**Why it's important:**
+Useful for teams and CI to see if quality has improved over time.
 
 ## License
 
