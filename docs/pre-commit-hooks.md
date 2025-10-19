@@ -11,7 +11,7 @@ Pre-commit hooks allow you to run GPHC checks automatically before commits are m
 ### Running Pre-commit Checks
 ```bash
 # Run pre-commit checks on staged files
-gphc pre-commit
+git hc pre-commit
 
 # This command will:
 # - Check staged files for formatting issues
@@ -34,9 +34,9 @@ Add to `.pre-commit-config.yaml`:
 repos:
   - repo: local
     hooks:
-      - id: gphc-pre-commit
-        name: GPHC Pre-commit Check
-        entry: gphc pre-commit
+      - id: git-hc-pre-commit
+        name: Git HC Pre-commit Check
+        entry: git hc pre-commit
         language: system
         stages: [pre-commit]
         pass_filenames: false
@@ -46,14 +46,14 @@ repos:
 Add to `.husky/pre-commit`:
 ```bash
 #!/bin/sh
-gphc pre-commit
+git hc pre-commit
 ```
 
 ### Git Hooks
 Create `.git/hooks/pre-commit`:
 ```bash
 #!/bin/sh
-gphc pre-commit
+git hc pre-commit
 ```
 
 ## Configuration
@@ -82,7 +82,7 @@ pre_commit:
 ## Troubleshooting
 
 ### Common Issues
-- **Command not found**: Ensure GPHC is installed and in PATH
+- **Command not found**: Ensure Git HC is set up properly
 - **Permission denied**: Check file permissions
 - **Slow execution**: Optimize file patterns
 

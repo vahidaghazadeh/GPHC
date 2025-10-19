@@ -28,8 +28,10 @@ jobs:
           go-version: '1.21'
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+      - name: Setup Git HC
+        run: ./setup-git-hc.sh
       - name: Health Check
-        run: gphc check --min-score 80
+        run: git hc check --min-score 80
 ```
 
 ### Advanced Integration
@@ -52,8 +54,10 @@ jobs:
           go-version: '1.21'
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+      - name: Setup Git HC
+        run: ./setup-git-hc.sh
       - name: Health Check
-        run: gphc check --min-score 80 --format json
+        run: git hc check --min-score 80 --format json
       - name: Upload Health Report
         uses: actions/upload-artifact@v3
         with:
@@ -62,7 +66,7 @@ jobs:
       - name: Comment PR
         if: github.event_name == 'pull_request'
         run: |
-          gphc check --format markdown > health-report.md
+          git hc check --format markdown > health-report.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file health-report.md
 ```
 
@@ -74,7 +78,8 @@ health_check:
   stage: test
   script:
     - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
-    - gphc check --min-score 80
+    - ./setup-git-hc.sh
+    - git hc check --min-score 80
   artifacts:
     reports:
       junit: health-report.xml
@@ -86,8 +91,9 @@ health_check:
   stage: test
   script:
     - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
-    - gphc check --min-score 80 --format json
-    - gphc check --format markdown > health-report.md
+    - ./setup-git-hc.sh
+    - git hc check --min-score 80 --format json
+    - git hc check --format markdown > health-report.md
   artifacts:
     reports:
       junit: health-report.xml
@@ -106,7 +112,8 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
-                sh 'gphc check --min-score 80'
+                sh './setup-git-hc.sh'
+                sh 'git hc check --min-score 80'
             }
         }
     }
@@ -126,15 +133,16 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
-                sh 'gphc check --min-score 80 --format json'
-                sh 'gphc check --format markdown > health-report.md'
+                sh './setup-git-hc.sh'
+                sh 'git hc check --min-score 80 --format json'
+                sh 'git hc check --format markdown > health-report.md'
             }
         }
         stage('Quality Gate') {
             steps {
                 script {
                     def healthScore = sh(
-                        script: 'gphc check --format json | jq -r ".overall_score"',
+                        script: 'git hc check --format json | jq -r ".overall_score"',
                         returnStdout: true
                     ).trim()
                     
@@ -158,13 +166,13 @@ pipeline {
 ### Setting Thresholds
 ```bash
 # Fail if score is below 80
-gphc check --min-score 80
+git hc check --min-score 80
 
 # Fail if score is below 70
-gphc check --min-score 70
+git hc check --min-score 70
 
 # Fail on warnings
-gphc check --fail-on-warnings
+git hc check --fail-on-warnings
 ```
 
 ### Exit Codes

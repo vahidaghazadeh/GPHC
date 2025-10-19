@@ -11,13 +11,13 @@ The Multi-Repository Scan feature allows you to analyze multiple Git repositorie
 ### Simple Scan
 ```bash
 # Scan current directory
-gphc scan
+git hc scan
 
 # Scan specific directory
-gphc scan ~/projects
+git hc scan ~/projects
 
 # Scan with recursive option
-gphc scan ~/projects --recursive
+git hc scan ~/projects --recursive
 ```
 
 ### Example Output
@@ -46,39 +46,39 @@ Summary:
 ### Recursive Scanning
 ```bash
 # Find all Git repositories in directory tree
-gphc scan ~/projects --recursive
+git hc scan ~/projects --recursive
 
 # Scan with minimum score threshold
-gphc scan ~/projects --recursive --min-score 80
+git hc scan ~/projects --recursive --min-score 80
 
 # Scan with parallel processing
-gphc scan ~/projects --recursive --parallel 8
+git hc scan ~/projects --recursive --parallel 8
 ```
 
 ### Filtering Options
 ```bash
 # Exclude specific directories
-gphc scan ~/projects --exclude "node_modules" --exclude ".git"
+git hc scan ~/projects --exclude "node_modules" --exclude ".git"
 
 # Include only specific patterns
-gphc scan ~/projects --include "*.go" --include "*.py"
+git hc scan ~/projects --include "*.go" --include "*.py"
 
 # Combine filters
-gphc scan ~/projects --recursive --exclude "test" --min-score 70
+git hc scan ~/projects --recursive --exclude "test" --min-score 70
 ```
 
 ### Output Options
 ```bash
 # Generate detailed report
-gphc scan ~/projects --detailed
+git hc scan ~/projects --detailed
 
 # Save output to file
-gphc scan ~/projects --output scan-results.json
+git hc scan ~/projects --output scan-results.json
 
 # Export in different formats
-gphc scan ~/projects --format json
-gphc scan ~/projects --format yaml
-gphc scan ~/projects --format markdown
+git hc scan ~/projects --format json
+git hc scan ~/projects --format yaml
+git hc scan ~/projects --format markdown
 ```
 
 ## Configuration
@@ -115,7 +115,7 @@ scan:
 ### Command Line Flags
 ```bash
 # Basic options
-gphc scan [path] [flags]
+git hc scan [path] [flags]
 
 Flags:
   -r, --recursive          Recursively scan subdirectories
@@ -132,37 +132,37 @@ Flags:
 ### Organization-wide Analysis
 ```bash
 # Scan all company repositories
-gphc scan /opt/repositories --recursive --min-score 80
+git hc scan /opt/repositories --recursive --min-score 80
 
 # Generate organization health report
-gphc scan /opt/repositories --recursive --detailed --output org-health.json
+git hc scan /opt/repositories --recursive --detailed --output org-health.json
 ```
 
 ### Team Project Monitoring
 ```bash
 # Monitor team projects
-gphc scan ~/team/projects --recursive --min-score 75
+git hc scan ~/team/projects --recursive --min-score 75
 
 # Track team progress
-gphc scan ~/team/projects --recursive --trends
+git hc scan ~/team/projects --recursive --trends
 ```
 
 ### Personal Repository Management
 ```bash
 # Check all personal projects
-gphc scan ~/dev --recursive
+git hc scan ~/dev --recursive
 
 # Find projects needing attention
-gphc scan ~/dev --recursive --min-score 60
+git hc scan ~/dev --recursive --min-score 60
 ```
 
 ### CI/CD Integration
 ```bash
 # Scan in CI pipeline
-gphc scan /workspace --recursive --min-score 85 --format json
+git hc scan /workspace --recursive --min-score 85 --format json
 
 # Fail pipeline if average score is too low
-gphc scan /workspace --recursive --min-score 80 || exit 1
+git hc scan /workspace --recursive --min-score 80 || exit 1
 ```
 
 ## Performance Optimization
@@ -170,29 +170,29 @@ gphc scan /workspace --recursive --min-score 80 || exit 1
 ### Parallel Processing
 ```bash
 # Use more parallel jobs for faster scanning
-gphc scan ~/projects --parallel 8
+git hc scan ~/projects --parallel 8
 
 # Adjust based on system resources
-gphc scan ~/projects --parallel 16  # For powerful systems
-gphc scan ~/projects --parallel 2   # For limited resources
+git hc scan ~/projects --parallel 16  # For powerful systems
+git hc scan ~/projects --parallel 2   # For limited resources
 ```
 
 ### Caching
 ```bash
 # Enable caching for repeated scans
-gphc scan ~/projects --cache
+git hc scan ~/projects --cache
 
 # Cache with TTL
-gphc scan ~/projects --cache --cache-ttl 300s
+git hc scan ~/projects --cache --cache-ttl 300s
 ```
 
 ### Filtering for Performance
 ```bash
 # Exclude large directories
-gphc scan ~/projects --exclude "node_modules" --exclude "vendor"
+git hc scan ~/projects --exclude "node_modules" --exclude "vendor"
 
 # Include only relevant repositories
-gphc scan ~/projects --include "*.go" --include "*.py"
+git hc scan ~/projects --include "*.go" --include "*.py"
 ```
 
 ## Output Formats
@@ -285,8 +285,10 @@ jobs:
           go-version: '1.21'
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+      - name: Setup Git HC
+        run: ./setup-git-hc.sh
       - name: Scan Repositories
-        run: gphc scan . --recursive --min-score 80 --format json
+        run: git hc scan . --recursive --min-score 80 --format json
       - name: Upload Results
         uses: actions/upload-artifact@v3
         with:
@@ -300,7 +302,8 @@ health_check:
   stage: test
   script:
     - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
-    - gphc scan . --recursive --min-score 80 --format json
+    - ./setup-git-hc.sh
+    - git hc scan . --recursive --min-score 80 --format json
   artifacts:
     reports:
       junit: health-scan-results.json
@@ -314,7 +317,8 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
-                sh 'gphc scan . --recursive --min-score 80 --format json'
+                sh './setup-git-hc.sh'
+                sh 'git hc scan . --recursive --min-score 80 --format json'
             }
         }
     }
