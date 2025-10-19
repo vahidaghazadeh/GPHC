@@ -45,6 +45,7 @@ const (
 	CategoryDocs Category = iota
 	CategoryCommits
 	CategoryHygiene
+	CategoryStructure
 )
 
 func (c Category) String() string {
@@ -55,6 +56,8 @@ func (c Category) String() string {
 		return "Commit History Quality"
 	case CategoryHygiene:
 		return "Git Cleanup & Hygiene"
+	case CategoryStructure:
+		return "Codebase Structure"
 	default:
 		return "Unknown"
 	}
@@ -98,6 +101,7 @@ type CommitInfo struct {
 	Subject      string
 	Body         string
 	Author       string
+	AuthorEmail  string
 	Date         time.Time
 	LinesAdded   int
 	LinesDeleted int

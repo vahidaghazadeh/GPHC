@@ -100,6 +100,9 @@ GPHC includes a fast pre-commit mode designed for integration with pre-commit fr
 gphc pre-commit
 gphc badge
 gphc github
+gphc gitlab
+gphc authors
+gphc codebase
 ```
 
 **Export Formats:**
@@ -367,6 +370,242 @@ The GitHub integration checker (`GH-601`) will appear in the results when:
 - Repository is hosted on GitHub
 - GitHub token is available
 - Repository is accessible via GitHub API
+
+## 🔗 GitLab Integration
+
+GPHC provides comprehensive integration with GitLab repositories to check advanced features and configurations.
+
+### Setup
+
+Set your GitLab Personal Access Token:
+
+```bash
+# Option 1: Using GPHC_TOKEN (recommended)
+export GPHC_TOKEN=your_gitlab_token
+
+# Option 2: Using GITLAB_TOKEN (also supported)
+export GITLAB_TOKEN=your_gitlab_token
+
+# For custom GitLab instances
+export GITLAB_URL=https://your-gitlab-instance.com
+```
+
+**Required Token Permissions:**
+- `api` (Full API access)
+- `read_repository` (Read repository data)
+- `read_user` (Read user information)
+
+### GitLab Integration Check
+
+```bash
+# Check GitLab integration features
+gphc gitlab
+
+# Check specific repository
+gphc gitlab /path/to/repository
+```
+
+**Features Checked:**
+- ✅ **Branch Protection:** Push/merge access restrictions, code owner approval
+- ✅ **GitLab CI/CD:** Pipeline configuration and status
+- ✅ **Project Settings:** Issues, merge requests, wiki, snippets enabled
+- ✅ **Contributors:** Multi-contributor analysis
+- ✅ **Merge Requests:** Open MRs and development activity
+- ✅ **Project Info:** Stars, forks, activity metrics
+
+**Example Output:**
+```
+🔍 Checking GitLab integration: /path/to/repo
+✅ GitLab token found
+
+📊 GitLab Integration Check Results:
+Status: PASS
+Score: 85
+Message: Excellent GitLab integration and configuration
+
+Details:
+  Project: owner/repository
+  ✅ Issues are enabled
+  ✅ Merge requests are enabled
+  ✅ Wiki is enabled
+  ✅ Snippets are enabled
+  ✅ Branch protection is enabled
+  ✅ Push access is restricted
+  ✅ Merge access is restricted
+  ✅ Code owner approval required
+  ✅ Found 3 pipeline(s)
+  ✅ 2 successful pipeline(s)
+  📊 Found 5 contributor(s)
+  ✅ Multiple contributors
+  📊 Found 2 open merge request(s)
+  ✅ Active development with open MRs
+```
+
+### Integration with Health Check
+
+GitLab integration is automatically included in the main health check:
+
+```bash
+gphc check
+```
+
+The GitLab integration checker (`GL-602`) will appear in the results when:
+- Repository is hosted on GitLab
+- GitLab token is available
+- Repository is accessible via GitLab API
+
+## 👥 Commit Author Insights
+
+GPHC analyzes commit history to identify contributor patterns and bus factor risks, helping teams understand project dependencies and team participation.
+
+### Author Analysis
+
+```bash
+# Analyze commit authors and bus factor risk
+gphc authors
+
+# Analyze specific repository
+gphc authors /path/to/repository
+```
+
+**Features Analyzed:**
+- ✅ **Contributor Count:** Total number of unique contributors
+- ✅ **Commit Distribution:** Percentage of commits per author
+- ✅ **Single Author Dominance:** Detection of >70% contribution by one person
+- ✅ **Bus Factor Risk:** Assessment of project dependency on individuals
+- ✅ **Email Consistency:** Validation of author email addresses
+- ✅ **Team Participation:** Analysis of contributor engagement
+
+**Example Output:**
+```
+👥 Analyzing commit authors: /path/to/repo
+
+📊 Commit Author Insights:
+Status: WARNING
+Score: 60
+Message: Single author dominance detected
+
+Details:
+  👥 Contributors: 4
+  📊 Total commits: 31
+  1. vahidaghazadeh (24 commits, 77.4%)
+  2. john.doe (4 commits, 12.9%)
+  3. jane.smith (2 commits, 6.5%)
+  4. mike.wilson (1 commits, 3.2%)
+  ⚠️ Single Author Dominance Detected (>70%)
+  Top author: vahidaghazadeh (77.4%)
+  Consider encouraging more team participation
+  ✅ Email addresses are consistent
+
+💡 Bus Factor Analysis:
+  ⚠️ MODERATE RISK: Low contributor count
+  📊 Contributors: 4
+  🚨 Bus Factor: 4 (Acceptable)
+  💡 Recommendation: Maintain current team size
+```
+
+**Bus Factor Risk Levels:**
+- **🚨 Critical (1 contributor):** Single person project - immediate action needed
+- **⚠️ High (2 contributors):** Low contributor count - expand team
+- **✅ Acceptable (3-5 contributors):** Small team - maintain current size
+- **✅ Excellent (6+ contributors):** Well-distributed team - excellent distribution
+
+### Integration with Health Check
+
+Author insights are automatically included in the main health check:
+
+```bash
+gphc check
+```
+
+The author insights checker (`CAI-701`) will appear in the results and provides:
+- Contributor distribution analysis
+- Single author dominance warnings
+- Bus factor risk assessment
+- Team participation recommendations
+
+## 🔍 Codebase Smell Check
+
+GPHC performs lightweight codebase structure analysis to detect common organizational issues and maintainability problems without requiring AST parsing.
+
+### Structure Analysis
+
+```bash
+# Analyze codebase structure and detect code smells
+gphc codebase
+
+# Analyze specific repository
+gphc codebase /path/to/repository
+```
+
+**Features Analyzed:**
+- ✅ **Test Directory Detection:** Missing test directories and files
+- ✅ **Directory Size Analysis:** Oversized directories (>1000 files)
+- ✅ **Code-to-Test Ratio:** Test coverage ratio analysis
+- ✅ **Empty Directory Detection:** Unused empty directories
+- ✅ **Directory Depth Analysis:** Deep nesting detection
+- ✅ **Root File Count:** Too many files in root directory
+- ✅ **Standard Directory Structure:** Missing src/, lib/, app/ directories
+- ✅ **Documentation Files:** Presence of documentation files
+
+**Example Output:**
+```
+🔍 Analyzing codebase structure: /path/to/repo
+
+📊 Codebase Structure Analysis:
+Status: WARNING
+Score: 65
+Message: Codebase structure warnings detected
+
+Details:
+  ⚠️ No test directory found
+  Consider adding tests/ or test/ directory
+  ✅ No oversized directories
+  ⚠️ Low test coverage ratio (5.2%)
+  Consider adding more test files
+  ℹ️ 2 empty directory(ies) found
+  Consider removing empty directories
+  ✅ Reasonable directory depth (4)
+  ✅ Reasonable number of root files (8)
+  ℹ️ No standard source directories (src/, lib/, app/)
+  Consider organizing code into standard directories
+  ✅ Found 3 documentation file(s)
+
+📊 Codebase Statistics:
+  📁 Total directories: 12
+  📄 Total files: 45
+  🧪 Test files: 2
+  📝 Documentation files: 3
+  📏 Max directory depth: 4
+
+💡 Structure Recommendations:
+  ⚠️ Codebase structure needs improvement
+  📋 Consider the following actions:
+    • Add test directories and test files
+    • Organize code into logical subdirectories
+    • Split oversized directories (>1000 files)
+    • Add documentation files
+    • Remove empty directories
+```
+
+**Structure Quality Levels:**
+- **🚨 Poor (<70):** Significant structural issues - immediate action needed
+- **⚠️ Fair (70-89):** Minor improvements needed - good foundation
+- **✅ Excellent (90+):** Well-organized codebase - maintain current structure
+
+### Integration with Health Check
+
+Codebase structure analysis is automatically included in the main health check:
+
+```bash
+gphc check
+```
+
+The codebase smell checker (`CBS-801`) will appear in the results and provides:
+- Directory structure analysis
+- Test coverage assessment
+- Organization recommendations
+- Maintainability insights
 
 ## ⚙️ Configuration
 

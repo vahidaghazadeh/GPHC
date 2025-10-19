@@ -117,6 +117,7 @@ func (ra *RepositoryAnalyzer) analyzeCommits() ([]types.CommitInfo, error) {
 			Subject:      subject,
 			Body:         body,
 			Author:       c.Author.Name,
+			AuthorEmail:  c.Author.Email,
 			Date:         c.Author.When,
 			LinesAdded:   linesAdded,
 			LinesDeleted: linesDeleted,
