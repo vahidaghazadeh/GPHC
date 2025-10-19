@@ -30,6 +30,12 @@
 - **CI Integration**: Track quality metrics in continuous integration
 - **Team Insights**: Monitor team progress and code quality trends
 
+### Multi-Repository Scan
+- **Batch Analysis**: Scan multiple repositories simultaneously
+- **Recursive Scanning**: Find and analyze all Git repositories in directories
+- **Aggregate Reporting**: Compare health scores across projects
+- **Organization Overview**: Get company-wide code quality insights
+
 ## Installation
 
 ### Prerequisites
@@ -110,6 +116,7 @@ gphc gitlab
 gphc authors
 gphc codebase
 gphc trend
+gphc scan
 ```
 
 **Export Formats:**
@@ -713,6 +720,113 @@ gphc check
 
 The trend data will be referenced in recommendations and next steps when available.
 
+## Multi-Repository Scan
+
+GPHC can analyze multiple repositories simultaneously, making it perfect for organizations with many projects.
+
+### Basic Usage
+
+Scan multiple repositories in a directory:
+
+```bash
+# Scan all repositories in a directory
+gphc scan ~/projects
+
+# Recursive scan (find all Git repos in subdirectories)
+gphc scan ~/projects --recursive
+
+# Scan specific repositories
+gphc scan ~/project-a ~/project-b ~/project-c
+
+# Scan with custom output format
+gphc scan ~/projects --format json
+gphc scan ~/projects --format yaml
+```
+
+### Example Output
+
+```bash
+$ gphc scan ~/projects --recursive
+
+Multi-Repository Health Scan Results
+====================================
+
+project-a: 92/100 (A-)
+project-b: 78/100 (C+)
+project-c: 85/100 (B+)
+project-d: 67/100 (D+)
+project-e: 91/100 (A-)
+
+Summary:
+  Total Repositories: 5
+  Average Health: 82.6/100
+  Highest Score: project-a (92/100)
+  Lowest Score: project-d (67/100)
+  Health Distribution:
+    A Grade (90-100): 2 repositories
+    B Grade (80-89): 1 repository
+    C Grade (70-79): 1 repository
+    D Grade (60-69): 1 repository
+
+Recommendations:
+  • Focus on project-d for immediate improvement
+  • Share best practices from project-a and project-e
+  • Consider standardizing documentation across all projects
+```
+
+### Advanced Options
+
+```bash
+# Filter by minimum score
+gphc scan ~/projects --min-score 80
+
+# Exclude specific directories
+gphc scan ~/projects --exclude "*/node_modules" --exclude "*/vendor"
+
+# Include only specific file types
+gphc scan ~/projects --include "*.go" --include "*.js"
+
+# Parallel processing (faster for many repos)
+gphc scan ~/projects --parallel 4
+
+# Generate detailed report
+gphc scan ~/projects --detailed --output scan-report.json
+```
+
+### Organization Benefits
+
+- **Portfolio Overview**: Get a bird's-eye view of all your projects
+- **Quality Benchmarking**: Compare projects against each other
+- **Resource Allocation**: Identify which projects need attention
+- **Best Practice Sharing**: Find your best-performing projects
+- **Compliance Monitoring**: Ensure all projects meet quality standards
+- **Team Productivity**: Track improvements across the entire organization
+
+### CI/CD Integration
+
+Perfect for automated organization-wide health monitoring:
+
+```yaml
+# GitHub Actions example
+- name: Multi-Repository Health Scan
+  run: |
+    gphc scan ./repos --recursive --format json --output org-health.json
+    
+- name: Upload Organization Health Report
+  uses: actions/upload-artifact@v3
+  with:
+    name: organization-health-report
+    path: org-health.json
+```
+
+### Use Cases
+
+- **Software Companies**: Monitor all client projects
+- **Open Source Organizations**: Track health of multiple repositories
+- **Enterprise Teams**: Ensure consistency across departments
+- **Consulting Firms**: Maintain quality across client projects
+- **Educational Institutions**: Monitor student project portfolios
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -870,10 +984,30 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - [ ] CI/CD integration
 
 ### Phase 3: Team, Trends & Automation
-- [ ] Multi-repository analysis
+- [x] Multi-repository analysis
 - [ ] Historical trend analysis
 - [ ] Team collaboration metrics
 - [ ] Integration with popular Git hosting platforms
+
+#### Multi-Repository Scan
+
+**What it does:**
+Scans multiple local repositories simultaneously:
+
+```bash
+gphc scan ~/projects --recursive
+```
+
+**Output:**
+```
+project-a: 92
+project-b: 78
+project-c: 85
+Average Health: 85.0
+```
+
+**Why it's important:**
+Very useful for companies or organizations that have multiple repositories.
 
 #### Historical Health Tracking
 
