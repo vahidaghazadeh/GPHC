@@ -11,16 +11,16 @@ The GPHC Terminal UI (TUI) provides a beautiful, interactive terminal-based user
 ### Launching the TUI
 ```bash
 # Start the TUI
-gphc tui
+git hc tui
 
 # Start TUI with specific repository
-gphc tui /path/to/repository
+git hc tui /path/to/repository
 
 # Start TUI with auto-refresh
-gphc tui --refresh 30s
+git hc tui --refresh 30s
 
 # Start TUI in full-screen mode
-gphc tui --fullscreen
+git hc tui --fullscreen
 ```
 
 ### Interface Overview
@@ -102,13 +102,13 @@ Search and Filter:
 ### Real-time Updates
 ```bash
 # Auto-refresh every 30 seconds
-gphc tui --refresh 30s
+git hc tui --refresh 30s
 
 # Auto-refresh every 2 minutes
-gphc tui --refresh 2m
+git hc tui --refresh 2m
 
 # Watch mode - refresh on file changes
-gphc tui --watch
+git hc tui --watch
 ```
 
 ### Rule Explanations
@@ -146,10 +146,10 @@ When you select a check, view detailed explanations:
 ### Multi-Repository View
 ```bash
 # Compare multiple repositories
-gphc tui --multi-repo ~/projects/*
+git hc tui --multi-repo ~/projects/*
 
 # Scan and display all repositories
-gphc tui --scan-recursive ~/projects
+git hc tui --scan-recursive ~/projects
 ```
 
 ### Custom Themes
@@ -220,16 +220,16 @@ tui:
 ### Display Options
 ```bash
 # Compact mode for smaller terminals
-gphc tui --compact-mode
+git hc tui --compact-mode
 
 # Full-screen mode
-gphc tui --fullscreen
+git hc tui --fullscreen
 
 # No color mode
-gphc tui --no-colors
+git hc tui --no-colors
 
 # Custom refresh interval
-gphc tui --refresh 2m
+git hc tui --refresh 2m
 ```
 
 ## Use Cases
@@ -237,37 +237,37 @@ gphc tui --refresh 2m
 ### Daily Development
 ```bash
 # Quick health check during development
-gphc tui --refresh 2m
+git hc tui --refresh 2m
 
 # Check specific repository
-gphc tui /path/to/current/project
+git hc tui /path/to/current/project
 ```
 
 ### Code Reviews
 ```bash
 # Review health before code review
-gphc tui --filter failed
+git hc tui --filter failed
 
 # Check trends over time
-gphc tui --trends
+git hc tui --trends
 ```
 
 ### Team Standups
 ```bash
 # Display health for team standup
-gphc tui --multi-repo ~/team/projects/*
+git hc tui --multi-repo ~/team/projects/*
 
 # Show only critical issues
-gphc tui --filter failed --min-score 70
+git hc tui --filter failed --min-score 70
 ```
 
 ### Project Management
 ```bash
 # Monitor project health trends
-gphc tui --trends --refresh 5m
+git hc tui --trends --refresh 5m
 
 # Export health report for stakeholders
-gphc tui --export json
+git hc tui --export json
 ```
 
 ## Troubleshooting
@@ -277,7 +277,7 @@ gphc tui --export json
 #### Terminal Compatibility
 ```bash
 # Use compatibility mode for older terminals
-gphc tui --compatibility-mode
+git hc tui --compatibility-mode
 
 # Check terminal capabilities
 echo $TERM
@@ -286,29 +286,29 @@ echo $TERM
 #### Performance Issues
 ```bash
 # Use fast mode for large repositories
-gphc tui --fast-mode
+git hc tui --fast-mode
 
 # Disable auto-refresh for better performance
-gphc tui --no-refresh
+git hc tui --no-refresh
 ```
 
 #### Display Issues
 ```bash
 # Use no color mode for problematic terminals
-gphc tui --no-colors
+git hc tui --no-colors
 
 # Use compact mode for small terminals
-gphc tui --compact-mode
+git hc tui --compact-mode
 ```
 
 ### Configuration Issues
 ```bash
 # Reset configuration
 rm ~/.gphc.yml
-gphc tui
+git hc tui
 
 # Check configuration
-gphc tui --config-check
+git hc tui --config-check
 ```
 
 ## Best Practices
@@ -332,25 +332,25 @@ gphc tui --config-check
 ### With Other Tools
 ```bash
 # Integrate with Git hooks
-gphc tui --pre-commit
+git hc tui --pre-commit
 
 # Integrate with CI/CD
-gphc tui --ci-mode
+git hc tui --ci-mode
 
 # Integrate with IDE
-gphc tui --ide-integration
+git hc tui --ide-integration
 ```
 
 ### With Team Workflows
 ```bash
 # Team health monitoring
-gphc tui --team-mode
+git hc tui --team-mode
 
 # Project health tracking
-gphc tui --project-tracking
+git hc tui --project-tracking
 
 # Quality assurance
-gphc tui --qa-mode
+git hc tui --qa-mode
 ```
 
 ## Next Steps

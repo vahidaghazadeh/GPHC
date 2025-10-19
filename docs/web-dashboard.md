@@ -11,19 +11,19 @@ The GPHC Web Dashboard provides a modern web interface for monitoring repository
 ### Starting the Dashboard
 ```bash
 # Start dashboard on default port (8080)
-gphc serve
+git hc serve
 
 # Start with custom port
-gphc serve --port 3000
+git hc serve --port 3000
 
 # Start with custom host and port
-gphc serve --host 0.0.0.0 --port 8080
+git hc serve --host 0.0.0.0 --port 8080
 
 # Start with authentication
-gphc serve --auth --username admin --password secret
+git hc serve --auth --username admin --password secret
 
 # Start with custom title
-gphc serve --title "My Project Dashboard"
+git hc serve --title "My Project Dashboard"
 ```
 
 ### Accessing the Dashboard
@@ -57,17 +57,17 @@ The dashboard displays:
 ### Command Line Options
 ```bash
 # Server configuration
-gphc serve --host localhost --port 8080
+git hc serve --host localhost --port 8080
 
 # Authentication
-gphc serve --auth --username admin --password secret
+git hc serve --auth --username admin --password secret
 
 # CORS settings
-gphc serve --cors  # Enable CORS (default: true)
-gphc serve --no-cors  # Disable CORS
+git hc serve --cors  # Enable CORS (default: true)
+git hc serve --no-cors  # Disable CORS
 
 # Dashboard customization
-gphc serve --title "My Custom Dashboard"
+git hc serve --title "My Custom Dashboard"
 ```
 
 ### Configuration File
@@ -146,7 +146,7 @@ Access-Control-Allow-Headers: Content-Type
 Perfect for team environments:
 ```bash
 # Start server accessible to team
-gphc serve --host 0.0.0.0 --port 8080
+git hc serve --host 0.0.0.0 --port 8080
 
 # Team members can access:
 # http://your-server:8080
@@ -156,7 +156,7 @@ gphc serve --host 0.0.0.0 --port 8080
 Enable basic authentication for team access:
 ```bash
 # Start with authentication
-gphc serve --auth --username team --password secure123
+git hc serve --auth --username team --password secure123
 
 # Access dashboard with credentials
 # Username: team
@@ -209,10 +209,10 @@ The dashboard is fully responsive and works on:
 ### Multi-Project Monitoring
 ```bash
 # Scan multiple repositories
-gphc scan ~/projects --recursive
+git hc scan ~/projects --recursive
 
 # Start dashboard for multiple projects
-gphc serve --multi-project ~/projects
+git hc serve --multi-project ~/projects
 ```
 
 ### Custom Themes
@@ -232,10 +232,10 @@ dashboard:
 ### Notifications
 ```bash
 # Enable Slack notifications
-gphc serve --notifications slack --webhook-url https://hooks.slack.com/...
+git hc serve --notifications slack --webhook-url https://hooks.slack.com/...
 
 # Enable email notifications
-gphc serve --notifications email --smtp-server smtp.company.com
+git hc serve --notifications email --smtp-server smtp.company.com
 ```
 
 ## Troubleshooting
@@ -245,7 +245,7 @@ gphc serve --notifications email --smtp-server smtp.company.com
 #### Port Already in Use
 ```bash
 # Use a different port
-gphc serve --port 8081
+git hc serve --port 8081
 
 # Check what's using the port
 lsof -i :8080
@@ -254,7 +254,7 @@ lsof -i :8080
 #### Permission Denied
 ```bash
 # Use a different host
-gphc serve --host 127.0.0.1
+git hc serve --host 127.0.0.1
 
 # Check repository permissions
 ls -la /path/to/repository
@@ -266,16 +266,16 @@ ls -la /path/to/repository
 curl http://localhost:8080/api/health
 
 # Check server logs
-gphc serve --verbose
+git hc serve --verbose
 ```
 
 ### Performance Issues
 ```bash
 # Large number of projects
-gphc serve --max-projects 100 --cache-ttl 300s
+git hc serve --max-projects 100 --cache-ttl 300s
 
 # Slow network
-gphc serve --compression --cache-ttl 600s
+git hc serve --compression --cache-ttl 600s
 ```
 
 ## Security Considerations
