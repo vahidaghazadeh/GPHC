@@ -117,8 +117,9 @@ var updateCmd = &cobra.Command{
 	Long: `Update GPHC to the latest version from GitHub.
 This command will:
 1. Pull the latest changes from the repository
-2. Rebuild and reinstall GPHC
-3. Show the new version`,
+2. Update dependencies with go mod tidy
+3. Rebuild and reinstall GPHC
+4. Show the new version`,
 	Run: runUpdate,
 }
 
@@ -679,6 +680,17 @@ func runUpdate(cmd *cobra.Command, args []string) {
 	if err := pullCmd.Run(); err != nil {
 		fmt.Printf("Error pulling changes: %v\n", err)
 		fmt.Println("Make sure you have internet connection and git access")
+		os.Exit(1)
+	}
+
+	// Update dependencies
+	fmt.Println("Updating dependencies...")
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Stdout = os.Stdout
+	tidyCmd.Stderr = os.Stderr
+
+	if err := tidyCmd.Run(); err != nil {
+		fmt.Printf("Error updating dependencies: %v\n", err)
 		os.Exit(1)
 	}
 
