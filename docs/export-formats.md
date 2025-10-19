@@ -11,37 +11,37 @@ GPHC supports multiple export formats for health reports, making it easy to inte
 ### JSON Export
 ```bash
 # Export to JSON
-gphc check --format json
+git hc check --format json
 
 # Save to file
-gphc check --format json --output health-report.json
+git hc check --format json --output health-report.json
 ```
 
 ### YAML Export
 ```bash
 # Export to YAML
-gphc check --format yaml
+git hc check --format yaml
 
 # Save to file
-gphc check --format yaml --output health-report.yaml
+git hc check --format yaml --output health-report.yaml
 ```
 
 ### Markdown Export
 ```bash
 # Export to Markdown
-gphc check --format markdown
+git hc check --format markdown
 
 # Save to file
-gphc check --format markdown --output health-report.md
+git hc check --format markdown --output health-report.md
 ```
 
 ### HTML Export
 ```bash
 # Export to HTML
-gphc check --format html
+git hc check --format html
 
 # Save to file
-gphc check --format html --output health-report.html
+git hc check --format html --output health-report.html
 ```
 
 ## Format Examples
@@ -152,7 +152,7 @@ gphc check --format html --output health-report.html
 ```yaml
 # GitHub Actions
 - name: Health Check
-  run: gphc check --format json --output health-report.json
+  run: git hc check --format json --output health-report.json
 
 - name: Upload Health Report
   uses: actions/upload-artifact@v3
@@ -164,19 +164,19 @@ gphc check --format html --output health-report.html
 ### Documentation Integration
 ```bash
 # Generate markdown for README
-gphc check --format markdown >> README.md
+git hc check --format markdown >> README.md
 
 # Generate HTML for project website
-gphc check --format html --output docs/health-report.html
+git hc check --format html --output docs/health-report.html
 ```
 
 ### Team Sharing
 ```bash
 # Generate report for team meeting
-gphc check --format markdown --output team-health-report.md
+git hc check --format markdown --output team-health-report.md
 
 # Generate JSON for dashboard
-gphc check --format json --output dashboard-data.json
+git hc check --format json --output dashboard-data.json
 ```
 
 ## Configuration
@@ -250,13 +250,13 @@ export:
 ### Debugging
 ```bash
 # Test export functionality
-gphc check --format json --dry-run
+git hc check --format json --dry-run
 
 # Validate export format
-gphc check --format json --validate
+git hc check --format json --validate
 
 # Check export options
-gphc check --help
+git hc check --help
 ```
 
 ## Next Steps
