@@ -98,7 +98,7 @@ func init() {
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
 	checkCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (default: stdout)")
-	
+
 	// Add scan command flags
 	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
 	scanCmd.Flags().IntVarP(&minScore, "min-score", "m", 0, "Minimum health score threshold")
@@ -110,15 +110,15 @@ func init() {
 }
 
 var (
-	exportFormat     string
-	outputFile       string
-	recursiveScan    bool
-	minScore         int
-	excludePatterns  []string
+	exportFormat    string
+	outputFile      string
+	recursiveScan   bool
+	minScore        int
+	excludePatterns []string
 	includePatterns []string
-	parallelJobs     int
-	detailedReport   bool
-	scanOutputFile   string
+	parallelJobs    int
+	detailedReport  bool
+	scanOutputFile  string
 )
 
 var checkCmd = &cobra.Command{
@@ -957,7 +957,7 @@ func runScan(cmd *cobra.Command, args []string) {
 
 	for _, repo := range repos {
 		fmt.Printf("Scanning: %s\n", repo)
-		
+
 		analyzer, err := git.NewRepositoryAnalyzer(repo)
 		if err != nil {
 			fmt.Printf("  Error: %v\n", err)
@@ -1021,12 +1021,12 @@ func runScan(cmd *cobra.Command, args []string) {
 		fmt.Printf("\nSummary:\n")
 		fmt.Printf("  Total Repositories: %d\n", len(results))
 		fmt.Printf("  Average Health: %.1f/100\n", averageScore)
-		
+
 		if len(results) > 0 {
 			// Find highest and lowest scores
 			highest := results[0]
 			lowest := results[0]
-			
+
 			for _, result := range results {
 				if result.Score > highest.Score {
 					highest = result
@@ -1035,7 +1035,7 @@ func runScan(cmd *cobra.Command, args []string) {
 					lowest = result
 				}
 			}
-			
+
 			fmt.Printf("  Highest Score: %s (%d/100)\n", highest.Name, highest.Score)
 			fmt.Printf("  Lowest Score: %s (%d/100)\n", lowest.Name, lowest.Score)
 		}
@@ -1051,7 +1051,7 @@ type ScanResult struct {
 
 func findGitRepositories(rootPath string, recursive bool) ([]string, error) {
 	var repos []string
-	
+
 	if !recursive {
 		// Check if rootPath itself is a Git repository
 		if isGitRepository(rootPath) {
