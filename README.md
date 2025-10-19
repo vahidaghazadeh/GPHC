@@ -42,6 +42,13 @@
 - **Pipeline Integration**: Fail builds when quality standards aren't met
 - **Continuous Monitoring**: Track project health in every build
 
+### Custom Rules (Rule Engine)
+- **Custom Checks**: Define project-specific health checks in `gphc.yml`
+- **File Existence Rules**: Check for required files (SECURITY.md, CONTRIBUTING.md, etc.)
+- **Regex Pattern Matching**: Search for patterns in files using regular expressions
+- **Flexible Scoring**: Assign custom scores to custom rules
+- **Project-Specific Policies**: Enforce organization-specific requirements
+
 ## Installation
 
 ### Prerequisites
@@ -1040,6 +1047,264 @@ gphc scan ./repos --min-score 80 --format json
 gphc trend --days 7 --format json
 ```
 
+## Custom Rules (Rule Engine)
+
+GPHC allows you to define custom health checks tailored to your project's specific requirements and organizational policies.
+
+### Basic Custom Rules
+
+Define custom checks in your `gphc.yml` configuration file:
+
+```yaml
+# Custom health checks
+custom_checks:
+  - id: CUSTOM-900
+    name: "Has SECURITY.md"
+    path: "SECURITY.md"
+    score: 5
+    description: "Project must have a SECURITY.md file for vulnerability reporting"
+    
+  - id: CUSTOM-901
+    name: "Has CONTRIBUTING.md"
+    path: "CONTRIBUTING.md"
+    score: 3
+    description: "Project should have contribution guidelines"
+    
+  - id: CUSTOM-902
+    name: "Has CODE_OF_CONDUCT.md"
+    path: "CODE_OF_CONDUCT.md"
+    score: 2
+    description: "Project should have a code of conduct"
+```
+
+### Regex-Based Rules
+
+Search for patterns in files using regular expressions:
+
+```yaml
+custom_checks:
+  - id: CUSTOM-903
+    name: "No TODO Comments"
+    pattern: "TODO|FIXME|HACK"
+    file_pattern: "*.go"
+    score: -2
+    description: "Code should not contain TODO comments"
+    
+  - id: CUSTOM-904
+    name: "Has License Header"
+    pattern: "Copyright.*\\d{4}"
+    file_pattern: "*.go"
+    score: 3
+    description: "Source files should have copyright headers"
+    
+  - id: CUSTOM-905
+    name: "No Hardcoded Secrets"
+    pattern: "(password|secret|key)\\s*=\\s*['\"][^'\"]+['\"]"
+    file_pattern: "*.{go,js,py}"
+    score: -5
+    description: "No hardcoded secrets should be present in code"
+```
+
+### Advanced Custom Rules
+
+More sophisticated rule configurations:
+
+```yaml
+custom_checks:
+  - id: CUSTOM-906
+    name: "API Documentation Complete"
+    type: "file_content"
+    path: "docs/api.md"
+    pattern: "GET|POST|PUT|DELETE"
+    min_matches: 4
+    score: 5
+    description: "API documentation should cover all HTTP methods"
+    
+  - id: CUSTOM-907
+    name: "Test Coverage Threshold"
+    type: "file_content"
+    path: "coverage.txt"
+    pattern: "coverage: (\\d+\\.\\d+)%"
+    min_value: 80.0
+    score: 5
+    description: "Test coverage should be at least 80%"
+    
+  - id: CUSTOM-908
+    name: "No Deprecated Dependencies"
+    type: "file_content"
+    path: "go.mod"
+    pattern: "deprecated|obsolete"
+    score: -3
+    description: "No deprecated dependencies should be used"
+```
+
+### Rule Types
+
+GPHC supports several types of custom rules:
+
+#### File Existence Rules
+```yaml
+- id: CUSTOM-910
+  name: "Required File Check"
+  type: "file_exists"
+  path: "required-file.txt"
+  score: 5
+```
+
+#### Content Pattern Rules
+```yaml
+- id: CUSTOM-911
+  name: "Pattern Search"
+  type: "file_content"
+  pattern: "your-regex-pattern"
+  file_pattern: "*.{go,js,py}"
+  score: 3
+```
+
+#### Directory Structure Rules
+```yaml
+- id: CUSTOM-912
+  name: "Directory Structure"
+  type: "directory_exists"
+  path: "src/main"
+  score: 2
+```
+
+#### File Size Rules
+```yaml
+- id: CUSTOM-913
+  name: "File Size Check"
+  type: "file_size"
+  path: "large-file.txt"
+  max_size: "10MB"
+  score: -2
+```
+
+### Configuration Examples
+
+**Security-Focused Project:**
+```yaml
+custom_checks:
+  - id: SEC-001
+    name: "Security Policy"
+    path: "SECURITY.md"
+    score: 10
+    
+  - id: SEC-002
+    name: "No Hardcoded Secrets"
+    pattern: "(api_key|secret|password)\\s*=\\s*['\"][^'\"]+['\"]"
+    file_pattern: "*.{go,js,py}"
+    score: -10
+    
+  - id: SEC-003
+    name: "Dependency Security Scan"
+    path: "security-scan.txt"
+    pattern: "vulnerabilities found: 0"
+    score: 5
+```
+
+**Open Source Project:**
+```yaml
+custom_checks:
+  - id: OSS-001
+    name: "License File"
+    path: "LICENSE"
+    score: 8
+    
+  - id: OSS-002
+    name: "Contributing Guidelines"
+    path: "CONTRIBUTING.md"
+    score: 5
+    
+  - id: OSS-003
+    name: "Code of Conduct"
+    path: "CODE_OF_CONDUCT.md"
+    score: 3
+    
+  - id: OSS-004
+    name: "Issue Templates"
+    path: ".github/ISSUE_TEMPLATE"
+    score: 2
+```
+
+**Enterprise Project:**
+```yaml
+custom_checks:
+  - id: ENT-001
+    name: "Architecture Documentation"
+    path: "docs/architecture.md"
+    score: 8
+    
+  - id: ENT-002
+    name: "Deployment Guide"
+    path: "docs/deployment.md"
+    score: 5
+    
+  - id: ENT-003
+    name: "Monitoring Configuration"
+    path: "monitoring.yml"
+    score: 3
+    
+  - id: ENT-004
+    name: "No Console Logs"
+    pattern: "console\\.log|print\\(|fmt\\.Print"
+    file_pattern: "*.{go,js,py}"
+    score: -2
+```
+
+### Rule Execution
+
+Custom rules are executed alongside built-in checks:
+
+```bash
+# Run health check with custom rules
+gphc check
+
+# Validate custom rules configuration
+gphc validate-config
+
+# Test specific custom rule
+gphc test-rule CUSTOM-900
+```
+
+### Example Output
+
+```bash
+$ gphc check
+
+Custom Rules Results:
+====================
+
+CUSTOM-900: Has SECURITY.md - PASS (5 points)
+CUSTOM-901: Has CONTRIBUTING.md - PASS (3 points)
+CUSTOM-902: Has CODE_OF_CONDUCT.md - FAIL (0 points)
+CUSTOM-903: No TODO Comments - FAIL (-2 points)
+
+Custom Rules Summary:
+  Total Rules: 4
+  Passed: 2
+  Failed: 2
+  Score: 6/10
+```
+
+### Benefits
+
+- **Project-Specific Requirements**: Enforce policies unique to your project
+- **Organizational Standards**: Maintain consistency across multiple repositories
+- **Compliance**: Ensure adherence to industry standards and regulations
+- **Quality Gates**: Prevent specific issues from reaching production
+- **Team Guidelines**: Enforce coding standards and best practices
+- **Flexible Scoring**: Customize the impact of each rule on overall health score
+
+### Best Practices
+
+1. **Start Simple**: Begin with basic file existence checks
+2. **Use Descriptive Names**: Make rule names clear and actionable
+3. **Appropriate Scoring**: Balance rule scores with built-in checks
+4. **Document Rules**: Always include descriptions for team understanding
+5. **Test Rules**: Validate rules before deploying to production
+6. **Regular Review**: Update rules as project requirements evolve
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -1210,6 +1475,24 @@ If the score is below the allowed threshold, the pipeline fails.
 
 **Why it's important:**
 So that projects pass the minimum required quality before being merged.
+
+#### Custom Rules (Rule Engine)
+
+**What it does:**
+Users can add rules to their `gphc.yml`, for example:
+
+```yaml
+custom_checks:
+  - id: CUSTOM-900
+    name: "Has SECURITY.md"
+    path: "SECURITY.md"
+    score: 5
+```
+
+Or even regex-based rules for searching in files.
+
+**Why it's important:**
+For projects that have specific policies or requirements (e.g., SECURITY.md file or TODO detection).
 
 ### Phase 3: Team, Trends & Automation
 - [x] Multi-repository analysis
