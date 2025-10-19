@@ -73,6 +73,16 @@ Checks for missing tests, oversized directories, poor organization, and maintain
 	Run:  runCodebase,
 }
 
+var scanCmd = &cobra.Command{
+	Use:   "scan [path]",
+	Short: "Scan multiple repositories for health analysis",
+	Long: `Scan multiple repositories simultaneously for health analysis.
+Supports recursive scanning to find all Git repositories in directories.
+Perfect for organizations with many projects.`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runScan,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
@@ -83,15 +93,32 @@ func init() {
 	rootCmd.AddCommand(gitlabCmd)
 	rootCmd.AddCommand(authorsCmd)
 	rootCmd.AddCommand(codebaseCmd)
+	rootCmd.AddCommand(scanCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
 	checkCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (default: stdout)")
+	
+	// Add scan command flags
+	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
+	scanCmd.Flags().IntVarP(&minScore, "min-score", "m", 0, "Minimum health score threshold")
+	scanCmd.Flags().StringSliceVarP(&excludePatterns, "exclude", "e", []string{}, "Exclude directories matching patterns")
+	scanCmd.Flags().StringSliceVarP(&includePatterns, "include", "i", []string{}, "Include only files matching patterns")
+	scanCmd.Flags().IntVarP(&parallelJobs, "parallel", "p", 4, "Number of parallel jobs for scanning")
+	scanCmd.Flags().BoolVarP(&detailedReport, "detailed", "d", false, "Generate detailed report")
+	scanCmd.Flags().StringVarP(&scanOutputFile, "output", "o", "", "Output file path (default: stdout)")
 }
 
 var (
-	exportFormat string
-	outputFile   string
+	exportFormat     string
+	outputFile       string
+	recursiveScan    bool
+	minScore         int
+	excludePatterns  []string
+	includePatterns []string
+	parallelJobs     int
+	detailedReport   bool
+	scanOutputFile   string
 )
 
 var checkCmd = &cobra.Command{
@@ -894,4 +921,165 @@ func checkSensitiveFiles(files []string) bool {
 	}
 
 	return true
+}
+
+func runScan(cmd *cobra.Command, args []string) {
+	var scanPath string
+	if len(args) > 0 {
+		scanPath = args[0]
+	} else {
+		var err error
+		scanPath, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Printf("Multi-Repository Health Scan Results\n")
+	fmt.Printf("====================================\n\n")
+
+	// Find Git repositories
+	repos, err := findGitRepositories(scanPath, recursiveScan)
+	if err != nil {
+		fmt.Printf("Error finding repositories: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(repos) == 0 {
+		fmt.Println("No Git repositories found in the specified path.")
+		return
+	}
+
+	// Scan repositories
+	results := make([]ScanResult, 0, len(repos))
+	totalScore := 0.0
+
+	for _, repo := range repos {
+		fmt.Printf("Scanning: %s\n", repo)
+		
+		analyzer, err := git.NewRepositoryAnalyzer(repo)
+		if err != nil {
+			fmt.Printf("  Error: %v\n", err)
+			continue
+		}
+
+		data, err := analyzer.Analyze()
+		if err != nil {
+			fmt.Printf("  Error: %v\n", err)
+			continue
+		}
+
+		// Run health checks
+		allCheckers := []checkers.Checker{
+			checkers.NewDocChecker(),
+			checkers.NewConventionalCommitChecker(),
+			checkers.NewMsgLengthChecker(),
+			checkers.NewCommitSizeChecker(),
+			checkers.NewLocalBranchChecker(),
+			checkers.NewStaleBranchChecker(),
+			checkers.NewBareRepoChecker(),
+			checkers.NewStashChecker(),
+			checkers.NewIgnoreChecker(),
+			checkers.NewGitHubIntegrationChecker(),
+			checkers.NewGitLabIntegrationChecker(),
+			checkers.NewCommitAuthorInsightsChecker(),
+			checkers.NewCodebaseSmellChecker(),
+		}
+
+		scorer := scorer.NewScorer()
+		for _, checker := range allCheckers {
+			result := checker.Check(data)
+			scorer.AddResult(*result)
+		}
+
+		// Generate report
+		healthReport := scorer.CalculateHealthReport()
+
+		// Filter by minimum score if specified
+		if minScore > 0 && healthReport.OverallScore < minScore {
+			continue
+		}
+
+		repoName := filepath.Base(repo)
+		result := ScanResult{
+			Name:  repoName,
+			Path:  repo,
+			Score: healthReport.OverallScore,
+			Grade: healthReport.Grade,
+		}
+
+		results = append(results, result)
+		totalScore += float64(healthReport.OverallScore)
+
+		fmt.Printf("  %s: %d/100 (%s)\n", repoName, healthReport.OverallScore, healthReport.Grade)
+	}
+
+	// Calculate average
+	if len(results) > 0 {
+		averageScore := totalScore / float64(len(results))
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  Total Repositories: %d\n", len(results))
+		fmt.Printf("  Average Health: %.1f/100\n", averageScore)
+		
+		if len(results) > 0 {
+			// Find highest and lowest scores
+			highest := results[0]
+			lowest := results[0]
+			
+			for _, result := range results {
+				if result.Score > highest.Score {
+					highest = result
+				}
+				if result.Score < lowest.Score {
+					lowest = result
+				}
+			}
+			
+			fmt.Printf("  Highest Score: %s (%d/100)\n", highest.Name, highest.Score)
+			fmt.Printf("  Lowest Score: %s (%d/100)\n", lowest.Name, lowest.Score)
+		}
+	}
+}
+
+type ScanResult struct {
+	Name  string
+	Path  string
+	Score int
+	Grade string
+}
+
+func findGitRepositories(rootPath string, recursive bool) ([]string, error) {
+	var repos []string
+	
+	if !recursive {
+		// Check if rootPath itself is a Git repository
+		if isGitRepository(rootPath) {
+			repos = append(repos, rootPath)
+		}
+		return repos, nil
+	}
+
+	// Recursive search
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip hidden directories
+		if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
+			return filepath.SkipDir
+		}
+
+		// Check if this is a Git repository
+		if info.IsDir() && info.Name() == ".git" {
+			repoPath := filepath.Dir(path)
+			repos = append(repos, repoPath)
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+
+	return repos, err
 }
