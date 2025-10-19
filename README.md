@@ -56,6 +56,13 @@
 - **Webhook Integration**: Support for any webhook-compatible service
 - **Team Collaboration**: Keep entire team informed about code quality trends
 
+### Semantic Commit Verification
+- **Commit Message Analysis**: Verify commit messages match actual code changes
+- **Change Type Detection**: Analyze file modifications to determine change type
+- **Mismatch Detection**: Identify commits with misleading commit messages
+- **Semantic Consistency**: Ensure commit history accurately reflects changes
+- **Quality Assurance**: Prevent confusing commit history and maintain transparency
+
 ## Installation
 
 ### Prerequisites
@@ -1595,6 +1602,299 @@ notifications:
     enabled: true
 ```
 
+## Semantic Commit Verification
+
+GPHC analyzes commit messages against actual code changes to ensure semantic consistency and prevent misleading commit history.
+
+### How It Works
+
+GPHC compares commit message prefixes with the actual changes made in the commit:
+
+```bash
+# Run semantic commit verification
+gphc check --semantic-verification
+
+# Analyze specific commits
+gphc analyze-commits --semantic-check
+
+# Verify commit message consistency
+gphc verify-semantic --commits 10
+```
+
+### Detection Examples
+
+**Mismatch Detection:**
+
+```bash
+Commit: fix: resolve authentication issue
+Changes: +800 lines added, -50 lines deleted
+Files: src/auth.go, src/user.go, src/session.go
+Analysis: MAJOR MISMATCH - 'fix' commit added 800 lines
+Warning: This appears to be a feature addition, not a bug fix
+```
+
+**Correct Semantic Usage:**
+
+```bash
+Commit: feat: add user authentication system
+Changes: +800 lines added, -0 lines deleted
+Files: src/auth.go, src/user.go, src/session.go
+Analysis: SEMANTIC MATCH - 'feat' commit with significant additions
+Status: PASS
+```
+
+### Semantic Commit Types
+
+GPHC recognizes standard semantic commit prefixes:
+
+#### Primary Types
+- **feat**: New features or functionality
+- **fix**: Bug fixes and corrections
+- **docs**: Documentation changes only
+- **style**: Code formatting, no logic changes
+- **refactor**: Code restructuring without behavior changes
+- **test**: Adding or modifying tests
+- **chore**: Maintenance tasks, dependencies, build changes
+
+#### Extended Types
+- **perf**: Performance improvements
+- **ci**: Continuous integration changes
+- **build**: Build system changes
+- **revert**: Reverting previous commits
+
+### Analysis Rules
+
+**Feature Commits (feat:):**
+```yaml
+semantic_rules:
+  feat:
+    min_lines_added: 10
+    max_lines_deleted: 5
+    allowed_file_types: ["*.go", "*.js", "*.py", "*.ts"]
+    forbidden_patterns: ["test", "spec", "mock"]
+    description: "New functionality should add significant code"
+```
+
+**Fix Commits (fix:):**
+```yaml
+semantic_rules:
+  fix:
+    max_lines_added: 100
+    max_lines_deleted: 50
+    allowed_file_types: ["*.go", "*.js", "*.py", "*.ts"]
+    required_patterns: ["bug", "error", "issue"]
+    description: "Bug fixes should be minimal changes"
+```
+
+**Documentation Commits (docs:):**
+```yaml
+semantic_rules:
+  docs:
+    max_lines_added: 200
+    max_lines_deleted: 100
+    allowed_file_types: ["*.md", "*.rst", "*.txt", "*.yml", "*.yaml"]
+    forbidden_patterns: ["src/", "lib/", "app/", "*.go", "*.js"]
+    description: "Documentation changes should not modify code"
+```
+
+**Style Commits (style:):**
+```yaml
+semantic_rules:
+  style:
+    max_lines_added: 50
+    max_lines_deleted: 50
+    allowed_file_types: ["*.go", "*.js", "*.py", "*.ts", "*.css"]
+    description: "Style changes should be formatting only"
+```
+
+### Configuration
+
+Configure semantic verification in your `gphc.yml`:
+
+```yaml
+# Semantic commit verification settings
+semantic_verification:
+  enabled: true
+  strict_mode: false
+  check_last_commits: 20
+  
+  # Custom rules for commit types
+  rules:
+    feat:
+      min_lines_added: 10
+      max_lines_added: 1000
+      max_lines_deleted: 20
+      allowed_file_types: ["*.go", "*.js", "*.py", "*.ts"]
+      
+    fix:
+      max_lines_added: 100
+      max_lines_deleted: 50
+      allowed_file_types: ["*.go", "*.js", "*.py", "*.ts"]
+      
+    docs:
+      max_lines_added: 200
+      max_lines_deleted: 100
+      allowed_file_types: ["*.md", "*.rst", "*.txt", "*.yml"]
+      forbidden_patterns: ["src/", "lib/", "*.go", "*.js"]
+      
+    style:
+      max_lines_added: 50
+      max_lines_deleted: 50
+      allowed_file_types: ["*.go", "*.js", "*.py", "*.ts", "*.css"]
+      
+    test:
+      max_lines_added: 300
+      max_lines_deleted: 100
+      allowed_file_types: ["*test*", "*spec*", "*mock*", "*.go", "*.js"]
+      
+    refactor:
+      max_lines_added: 200
+      max_lines_deleted: 200
+      allowed_file_types: ["*.go", "*.js", "*.py", "*.ts"]
+      
+    chore:
+      max_lines_added: 50
+      max_lines_deleted: 50
+      allowed_file_types: ["*.yml", "*.yaml", "*.json", "*.lock", "*.toml"]
+```
+
+### Example Output
+
+```bash
+$ gphc check --semantic-verification
+
+Semantic Commit Verification Results:
+=====================================
+
+Commit: abc1234 - feat: add user authentication
+Changes: +450 lines, -12 lines
+Files: src/auth.go, src/user.go, src/session.go
+Status: PASS - Semantic match ✓
+
+Commit: def5678 - fix: resolve login bug
+Changes: +800 lines, -50 lines  
+Files: src/auth.go, src/user.go, src/session.go, src/middleware.go
+Status: FAIL - Major mismatch ⚠️
+Warning: 'fix' commit added 800 lines - appears to be a feature
+
+Commit: ghi9012 - docs: update API documentation
+Changes: +25 lines, -5 lines
+Files: docs/api.md, README.md
+Status: PASS - Semantic match ✓
+
+Commit: jkl3456 - docs: update user interface
+Changes: +200 lines, -50 lines
+Files: src/components/UserForm.js, src/styles/user.css
+Status: FAIL - Major mismatch ⚠️
+Warning: 'docs' commit modified code files
+
+Summary:
+  Total Commits Analyzed: 4
+  Semantic Matches: 2
+  Mismatches Detected: 2
+  Semantic Score: 50/100
+```
+
+### Advanced Analysis
+
+**File Type Analysis:**
+```bash
+# Analyze by file type patterns
+gphc verify-semantic --file-patterns "*.go,*.js" --commits 10
+
+# Check specific commit types
+gphc verify-semantic --types "feat,fix" --commits 20
+
+# Strict mode verification
+gphc verify-semantic --strict --commits 15
+```
+
+**Custom Rule Testing:**
+```bash
+# Test custom semantic rules
+gphc test-semantic-rules --config custom-semantic.yml
+
+# Validate commit message format
+gphc validate-commit-format --commits 5
+```
+
+### Integration with CI/CD
+
+**GitHub Actions Integration:**
+```yaml
+name: Semantic Commit Verification
+on: [push, pull_request]
+
+jobs:
+  semantic-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 20
+          
+      - name: Install GPHC
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+        
+      - name: Verify Semantic Commits
+        run: gphc verify-semantic --commits 10 --fail-on-mismatch
+```
+
+**Pre-commit Hook:**
+```bash
+#!/bin/bash
+# .git/hooks/commit-msg
+
+# Run semantic verification on commit message
+gphc verify-commit-message --message "$1" --staged-files
+if [ $? -ne 0 ]; then
+    echo "Semantic commit verification failed"
+    exit 1
+fi
+```
+
+### Benefits
+
+- **Commit History Accuracy**: Ensure commit messages accurately describe changes
+- **Team Consistency**: Maintain consistent semantic commit practices across team
+- **Code Review Quality**: Help reviewers understand changes from commit messages
+- **Release Notes**: Generate accurate release notes from semantic commit history
+- **Debugging**: Make it easier to find specific changes in git history
+- **Automation**: Enable automated versioning and changelog generation
+
+### Best Practices
+
+1. **Use Descriptive Messages**: Commit messages should clearly describe the change
+2. **Follow Semantic Format**: Use standard prefixes (feat:, fix:, docs:, etc.)
+3. **Keep Commits Focused**: Each commit should address one logical change
+4. **Review Before Committing**: Check that message matches actual changes
+5. **Use Conventional Commits**: Follow the conventional commits specification
+6. **Regular Verification**: Run semantic verification regularly in CI/CD
+
+### Troubleshooting
+
+**Common Issues:**
+
+```bash
+# Commit message doesn't match changes
+Warning: 'fix' commit added 500 lines - consider using 'feat' instead
+
+# Documentation commit modified code
+Error: 'docs' commit modified .go files - use 'feat' or 'fix' instead
+
+# Style commit changed logic
+Warning: 'style' commit modified function logic - use 'refactor' instead
+```
+
+**Configuration Issues:**
+```bash
+# Invalid semantic rules
+Error: semantic_rules.feat.max_lines_added must be positive
+
+# Missing file type patterns
+Warning: No file type patterns defined for 'docs' commits
+```
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -1783,6 +2083,20 @@ Or even regex-based rules for searching in files.
 
 **Why it's important:**
 For projects that have specific policies or requirements (e.g., SECURITY.md file or TODO detection).
+
+#### Semantic Commit Verification
+
+**What it does:**
+Checks whether commit messages match the actual changes made.
+For example:
+
+```
+commit with title "fix:" but added 800 lines of code → warning
+commit with "docs:" but code was changed → warning
+```
+
+**Why it's important:**
+To prevent misleading commits and maintain transparency in history.
 
 ### Phase 3: Team, Trends & Automation
 - [x] Multi-repository analysis
