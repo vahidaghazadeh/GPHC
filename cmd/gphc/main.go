@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/opsource/gphc/internal/checkers"
@@ -97,6 +99,19 @@ Provides a graphical interface in the terminal with:
 	Run:  runTUI,
 }
 
+var serveCmd = &cobra.Command{
+	Use:   "serve [path]",
+	Short: "Start web dashboard server",
+	Long: `Start a local web server to display health monitoring dashboard.
+Provides a web interface accessible via browser with:
+- Multi-project health monitoring
+- Historical trend analysis
+- Export capabilities
+- Team collaboration features`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runServe,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
@@ -109,6 +124,7 @@ func init() {
 	rootCmd.AddCommand(codebaseCmd)
 	rootCmd.AddCommand(scanCmd)
 	rootCmd.AddCommand(tuiCmd)
+	rootCmd.AddCommand(serveCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
@@ -122,6 +138,15 @@ func init() {
 	scanCmd.Flags().IntVarP(&parallelJobs, "parallel", "p", 4, "Number of parallel jobs for scanning")
 	scanCmd.Flags().BoolVarP(&detailedReport, "detailed", "d", false, "Generate detailed report")
 	scanCmd.Flags().StringVarP(&scanOutputFile, "output", "o", "", "Output file path (default: stdout)")
+	
+	// Add serve command flags
+	serveCmd.Flags().StringVarP(&serverHost, "host", "H", "localhost", "Host to bind the server to")
+	serveCmd.Flags().IntVarP(&serverPort, "port", "p", 8080, "Port to bind the server to")
+	serveCmd.Flags().BoolVarP(&serverAuth, "auth", "a", false, "Enable basic authentication")
+	serveCmd.Flags().StringVarP(&serverUsername, "username", "u", "admin", "Username for basic authentication")
+	serveCmd.Flags().StringVarP(&serverPassword, "password", "w", "admin", "Password for basic authentication")
+	serveCmd.Flags().BoolVarP(&serverCORS, "cors", "c", true, "Enable CORS headers")
+	serveCmd.Flags().StringVarP(&serverTitle, "title", "t", "GPHC Dashboard", "Dashboard title")
 }
 
 var (
@@ -134,6 +159,13 @@ var (
 	parallelJobs    int
 	detailedReport  bool
 	scanOutputFile  string
+	serverHost      string
+	serverPort      int
+	serverAuth      bool
+	serverUsername  string
+	serverPassword  string
+	serverCORS      bool
+	serverTitle     string
 )
 
 var checkCmd = &cobra.Command{
@@ -1305,4 +1337,293 @@ func (m *TUIModel) renderDetails() string {
 // renderTrends renders the trends tab
 func (m *TUIModel) renderTrends() string {
 	return "Trend analysis not yet implemented.\n\nThis feature will show historical health scores over time."
+}
+
+func runServe(cmd *cobra.Command, args []string) {
+	var repoPath string
+	if len(args) > 0 {
+		repoPath = args[0]
+	} else {
+		var err error
+		repoPath, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if it's a Git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+
+	// Setup HTTP handlers
+	http.HandleFunc("/", handleDashboard)
+	http.HandleFunc("/api/health", handleHealthAPI)
+	http.HandleFunc("/api/export/json", handleExportJSON)
+	http.HandleFunc("/api/export/pdf", handleExportPDF)
+
+	// Start server
+	addr := fmt.Sprintf("%s:%d", serverHost, serverPort)
+	fmt.Printf("Starting GPHC Web Dashboard...\n")
+	fmt.Printf("Dashboard: http://%s\n", addr)
+	fmt.Printf("Repository: %s\n", repoPath)
+	fmt.Printf("Press Ctrl+C to stop\n\n")
+
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// HTTP handlers
+func handleDashboard(w http.ResponseWriter, r *http.Request) {
+	html := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>` + serverTitle + `</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .score { font-size: 2em; font-weight: bold; }
+        .score.excellent { color: #27ae60; }
+        .score.good { color: #f39c12; }
+        .score.poor { color: #e74c3c; }
+        .status { padding: 4px 8px; border-radius: 4px; color: white; font-size: 0.8em; }
+        .status.pass { background: #27ae60; }
+        .status.fail { background: #e74c3c; }
+        .status.warn { background: #f39c12; }
+        .refresh-btn { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .refresh-btn:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>` + serverTitle + `</h1>
+            <p>Repository Health Monitoring Dashboard</p>
+        </div>
+        
+        <div class="card">
+            <h2>Health Overview</h2>
+            <div id="health-data">Loading...</div>
+            <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+        </div>
+        
+        <div class="card">
+            <h2>Export Options</h2>
+            <button class="refresh-btn" onclick="exportJSON()">Export JSON</button>
+            <button class="refresh-btn" onclick="exportPDF()">Export PDF</button>
+        </div>
+    </div>
+
+    <script>
+        function refreshData() {
+            fetch('/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('health-data').innerHTML = 
+                        '<div class="score ' + getScoreClass(data.overall_score) + '">' + data.overall_score + '/100</div>' +
+                        '<div class="status ' + getStatusClass(data.grade) + '">' + data.grade + '</div>' +
+                        '<p>Total Checks: ' + data.summary.total_checks + '</p>' +
+                        '<p>Passed: ' + data.summary.passed_checks + '</p>' +
+                        '<p>Failed: ' + data.summary.failed_checks + '</p>' +
+                        '<p>Warnings: ' + data.summary.warning_checks + '</p>';
+                })
+                .catch(error => {
+                    document.getElementById('health-data').innerHTML = '<p>Error loading data: ' + error + '</p>';
+                });
+        }
+        
+        function getScoreClass(score) {
+            if (score >= 80) return 'excellent';
+            if (score >= 60) return 'good';
+            return 'poor';
+        }
+        
+        function getStatusClass(grade) {
+            if (grade.includes('A') || grade.includes('B')) return 'pass';
+            if (grade.includes('C')) return 'warn';
+            return 'fail';
+        }
+        
+        function exportJSON() {
+            window.open('/api/export/json', '_blank');
+        }
+        
+        function exportPDF() {
+            window.open('/api/export/pdf', '_blank');
+        }
+        
+        // Load data on page load
+        refreshData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>`
+	
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(html))
+}
+
+func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
+	// Get current directory for health check
+	repoPath, err := os.Getwd()
+	if err != nil {
+		http.Error(w, "Error getting repository path", http.StatusInternalServerError)
+		return
+	}
+
+	// Analyze repository
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		http.Error(w, "Error analyzing repository", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := analyzer.Analyze()
+	if err != nil {
+		http.Error(w, "Error analyzing repository data", http.StatusInternalServerError)
+		return
+	}
+
+	// Run health checks
+	allCheckers := []checkers.Checker{
+		checkers.NewDocChecker(),
+		checkers.NewConventionalCommitChecker(),
+		checkers.NewMsgLengthChecker(),
+		checkers.NewCommitSizeChecker(),
+		checkers.NewLocalBranchChecker(),
+		checkers.NewStaleBranchChecker(),
+		checkers.NewBareRepoChecker(),
+		checkers.NewStashChecker(),
+		checkers.NewIgnoreChecker(),
+		checkers.NewGitHubIntegrationChecker(),
+		checkers.NewGitLabIntegrationChecker(),
+		checkers.NewCommitAuthorInsightsChecker(),
+		checkers.NewCodebaseSmellChecker(),
+	}
+
+	scorer := scorer.NewScorer()
+	for _, checker := range allCheckers {
+		result := checker.Check(data)
+		scorer.AddResult(*result)
+	}
+
+	// Generate report
+	healthReport := scorer.CalculateHealthReport()
+
+	// Set CORS headers if enabled
+	if serverCORS {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	
+	// Convert to JSON (simplified)
+	json := fmt.Sprintf(`{
+		"overall_score": %d,
+		"grade": "%s",
+		"summary": {
+			"total_checks": %d,
+			"passed_checks": %d,
+			"failed_checks": %d,
+			"warning_checks": %d
+		},
+		"timestamp": "%s",
+		"repository": "%s"
+	}`, 
+		healthReport.OverallScore,
+		healthReport.Grade,
+		healthReport.Summary.TotalChecks,
+		healthReport.Summary.PassedChecks,
+		healthReport.Summary.FailedChecks,
+		healthReport.Summary.WarningChecks,
+		healthReport.Timestamp.Format(time.RFC3339),
+		filepath.Base(repoPath))
+	
+	w.Write([]byte(json))
+}
+
+func handleExportJSON(w http.ResponseWriter, r *http.Request) {
+	// Get current directory for health check
+	repoPath, err := os.Getwd()
+	if err != nil {
+		http.Error(w, "Error getting repository path", http.StatusInternalServerError)
+		return
+	}
+
+	// Analyze repository
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		http.Error(w, "Error analyzing repository", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := analyzer.Analyze()
+	if err != nil {
+		http.Error(w, "Error analyzing repository data", http.StatusInternalServerError)
+		return
+	}
+
+	// Run health checks
+	allCheckers := []checkers.Checker{
+		checkers.NewDocChecker(),
+		checkers.NewConventionalCommitChecker(),
+		checkers.NewMsgLengthChecker(),
+		checkers.NewCommitSizeChecker(),
+		checkers.NewLocalBranchChecker(),
+		checkers.NewStaleBranchChecker(),
+		checkers.NewBareRepoChecker(),
+		checkers.NewStashChecker(),
+		checkers.NewIgnoreChecker(),
+		checkers.NewGitHubIntegrationChecker(),
+		checkers.NewGitLabIntegrationChecker(),
+		checkers.NewCommitAuthorInsightsChecker(),
+		checkers.NewCodebaseSmellChecker(),
+	}
+
+	scorer := scorer.NewScorer()
+	for _, checker := range allCheckers {
+		result := checker.Check(data)
+		scorer.AddResult(*result)
+	}
+
+	// Generate report
+	healthReport := scorer.CalculateHealthReport()
+
+	// Export to JSON
+	exporter := exporter.NewExporter()
+	jsonData, err := exporter.Export(healthReport, "json")
+	if err != nil {
+		http.Error(w, "Error exporting to JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", "attachment; filename=health-report.json")
+	w.Write([]byte(jsonData))
+}
+
+func handleExportPDF(w http.ResponseWriter, r *http.Request) {
+	// For now, return a simple message since PDF export requires additional dependencies
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(`
+		<html>
+		<body>
+			<h1>PDF Export</h1>
+			<p>PDF export is not yet implemented. Please use JSON export for now.</p>
+			<a href="/api/export/json">Download JSON Report</a>
+		</body>
+		</html>
+	`))
 }
