@@ -11,7 +11,7 @@ Notifications allow you to send health reports directly to team channels, keepin
 ### Basic Setup
 ```bash
 # Send health report to Slack
-gphc check --notify slack --webhook-url https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+git hc check --notify slack --webhook-url https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
 ### Slack Configuration
@@ -50,7 +50,7 @@ Status: PASS
 ### Basic Setup
 ```bash
 # Send health report to Discord
-gphc check --notify discord --webhook-url https://discord.com/api/webhooks/YOUR/WEBHOOK/URL
+git hc check --notify discord --webhook-url https://discord.com/api/webhooks/YOUR/WEBHOOK/URL
 ```
 
 ### Discord Configuration
@@ -69,7 +69,7 @@ notifications:
 ### Generic Webhook
 ```bash
 # Send to custom webhook
-gphc check --notify webhook --webhook-url https://your-service.com/webhook
+git hc check --notify webhook --webhook-url https://your-service.com/webhook
 ```
 
 ### Webhook Payload
@@ -167,8 +167,10 @@ jobs:
           go-version: '1.21'
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+      - name: Setup Git HC
+        run: ./setup-git-hc.sh
       - name: Health Check with Notifications
-        run: gphc check --notify slack --webhook-url ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: git hc check --notify slack --webhook-url ${{ secrets.SLACK_WEBHOOK_URL }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```
@@ -179,7 +181,8 @@ health_check:
   stage: test
   script:
     - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
-    - gphc check --notify slack --webhook-url $SLACK_WEBHOOK_URL
+    - ./setup-git-hc.sh
+    - git hc check --notify slack --webhook-url $SLACK_WEBHOOK_URL
   variables:
     SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
 ```
@@ -211,13 +214,13 @@ notifications:
 ### Scheduled Notifications
 ```bash
 # Send daily health report
-gphc check --schedule daily --notify slack
+git hc check --schedule daily --notify slack
 
 # Send weekly health report
-gphc check --schedule weekly --notify slack
+git hc check --schedule weekly --notify slack
 
 # Send monthly health report
-gphc check --schedule monthly --notify slack
+git hc check --schedule monthly --notify slack
 ```
 
 ## Troubleshooting
@@ -231,13 +234,13 @@ gphc check --schedule monthly --notify slack
 ### Debugging
 ```bash
 # Test webhook connection
-gphc check --test-webhook --webhook-url https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+git hc check --test-webhook --webhook-url https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 
 # Verbose notification output
-gphc check --notify slack --verbose
+git hc check --notify slack --verbose
 
 # Dry run notifications
-gphc check --notify slack --dry-run
+git hc check --notify slack --dry-run
 ```
 
 ## Best Practices
