@@ -6,25 +6,25 @@
 
 **GPHC** (pronounced "githlth") is a Command-Line Interface (CLI) tool written in Go that audits local Git repositories against established Open Source best practices. It evaluates documentation quality, commit history standards, and repository hygiene, providing a comprehensive Health Score with actionable feedback.
 
-## 🌟 Features
+## Features
 
-### 📚 Documentation & Project Structure
+### Documentation & Project Structure
 - **Essential Files Check**: Validates presence of README.md, LICENSE, CONTRIBUTING.md, and CODE_OF_CONDUCT.md
 - **Setup Instructions**: Ensures clear installation and usage instructions
 - **Gitignore Validation**: Checks for proper .gitignore configuration with common patterns
 
-### 📝 Commit History Quality
+### Commit History Quality
 - **Conventional Commits**: Validates adherence to conventional commit format (feat:, fix:, etc.)
 - **Message Length**: Ensures commit messages stay within 72-character limit
 - **Commit Size Analysis**: Identifies oversized commits that might indicate "God Commits"
 
-### 🧹 Git Cleanup & Hygiene
+### Git Cleanup & Hygiene
 - **Local Branch Cleanup**: Identifies merged branches that should be deleted
 - **Stale Branch Detection**: Finds branches with no activity for 60+ days
 - **Branch Protection**: Checks for main branch protection (requires GitHub API)
 - **Stash Management**: Analyzes Git stash entries and warns about old stashes (>30 days)
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 - Go 1.19 or higher
@@ -129,7 +129,7 @@ gphc badge
 # 🔗 Badge URL:
 # https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github
 # 
-# 📝 Markdown Badge:
+# Markdown Badge:
 # ![Health Score](https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github)
 ```
 
@@ -139,12 +139,12 @@ gphc pre-commit
 ```
 
 **Features:**
-- ✅ **Fast execution:** Only checks staged files
-- ✅ **File formatting:** Validates Go code formatting
-- ✅ **Commit message:** Checks conventional commit format
-- ✅ **Large files:** Prevents files >1MB from being committed
-- ✅ **Sensitive files:** Blocks .env, keys, credentials
-- ✅ **Exit codes:** Returns non-zero for failed checks
+- **Fast execution:** Only checks staged files
+- **File formatting:** Validates Go code formatting
+- **Commit message:** Checks conventional commit format
+- **Large files:** Prevents files >1MB from being committed
+- **Sensitive files:** Blocks .env, keys, credentials
+- **Exit codes:** Returns non-zero for failed checks
 
 **Integration Examples:**
 
@@ -193,44 +193,44 @@ chmod +x $(go env GOPATH)/bin/gphc
 
 ### Example Output
 ```
-🔍 Analyzing repository: /path/to/repo
+Analyzing repository: /path/to/repo
 
-✅ Repository Health Check (GPHC v1.0.0)
+Repository Health Check (GPHC v1.0.0)
 
-🌟 Overall Health Score: 85/100 (B+)
+Overall Health Score: 85/100 (B+)
 
 ---------------------------------------------------
 [A] Documentation & Project Structure (Passed: 3/4)
 ---------------------------------------------------
-   ✅ DOC-101: README.md found (Score: +10)
-   ✅ DOC-102: LICENSE file found (Score: +10)
-   ❌ DOC-103: CONTRIBUTING.md is missing (Deduct: -10)
-   ✅ IG-201: .gitignore is present and valid (Score: +10)
+   PASS DOC-101: README.md found (Score: +10)
+   PASS DOC-102: LICENSE file found (Score: +10)
+   FAIL DOC-103: CONTRIBUTING.md is missing (Deduct: -10)
+   PASS IG-201: .gitignore is present and valid (Score: +10)
 
 ---------------------------------------------------
 [B] Commit History Quality (Passed: 8/10)
 ---------------------------------------------------
-   ⚠️ CHQ-301: 2 of 10 recent commits violate Conventional Commit standard (Deduct: -5)
+   WARN CHQ-301: 2 of 10 recent commits violate Conventional Commit standard (Deduct: -5)
       - Non-Standard Commit: "Initial work"
-   ✅ CHQ-302: Commit message length is compliant (Avg. 55 chars) (Score: +10)
-   ✅ CHQ-303: Average commit size is moderate (Avg. 120 lines) (Score: +10)
+   PASS CHQ-302: Commit message length is compliant (Avg. 55 chars) (Score: +10)
+   PASS CHQ-303: Average commit size is moderate (Avg. 120 lines) (Score: +10)
 
 ---------------------------------------------------
 [C] Git Cleanup & Hygiene (Needs Attention)
 ---------------------------------------------------
-   ❌ CLEAN-401: 3 local branches are merged but not deleted (Deduct: -10)
-   ⚠️ CLEAN-402: Branch 'experiment-beta' is stale (last activity: 95 days ago) (Deduct: -5)
-   ⚠️ STASH-501: Found 2 stash entries (1 old) (Deduct: -5)
-      ⚠️ Old stash@{0}: WIP on feature-branch (45 days ago) [feature-branch]
-      ✅ Recent stash@{1}: Quick fix attempt (2 days ago) [main]
+   FAIL CLEAN-401: 3 local branches are merged but not deleted (Deduct: -10)
+   WARN CLEAN-402: Branch 'experiment-beta' is stale (last activity: 95 days ago) (Deduct: -5)
+   WARN STASH-501: Found 2 stash entries (1 old) (Deduct: -5)
+      WARN Old stash@{0}: WIP on feature-branch (45 days ago) [feature-branch]
+      PASS Recent stash@{1}: Quick fix attempt (2 days ago) [main]
 
-💡 Next Steps:
+Next Steps:
    1. Create CONTRIBUTING.md
    2. Delete 3 stale local branches
    3. Review and clean up old stash entries
 ```
 
-## 📊 Export Formats & Badges
+## Export Formats & Badges
 
 GPHC supports multiple output formats for integration with CI/CD pipelines, documentation, and reporting systems.
 
@@ -270,22 +270,22 @@ gphc badge
 
 **Output:**
 ```
-📊 Health Score: 85/100 (B+)
+Health Score: 85/100 (B+)
 
-🔗 Badge URL:
+Badge URL:
 https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github
 
-📝 Markdown Badge:
+Markdown Badge:
 ![Health Score](https://img.shields.io/badge/Health_Score-85%2F100-green?style=for-the-badge&logo=github)
 ```
 
 **Badge Colors:**
-- 🟢 **90-100:** `brightgreen` (A+)
-- 🟢 **80-89:** `green` (A, B+)
-- 🟡 **70-79:** `yellowgreen` (B, B-)
-- 🟡 **60-69:** `yellow` (C+, C)
-- 🟠 **50-59:** `orange` (C-, D+)
-- 🔴 **0-49:** `red` (D, F)
+- **90-100:** `brightgreen` (A+)
+- **80-89:** `green` (A, B+)
+- **70-79:** `yellowgreen` (B, B-)
+- **60-69:** `yellow` (C+, C)
+- **50-59:** `orange` (C-, D+)
+- **0-49:** `red` (D, F)
 
 **Add to README:**
 ```markdown
@@ -327,35 +327,35 @@ gphc github /path/to/repository
 ```
 
 **Features Checked:**
-- ✅ **Branch Protection:** Required reviewers, status checks, code owner reviews
-- ✅ **GitHub Actions:** Workflow configuration and status
-- ✅ **Repository Settings:** Issues, projects, wiki enabled
-- ✅ **Contributors:** Multi-contributor analysis
-- ✅ **Repository Info:** Stars, forks, activity metrics
+- **Branch Protection:** Required reviewers, status checks, code owner reviews
+- **GitHub Actions:** Workflow configuration and status
+- **Repository Settings:** Issues, projects, wiki enabled
+- **Contributors:** Multi-contributor analysis
+- **Repository Info:** Stars, forks, activity metrics
 
 **Example Output:**
 ```
-🔍 Checking GitHub integration: /path/to/repo
-✅ GitHub token found
+Checking GitHub integration: /path/to/repo
+GitHub token found
 
-📊 GitHub Integration Check Results:
+GitHub Integration Check Results:
 Status: PASS
 Score: 85
 Message: Excellent GitHub integration and configuration
 
 Details:
   Repository: owner/repository
-  ✅ Issues are enabled
-  ✅ Projects are enabled
-  ✅ Wiki is enabled
-  ✅ Branch protection is enabled
-  ✅ Required 2 reviewer(s)
-  ✅ Code owner reviews required
-  ✅ Required status checks: ci, test, build
-  ✅ Found 3 workflow(s)
-  ✅ 2 active workflow(s)
-  📊 Found 5 contributor(s)
-  ✅ Multiple contributors
+  PASS Issues are enabled
+  PASS Projects are enabled
+  PASS Wiki is enabled
+  PASS Branch protection is enabled
+  PASS Required 2 reviewer(s)
+  PASS Code owner reviews required
+  PASS Required status checks: ci, test, build
+  PASS Found 3 workflow(s)
+  PASS 2 active workflow(s)
+  Found 5 contributor(s)
+  PASS Multiple contributors
 ```
 
 ### Integration with Health Check
@@ -406,39 +406,39 @@ gphc gitlab /path/to/repository
 ```
 
 **Features Checked:**
-- ✅ **Branch Protection:** Push/merge access restrictions, code owner approval
-- ✅ **GitLab CI/CD:** Pipeline configuration and status
-- ✅ **Project Settings:** Issues, merge requests, wiki, snippets enabled
-- ✅ **Contributors:** Multi-contributor analysis
-- ✅ **Merge Requests:** Open MRs and development activity
-- ✅ **Project Info:** Stars, forks, activity metrics
+- **Branch Protection:** Push/merge access restrictions, code owner approval
+- **GitLab CI/CD:** Pipeline configuration and status
+- **Project Settings:** Issues, merge requests, wiki, snippets enabled
+- **Contributors:** Multi-contributor analysis
+- **Merge Requests:** Open MRs and development activity
+- **Project Info:** Stars, forks, activity metrics
 
 **Example Output:**
 ```
-🔍 Checking GitLab integration: /path/to/repo
-✅ GitLab token found
+Checking GitLab integration: /path/to/repo
+GitLab token found
 
-📊 GitLab Integration Check Results:
+GitLab Integration Check Results:
 Status: PASS
 Score: 85
 Message: Excellent GitLab integration and configuration
 
 Details:
   Project: owner/repository
-  ✅ Issues are enabled
-  ✅ Merge requests are enabled
-  ✅ Wiki is enabled
-  ✅ Snippets are enabled
-  ✅ Branch protection is enabled
-  ✅ Push access is restricted
-  ✅ Merge access is restricted
-  ✅ Code owner approval required
-  ✅ Found 3 pipeline(s)
-  ✅ 2 successful pipeline(s)
-  📊 Found 5 contributor(s)
-  ✅ Multiple contributors
-  📊 Found 2 open merge request(s)
-  ✅ Active development with open MRs
+  PASS Issues are enabled
+  PASS Merge requests are enabled
+  PASS Wiki is enabled
+  PASS Snippets are enabled
+  PASS Branch protection is enabled
+  PASS Push access is restricted
+  PASS Merge access is restricted
+  PASS Code owner approval required
+  PASS Found 3 pipeline(s)
+  PASS 2 successful pipeline(s)
+  Found 5 contributor(s)
+  PASS Multiple contributors
+  Found 2 open merge request(s)
+  PASS Active development with open MRs
 ```
 
 ### Integration with Health Check
@@ -454,7 +454,7 @@ The GitLab integration checker (`GL-602`) will appear in the results when:
 - GitLab token is available
 - Repository is accessible via GitLab API
 
-## 👥 Commit Author Insights
+## Commit Author Insights
 
 GPHC analyzes commit history to identify contributor patterns and bus factor risks, helping teams understand project dependencies and team participation.
 
@@ -469,46 +469,46 @@ gphc authors /path/to/repository
 ```
 
 **Features Analyzed:**
-- ✅ **Contributor Count:** Total number of unique contributors
-- ✅ **Commit Distribution:** Percentage of commits per author
-- ✅ **Single Author Dominance:** Detection of >70% contribution by one person
-- ✅ **Bus Factor Risk:** Assessment of project dependency on individuals
-- ✅ **Email Consistency:** Validation of author email addresses
-- ✅ **Team Participation:** Analysis of contributor engagement
+- **Contributor Count:** Total number of unique contributors
+- **Commit Distribution:** Percentage of commits per author
+- **Single Author Dominance:** Detection of >70% contribution by one person
+- **Bus Factor Risk:** Assessment of project dependency on individuals
+- **Email Consistency:** Validation of author email addresses
+- **Team Participation:** Analysis of contributor engagement
 
 **Example Output:**
 ```
-👥 Analyzing commit authors: /path/to/repo
+Analyzing commit authors: /path/to/repo
 
-📊 Commit Author Insights:
+Commit Author Insights:
 Status: WARNING
 Score: 60
 Message: Single author dominance detected
 
 Details:
-  👥 Contributors: 4
-  📊 Total commits: 31
+  Contributors: 4
+  Total commits: 31
   1. vahidaghazadeh (24 commits, 77.4%)
   2. john.doe (4 commits, 12.9%)
   3. jane.smith (2 commits, 6.5%)
   4. mike.wilson (1 commits, 3.2%)
-  ⚠️ Single Author Dominance Detected (>70%)
+  WARN Single Author Dominance Detected (>70%)
   Top author: vahidaghazadeh (77.4%)
   Consider encouraging more team participation
-  ✅ Email addresses are consistent
+  PASS Email addresses are consistent
 
-💡 Bus Factor Analysis:
-  ⚠️ MODERATE RISK: Low contributor count
-  📊 Contributors: 4
-  🚨 Bus Factor: 4 (Acceptable)
-  💡 Recommendation: Maintain current team size
+Bus Factor Analysis:
+  WARN MODERATE RISK: Low contributor count
+  Contributors: 4
+  Bus Factor: 4 (Acceptable)
+  Recommendation: Maintain current team size
 ```
 
 **Bus Factor Risk Levels:**
-- **🚨 Critical (1 contributor):** Single person project - immediate action needed
-- **⚠️ High (2 contributors):** Low contributor count - expand team
-- **✅ Acceptable (3-5 contributors):** Small team - maintain current size
-- **✅ Excellent (6+ contributors):** Well-distributed team - excellent distribution
+- **Critical (1 contributor):** Single person project - immediate action needed
+- **High (2 contributors):** Low contributor count - expand team
+- **Acceptable (3-5 contributors):** Small team - maintain current size
+- **Excellent (6+ contributors):** Well-distributed team - excellent distribution
 
 ### Integration with Health Check
 
@@ -524,7 +524,7 @@ The author insights checker (`CAI-701`) will appear in the results and provides:
 - Bus factor risk assessment
 - Team participation recommendations
 
-## 🔍 Codebase Smell Check
+## Codebase Smell Check
 
 GPHC performs lightweight codebase structure analysis to detect common organizational issues and maintainability problems without requiring AST parsing.
 
@@ -539,48 +539,48 @@ gphc codebase /path/to/repository
 ```
 
 **Features Analyzed:**
-- ✅ **Test Directory Detection:** Missing test directories and files
-- ✅ **Directory Size Analysis:** Oversized directories (>1000 files)
-- ✅ **Code-to-Test Ratio:** Test coverage ratio analysis
-- ✅ **Empty Directory Detection:** Unused empty directories
-- ✅ **Directory Depth Analysis:** Deep nesting detection
-- ✅ **Root File Count:** Too many files in root directory
-- ✅ **Standard Directory Structure:** Missing src/, lib/, app/ directories
-- ✅ **Documentation Files:** Presence of documentation files
+- **Test Directory Detection:** Missing test directories and files
+- **Directory Size Analysis:** Oversized directories (>1000 files)
+- **Code-to-Test Ratio:** Test coverage ratio analysis
+- **Empty Directory Detection:** Unused empty directories
+- **Directory Depth Analysis:** Deep nesting detection
+- **Root File Count:** Too many files in root directory
+- **Standard Directory Structure:** Missing src/, lib/, app/ directories
+- **Documentation Files:** Presence of documentation files
 
 **Example Output:**
 ```
-🔍 Analyzing codebase structure: /path/to/repo
+Analyzing codebase structure: /path/to/repo
 
-📊 Codebase Structure Analysis:
+Codebase Structure Analysis:
 Status: WARNING
 Score: 65
 Message: Codebase structure warnings detected
 
 Details:
-  ⚠️ No test directory found
+  WARN No test directory found
   Consider adding tests/ or test/ directory
-  ✅ No oversized directories
-  ⚠️ Low test coverage ratio (5.2%)
+  PASS No oversized directories
+  WARN Low test coverage ratio (5.2%)
   Consider adding more test files
-  ℹ️ 2 empty directory(ies) found
+  INFO 2 empty directory(ies) found
   Consider removing empty directories
-  ✅ Reasonable directory depth (4)
-  ✅ Reasonable number of root files (8)
-  ℹ️ No standard source directories (src/, lib/, app/)
+  PASS Reasonable directory depth (4)
+  PASS Reasonable number of root files (8)
+  INFO No standard source directories (src/, lib/, app/)
   Consider organizing code into standard directories
-  ✅ Found 3 documentation file(s)
+  PASS Found 3 documentation file(s)
 
-📊 Codebase Statistics:
-  📁 Total directories: 12
-  📄 Total files: 45
-  🧪 Test files: 2
-  📝 Documentation files: 3
-  📏 Max directory depth: 4
+Codebase Statistics:
+  Total directories: 12
+  Total files: 45
+  Test files: 2
+  Documentation files: 3
+  Max directory depth: 4
 
-💡 Structure Recommendations:
-  ⚠️ Codebase structure needs improvement
-  📋 Consider the following actions:
+Structure Recommendations:
+  WARN Codebase structure needs improvement
+  Consider the following actions:
     • Add test directories and test files
     • Organize code into logical subdirectories
     • Split oversized directories (>1000 files)
@@ -589,9 +589,9 @@ Details:
 ```
 
 **Structure Quality Levels:**
-- **🚨 Poor (<70):** Significant structural issues - immediate action needed
-- **⚠️ Fair (70-89):** Minor improvements needed - good foundation
-- **✅ Excellent (90+):** Well-organized codebase - maintain current structure
+- **Poor (<70):** Significant structural issues - immediate action needed
+- **Fair (70-89):** Minor improvements needed - good foundation
+- **Excellent (90+):** Well-organized codebase - maintain current structure
 
 ### Integration with Health Check
 
@@ -607,7 +607,7 @@ The codebase smell checker (`CBS-801`) will appear in the results and provides:
 - Organization recommendations
 - Maintainability insights
 
-## ⚙️ Configuration
+## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
 
@@ -631,7 +631,7 @@ weights:
   hygiene: 2
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 GPHC follows a modular architecture with discrete checkers reporting to a central scoring engine:
 
@@ -656,7 +656,7 @@ Reporter: Colorful terminal output with structured results
 - **`pkg/types/`**: Core data structures and interfaces
 - **`pkg/config/`**: Configuration management
 
-## 🔧 Development
+## Development
 
 ### Setting Up Development Environment
 ```bash
@@ -743,9 +743,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📋 Roadmap
+## Roadmap
 
-### Phase 1: Core Features ✅
+### Phase 1: Core Features
 - [x] Basic CLI framework
 - [x] Git repository analysis
 - [x] Documentation checks
@@ -767,11 +767,11 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - [ ] Team collaboration metrics
 - [ ] Integration with popular Git hosting platforms
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [go-git](https://github.com/go-git/go-git) for Git repository access
 - [Cobra](https://github.com/spf13/cobra) for CLI framework
@@ -780,4 +780,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the Open Source community**
+**Made with love for the Open Source community**
