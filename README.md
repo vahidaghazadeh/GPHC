@@ -63,6 +63,14 @@
 - **Semantic Consistency**: Ensure commit history accurately reflects changes
 - **Quality Assurance**: Prevent confusing commit history and maintain transparency
 
+### Interactive Terminal UI (TUI)
+- **Graphical Terminal Interface**: Beautiful terminal-based user interface like htop
+- **Colorful Score Display**: Interactive and colorful score visualization
+- **Real-time Filtering**: Filter results by category, status, or score range
+- **Rule Explanations**: View detailed explanations for each health check rule
+- **Trend Navigation**: Browse through historical score trends interactively
+- **Enhanced Developer Experience**: Improved user experience for developers and technical teams
+
 ## Installation
 
 ### Prerequisites
@@ -1895,6 +1903,299 @@ Error: semantic_rules.feat.max_lines_added must be positive
 Warning: No file type patterns defined for 'docs' commits
 ```
 
+## Interactive Terminal UI (TUI)
+
+GPHC provides a beautiful, interactive terminal user interface that makes health checking and monitoring an engaging experience for developers and technical teams.
+
+### Getting Started
+
+Launch the interactive terminal interface:
+
+```bash
+# Start the TUI
+gphc tui
+
+# Start TUI with specific repository
+gphc tui --path /path/to/repository
+
+# Start TUI with auto-refresh
+gphc tui --refresh 30s
+
+# Start TUI in full-screen mode
+gphc tui --fullscreen
+```
+
+### Interface Overview
+
+The TUI provides multiple views and interactive features:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ GPHC - Git Project Health Checker                          │
+│ Repository: /path/to/project                                │
+│ Last Updated: 2024-01-15 10:30:00                          │
+├─────────────────────────────────────────────────────────────┤
+│ Overall Health Score: 85/100 (B+)                          │
+│ Status: PASS                                                │
+│                                                             │
+│ ┌─ Health Overview ──────────────────────────────────────┐ │
+│ │ Documentation & Project Structure: 90/100 (A-)         │ │
+│ │ Commit History Quality: 85/100 (B+)                    │ │
+│ │ Git Cleanup & Hygiene: 80/100 (B-)                    │ │
+│ │ Codebase Structure: 75/100 (C+)                        │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─ Quick Actions ────────────────────────────────────────┐ │
+│ │ [F1] Help  [F2] Filter  [F3] Trends  [F4] Settings    │ │
+│ │ [F5] Refresh  [F6] Export  [F7] Notify  [F8] Quit     │ │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Main Views
+
+#### 1. Health Overview Dashboard
+- **Overall Score Display**: Large, colorful health score with grade
+- **Category Breakdown**: Visual representation of each health category
+- **Status Indicators**: Pass/Fail/Warning status for each check
+- **Quick Stats**: Number of checks passed, failed, and warnings
+
+#### 2. Detailed Check Results
+```
+┌─ Check Results ────────────────────────────────────────────┐
+│ DOC-101: README.md exists                                 │
+│ Status: PASS  Score: 5/5  Category: Documentation        │
+│ Details: Project has a comprehensive README.md file      │
+│                                                           │
+│ DOC-102: LICENSE file exists                              │
+│ Status: FAIL  Score: 0/5  Category: Documentation        │
+│ Details: Project is missing a LICENSE file               │
+│ Recommendation: Add a LICENSE file for legal clarity     │
+│                                                           │
+│ COMM-201: Conventional commit format                      │
+│ Status: WARN  Score: 3/5  Category: Commit Quality       │
+│ Details: 15% of commits don't follow conventional format │
+│ Recommendation: Use feat:, fix:, docs: prefixes          │
+└───────────────────────────────────────────────────────────┘
+```
+
+#### 3. Interactive Filtering
+- **Category Filter**: Filter by Documentation, Commits, Hygiene, Structure
+- **Status Filter**: Show only PASS, FAIL, or WARNING checks
+- **Score Range**: Filter by minimum/maximum score thresholds
+- **Search**: Find specific checks by name or ID
+
+#### 4. Trend Analysis View
+```
+┌─ Health Trends ────────────────────────────────────────────┐
+│ Score History (Last 30 days)                              │
+│                                                           │
+│ 100 ┤                                                    │
+│  90 ┤     ●                                              │
+│  80 ┤   ●   ●                                            │
+│  70 ┤ ●       ●                                          │
+│  60 ┤           ●                                        │
+│  50 ┤                                                     │
+│     └─────────────────────────────────────────────────────│
+│      Jan 01  Jan 08  Jan 15  Jan 22  Jan 29             │
+│                                                           │
+│ Current: 85/100  Previous: 78/100  Change: +7 (+9.0%)    │
+│ Trend: Improving  Average: 81.2/100                      │
+└───────────────────────────────────────────────────────────┘
+```
+
+### Interactive Features
+
+#### Keyboard Shortcuts
+```
+Navigation:
+  ↑/↓/←/→    Move cursor
+  Tab        Switch between panels
+  Enter      Select/expand item
+  Esc        Go back/close dialog
+
+Actions:
+  F1         Help and shortcuts
+  F2         Open filter menu
+  F3         View trend analysis
+  F4         Settings and configuration
+  F5         Refresh data
+  F6         Export results
+  F7         Send notifications
+  F8         Quit application
+
+Search and Filter:
+  /          Search checks
+  Ctrl+F     Advanced filtering
+  Ctrl+R     Reset filters
+  Space      Toggle selection
+```
+
+#### Real-time Updates
+```bash
+# Auto-refresh every 30 seconds
+gphc tui --refresh 30s
+
+# Auto-refresh every 2 minutes
+gphc tui --refresh 2m
+
+# Watch mode - refresh on file changes
+gphc tui --watch
+```
+
+#### Rule Explanations
+When you select a check, view detailed explanations:
+
+```
+┌─ Rule Details: DOC-101 ────────────────────────────────────┐
+│ Name: README.md exists                                     │
+│ ID: DOC-101                                               │
+│ Category: Documentation & Project Structure               │
+│ Score: 5 points                                           │
+│                                                           │
+│ Description:                                              │
+│ Checks if the project has a README.md file in the root   │
+│ directory. This file is essential for project             │
+│ documentation and helps new contributors understand        │
+│ the project.                                              │
+│                                                           │
+│ Requirements:                                             │
+│ • README.md file must exist in repository root           │
+│ • File should not be empty                               │
+│ • Should contain project description                      │
+│                                                           │
+│ Benefits:                                                 │
+│ • Improves project discoverability                       │
+│ • Helps new contributors get started                     │
+│ • Provides essential project information                  │
+│                                                           │
+│ [Press Enter to go back]                                 │
+└───────────────────────────────────────────────────────────┘
+```
+
+### Advanced Features
+
+#### Multi-Repository View
+```bash
+# Compare multiple repositories
+gphc tui --multi-repo ~/projects/*
+
+# Scan and display all repositories
+gphc tui --scan-recursive ~/projects
+```
+
+#### Custom Themes
+```yaml
+# gphc.yml
+tui:
+  theme: "dark"  # dark, light, auto
+  colors:
+    score_excellent: "#00ff00"  # Green
+    score_good: "#ffff00"       # Yellow
+    score_poor: "#ff0000"      # Red
+    status_pass: "#00ff00"
+    status_fail: "#ff0000"
+    status_warn: "#ffaa00"
+  
+  layout:
+    show_trends: true
+    show_recommendations: true
+    auto_refresh: "30s"
+    fullscreen: false
+```
+
+#### Export from TUI
+- **Current View Export**: Export currently displayed data
+- **Filtered Export**: Export only filtered results
+- **Trend Export**: Export historical trend data
+- **Formats**: JSON, YAML, Markdown, HTML
+
+### Configuration
+
+Configure TUI behavior in your `gphc.yml`:
+
+```yaml
+# TUI settings
+tui:
+  enabled: true
+  theme: "dark"
+  auto_refresh: "30s"
+  fullscreen: false
+  
+  # Display options
+  show_trends: true
+  show_recommendations: true
+  show_details: true
+  compact_mode: false
+  
+  # Color scheme
+  colors:
+    score_excellent: "#00ff00"
+    score_good: "#ffff00"
+    score_poor: "#ff0000"
+    status_pass: "#00ff00"
+    status_fail: "#ff0000"
+    status_warn: "#ffaa00"
+    background: "#000000"
+    foreground: "#ffffff"
+  
+  # Layout preferences
+  layout:
+    main_panel_height: 60
+    sidebar_width: 30
+    show_help: true
+    show_shortcuts: true
+```
+
+### Benefits
+
+- **Enhanced User Experience**: Beautiful, intuitive interface for health monitoring
+- **Real-time Monitoring**: Live updates and auto-refresh capabilities
+- **Interactive Exploration**: Deep dive into specific checks and trends
+- **Efficient Navigation**: Quick access to different views and features
+- **Visual Feedback**: Color-coded scores and status indicators
+- **Team Collaboration**: Easy sharing of health status with team members
+- **Accessibility**: Keyboard-driven interface suitable for all users
+
+### Use Cases
+
+- **Daily Health Monitoring**: Quick daily check of repository health
+- **Team Meetings**: Visual presentation of project health status
+- **Code Review Preparation**: Understanding project health before reviews
+- **Onboarding**: New team members exploring project structure
+- **CI/CD Integration**: Visual monitoring of automated health checks
+- **Client Presentations**: Professional health status displays
+
+### Troubleshooting
+
+**Common Issues:**
+
+```bash
+# Terminal not supported
+Error: Terminal does not support TUI mode
+Solution: Use a modern terminal emulator (iTerm2, Windows Terminal, etc.)
+
+# Color display issues
+Warning: Terminal colors not properly configured
+Solution: Set TERM environment variable or use --no-color flag
+
+# Performance issues
+Warning: TUI performance degraded with large repositories
+Solution: Use --compact-mode or reduce --refresh interval
+```
+
+**Performance Optimization:**
+```bash
+# Use compact mode for better performance
+gphc tui --compact-mode
+
+# Reduce refresh frequency
+gphc tui --refresh 2m
+
+# Disable auto-refresh for static analysis
+gphc tui --no-refresh
+```
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -2100,9 +2401,24 @@ To prevent misleading commits and maintain transparency in history.
 
 ### Phase 3: Team, Trends & Automation
 - [x] Multi-repository analysis
-- [ ] Historical trend analysis
-- [ ] Team collaboration metrics
-- [ ] Integration with popular Git hosting platforms
+- [x] Historical trend analysis
+- [x] Team collaboration metrics
+- [x] Integration with popular Git hosting platforms
+- [x] Interactive Terminal UI (TUI)
+
+#### Interactive Terminal UI (TUI)
+
+**What it does:**
+Creates a graphical interface in the terminal (like htop):
+
+```bash
+gphc tui
+```
+
+Colorful and interactive score display with ability to filter, view rule explanations, and browse score trends.
+
+**Why it's important:**
+Much better user experience for developers and technical teams.
 
 #### Multi-Repository Scan
 
