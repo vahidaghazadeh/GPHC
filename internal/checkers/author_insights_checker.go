@@ -11,9 +11,9 @@ import (
 
 // AuthorStats represents statistics for a commit author
 type AuthorStats struct {
-	Name      string
-	Email     string
-	Commits   int
+	Name       string
+	Email      string
+	Commits    int
 	Percentage float64
 }
 
@@ -57,10 +57,10 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 
 	// Analyze commit authors
 	authorStats := c.analyzeAuthors(data.Commits)
-	
+
 	// Calculate total commits
 	totalCommits := len(data.Commits)
-	
+
 	// Sort authors by commit count (descending)
 	sort.Slice(authorStats, func(i, j int) bool {
 		return authorStats[i].Commits > authorStats[j].Commits
@@ -78,7 +78,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 
 	for i, author := range topContributors {
 		rank := i + 1
-		result.Details = append(result.Details, fmt.Sprintf("  %d. %s (%d commits, %.1f%%)", 
+		result.Details = append(result.Details, fmt.Sprintf("  %d. %s (%d commits, %.1f%%)",
 			rank, author.Name, author.Commits, author.Percentage))
 	}
 
@@ -86,7 +86,7 @@ func (c *CommitAuthorInsightsChecker) Check(data *types.RepositoryData) *types.C
 	score := 100
 	if len(authorStats) > 0 {
 		topAuthor := authorStats[0]
-		
+
 		// Single author dominance warning (>70%)
 		if topAuthor.Percentage > 70 {
 			result.Status = types.StatusWarning
@@ -169,7 +169,7 @@ func (c *CommitAuthorInsightsChecker) analyzeAuthors(commits []types.CommitInfo)
 	// Count commits per author
 	for _, commit := range commits {
 		authorKey := fmt.Sprintf("%s <%s>", commit.Author, commit.AuthorEmail)
-		
+
 		if stats, exists := authorMap[authorKey]; exists {
 			stats.Commits++
 		} else {

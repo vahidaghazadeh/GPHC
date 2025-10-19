@@ -129,17 +129,17 @@ func (c *GitLabIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 	} else if protection != nil {
 		score += 25
 		result.Details = append(result.Details, "Branch protection is enabled")
-		
+
 		if len(protection.PushAccessLevels) > 0 {
 			score += 10
 			result.Details = append(result.Details, "Push access is restricted")
 		}
-		
+
 		if len(protection.MergeAccessLevels) > 0 {
 			score += 10
 			result.Details = append(result.Details, "Merge access is restricted")
 		}
-		
+
 		if protection.CodeOwnerApprovalRequired {
 			score += 10
 			result.Details = append(result.Details, "Code owner approval required")
@@ -156,14 +156,14 @@ func (c *GitLabIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 	} else if len(pipelines) > 0 {
 		score += 20
 		result.Details = append(result.Details, fmt.Sprintf("Found %d pipeline(s)", len(pipelines)))
-		
+
 		successfulPipelines := 0
 		for _, pipeline := range pipelines {
 			if pipeline.Status == "success" {
 				successfulPipelines++
 			}
 		}
-		
+
 		if successfulPipelines > 0 {
 			score += 10
 			result.Details = append(result.Details, fmt.Sprintf("%d successful pipeline(s)", successfulPipelines))
@@ -179,7 +179,7 @@ func (c *GitLabIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 		result.Details = append(result.Details, fmt.Sprintf("Could not check contributors: %v", err))
 	} else {
 		result.Details = append(result.Details, fmt.Sprintf("Found %d contributor(s)", len(contributors)))
-		
+
 		if len(contributors) > 1 {
 			score += 10
 			result.Details = append(result.Details, "Multiple contributors")
@@ -195,7 +195,7 @@ func (c *GitLabIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 		result.Details = append(result.Details, fmt.Sprintf("Could not check merge requests: %v", err))
 	} else {
 		result.Details = append(result.Details, fmt.Sprintf("Found %d open merge request(s)", len(mergeRequests)))
-		
+
 		if len(mergeRequests) > 0 {
 			score += 5
 			result.Details = append(result.Details, "Active development with open MRs")
@@ -226,12 +226,12 @@ func (c *GitLabIntegrationChecker) Check(data *types.RepositoryData) *types.Chec
 func (c *GitLabIntegrationChecker) getRemoteURL(repoPath string) (string, error) {
 	cmd := exec.Command("git", "remote", "get-url", "origin")
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(string(output)), nil
 }
 
@@ -241,6 +241,6 @@ func (c *GitLabIntegrationChecker) isGitLabRepository(repoPath string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	return strings.Contains(remoteURL, "gitlab.com") || strings.Contains(remoteURL, "gitlab")
 }

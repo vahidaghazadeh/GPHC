@@ -18,39 +18,39 @@ type GitLabClient struct {
 
 // GitLabProject represents a GitLab project
 type GitLabProject struct {
-	ID                int    `json:"id"`
-	Name              string `json:"name"`
-	Path              string `json:"path"`
-	PathWithNamespace string `json:"path_with_namespace"`
-	Description       string `json:"description"`
-	DefaultBranch     string `json:"default_branch"`
-	Visibility        string `json:"visibility"`
-	IssuesEnabled     bool   `json:"issues_enabled"`
-	MergeRequestsEnabled bool `json:"merge_requests_enabled"`
-	WikiEnabled       bool   `json:"wiki_enabled"`
-	SnippetsEnabled   bool   `json:"snippets_enabled"`
-	Archived          bool   `json:"archived"`
-	CreatedAt         string `json:"created_at"`
-	LastActivityAt    string `json:"last_activity_at"`
-	StarCount         int    `json:"star_count"`
-	ForksCount        int    `json:"forks_count"`
-	OpenIssuesCount   int    `json:"open_issues_count"`
+	ID                   int    `json:"id"`
+	Name                 string `json:"name"`
+	Path                 string `json:"path"`
+	PathWithNamespace    string `json:"path_with_namespace"`
+	Description          string `json:"description"`
+	DefaultBranch        string `json:"default_branch"`
+	Visibility           string `json:"visibility"`
+	IssuesEnabled        bool   `json:"issues_enabled"`
+	MergeRequestsEnabled bool   `json:"merge_requests_enabled"`
+	WikiEnabled          bool   `json:"wiki_enabled"`
+	SnippetsEnabled      bool   `json:"snippets_enabled"`
+	Archived             bool   `json:"archived"`
+	CreatedAt            string `json:"created_at"`
+	LastActivityAt       string `json:"last_activity_at"`
+	StarCount            int    `json:"star_count"`
+	ForksCount           int    `json:"forks_count"`
+	OpenIssuesCount      int    `json:"open_issues_count"`
 }
 
 // GitLabBranchProtection represents branch protection rules
 type GitLabBranchProtection struct {
-	Name               string `json:"name"`
-	PushAccessLevels   []GitLabAccessLevel `json:"push_access_levels"`
-	MergeAccessLevels []GitLabAccessLevel `json:"merge_access_levels"`
-	UnprotectAccessLevels []GitLabAccessLevel `json:"unprotect_access_levels"`
-	CodeOwnerApprovalRequired bool `json:"code_owner_approval_required"`
+	Name                      string              `json:"name"`
+	PushAccessLevels          []GitLabAccessLevel `json:"push_access_levels"`
+	MergeAccessLevels         []GitLabAccessLevel `json:"merge_access_levels"`
+	UnprotectAccessLevels     []GitLabAccessLevel `json:"unprotect_access_levels"`
+	CodeOwnerApprovalRequired bool                `json:"code_owner_approval_required"`
 }
 
 type GitLabAccessLevel struct {
-	AccessLevel       int    `json:"access_level"`
+	AccessLevel            int    `json:"access_level"`
 	AccessLevelDescription string `json:"access_level_description"`
-	UserID            int    `json:"user_id,omitempty"`
-	GroupID           int    `json:"group_id,omitempty"`
+	UserID                 int    `json:"user_id,omitempty"`
+	GroupID                int    `json:"group_id,omitempty"`
 }
 
 // GitLabPipeline represents a GitLab CI/CD pipeline
@@ -66,25 +66,25 @@ type GitLabPipeline struct {
 
 // GitLabContributor represents a project contributor
 type GitLabContributor struct {
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Commits     int    `json:"commits"`
-	Additions   int    `json:"additions"`
-	Deletions   int    `json:"deletions"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Commits   int    `json:"commits"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
 }
 
 // GitLabMergeRequest represents a merge request
 type GitLabMergeRequest struct {
-	ID           int    `json:"id"`
-	Title        string `json:"title"`
-	State        string `json:"state"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
-	Author       GitLabUser `json:"author"`
+	ID           int         `json:"id"`
+	Title        string      `json:"title"`
+	State        string      `json:"state"`
+	CreatedAt    string      `json:"created_at"`
+	UpdatedAt    string      `json:"updated_at"`
+	Author       GitLabUser  `json:"author"`
 	Assignee     *GitLabUser `json:"assignee"`
-	SourceBranch string `json:"source_branch"`
-	TargetBranch string `json:"target_branch"`
-	WebURL       string `json:"web_url"`
+	SourceBranch string      `json:"source_branch"`
+	TargetBranch string      `json:"target_branch"`
+	WebURL       string      `json:"web_url"`
 }
 
 type GitLabUser struct {

@@ -41,7 +41,7 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 
 	// Analyze codebase structure
 	smells := c.analyzeCodebaseStructure(data.Path)
-	
+
 	score := 100
 	totalChecks := 0
 	warnings := 0
@@ -162,39 +162,39 @@ func (c *CodebaseSmellChecker) Check(data *types.RepositoryData) *types.CheckRes
 
 // CodebaseSmells represents detected codebase structure issues
 type CodebaseSmells struct {
-	MissingTestDir    bool
-	OversizedDirs     int
-	CodeToTestRatio   float64
-	EmptyDirs         int
-	MaxDepth          int
-	RootFiles         int
-	HasSrcDir         bool
-	HasLibDir         bool
-	HasAppDir         bool
-	DocFiles          int
-	TotalFiles        int
-	TotalDirs         int
-	TestFiles         int
+	MissingTestDir  bool
+	OversizedDirs   int
+	CodeToTestRatio float64
+	EmptyDirs       int
+	MaxDepth        int
+	RootFiles       int
+	HasSrcDir       bool
+	HasLibDir       bool
+	HasAppDir       bool
+	DocFiles        int
+	TotalFiles      int
+	TotalDirs       int
+	TestFiles       int
 }
 
 // analyzeCodebaseStructure analyzes the codebase structure
 func (c *CodebaseSmellChecker) analyzeCodebaseStructure(repoPath string) *CodebaseSmells {
 	smells := &CodebaseSmells{}
-	
+
 	// Track directories and files
 	var dirs []string
 	var files []string
 	var testFiles []string
 	var docFiles []string
-	
+
 	maxDepth := 0
 	rootFiles := 0
-	
+
 	err := filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip files we can't access
 		}
-		
+
 		// Skip .git directory
 		if strings.Contains(path, ".git") {
 			if info.IsDir() {
@@ -202,27 +202,27 @@ func (c *CodebaseSmellChecker) analyzeCodebaseStructure(repoPath string) *Codeba
 			}
 			return nil
 		}
-		
+
 		// Calculate depth
 		relPath, _ := filepath.Rel(repoPath, path)
 		depth := strings.Count(relPath, string(filepath.Separator))
 		if depth > maxDepth {
 			maxDepth = depth
 		}
-		
+
 		// Count root files
 		if depth == 0 && !info.IsDir() {
 			rootFiles++
 		}
-		
+
 		if info.IsDir() {
 			dirs = append(dirs, path)
-			
+
 			// Check for empty directories
 			if isEmptyDir(path) {
 				smells.EmptyDirs++
 			}
-			
+
 			// Check for standard directories
 			dirName := filepath.Base(path)
 			switch dirName {
@@ -235,46 +235,46 @@ func (c *CodebaseSmellChecker) analyzeCodebaseStructure(repoPath string) *Codeba
 			case "test", "tests":
 				smells.MissingTestDir = false
 			}
-			
+
 			// Check for oversized directories
 			if fileCount := countFilesInDir(path); fileCount > 1000 {
 				smells.OversizedDirs++
 			}
 		} else {
 			files = append(files, path)
-			
+
 			// Check file types
 			fileName := strings.ToLower(filepath.Base(path))
 			ext := strings.ToLower(filepath.Ext(path))
-			
+
 			// Test files
-			if strings.Contains(fileName, "test") || 
-			   strings.Contains(fileName, "_test") ||
-			   ext == ".test" ||
-			   ext == ".spec" {
+			if strings.Contains(fileName, "test") ||
+				strings.Contains(fileName, "_test") ||
+				ext == ".test" ||
+				ext == ".spec" {
 				testFiles = append(testFiles, path)
 			}
-			
+
 			// Documentation files
-			if ext == ".md" || ext == ".rst" || ext == ".txt" || 
-			   fileName == "readme" || fileName == "changelog" || 
-			   fileName == "license" || fileName == "copying" {
+			if ext == ".md" || ext == ".rst" || ext == ".txt" ||
+				fileName == "readme" || fileName == "changelog" ||
+				fileName == "license" || fileName == "copying" {
 				docFiles = append(docFiles, path)
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	if err != nil {
 		// If we can't walk the directory, return basic info
 		smells.MissingTestDir = true
 		return smells
 	}
-	
+
 	// Set missing test dir flag
 	smells.MissingTestDir = len(testFiles) == 0
-	
+
 	// Calculate ratios
 	smells.TotalFiles = len(files)
 	smells.TotalDirs = len(dirs)
@@ -282,11 +282,11 @@ func (c *CodebaseSmellChecker) analyzeCodebaseStructure(repoPath string) *Codeba
 	smells.DocFiles = len(docFiles)
 	smells.MaxDepth = maxDepth
 	smells.RootFiles = rootFiles
-	
+
 	if len(files) > 0 {
 		smells.CodeToTestRatio = float64(len(testFiles)) / float64(len(files))
 	}
-	
+
 	return smells
 }
 
@@ -305,7 +305,7 @@ func countFilesInDir(path string) int {
 	if err != nil {
 		return 0
 	}
-	
+
 	count := 0
 	for _, entry := range entries {
 		if !entry.IsDir() {
