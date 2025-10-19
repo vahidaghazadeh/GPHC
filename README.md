@@ -49,6 +49,13 @@
 - **Flexible Scoring**: Assign custom scores to custom rules
 - **Project-Specific Policies**: Enforce organization-specific requirements
 
+### Slack / Webhook Notifications
+- **Team Notifications**: Send health reports directly to Slack or Discord channels
+- **Real-time Updates**: Get immediate notifications about repository health status
+- **Customizable Messages**: Format notifications with project-specific information
+- **Webhook Integration**: Support for any webhook-compatible service
+- **Team Collaboration**: Keep entire team informed about code quality trends
+
 ## Installation
 
 ### Prerequisites
@@ -1305,6 +1312,289 @@ Custom Rules Summary:
 5. **Test Rules**: Validate rules before deploying to production
 6. **Regular Review**: Update rules as project requirements evolve
 
+## Slack / Webhook Notifications
+
+GPHC can automatically send health reports to your team's communication channels, keeping everyone informed about repository health status in real-time.
+
+### Basic Setup
+
+Configure webhook notifications in your `gphc.yml`:
+
+```yaml
+# Notification settings
+notifications:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    channel: "#dev-team"
+    enabled: true
+    
+  discord:
+    webhook_url: "https://discord.com/api/webhooks/YOUR/DISCORD/WEBHOOK"
+    enabled: false
+    
+  custom_webhook:
+    url: "https://your-webhook-endpoint.com/notify"
+    enabled: false
+```
+
+### Slack Integration
+
+**Basic Slack Notification:**
+```bash
+# Run health check and send to Slack
+gphc check --notify slack
+
+# Send specific report to Slack
+gphc check --format json --notify slack --webhook-url "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+```
+
+**Example Slack Message:**
+```
+GPHC Health Report: project-name
+Score: 83/100 (B+)
+Status: PASS
+
+Issues Found:
+• Missing CONTRIBUTING.md
+• 2 stale branches found
+• Low test coverage (65%)
+
+Recommendations:
+• Add contribution guidelines
+• Clean up old branches
+• Increase test coverage
+
+Full Report: https://github.com/owner/repo/actions/runs/123456
+```
+
+### Discord Integration
+
+**Discord Webhook Setup:**
+```bash
+# Send to Discord
+gphc check --notify discord --webhook-url "https://discord.com/api/webhooks/YOUR/DISCORD/WEBHOOK"
+```
+
+**Example Discord Message:**
+```
+**GPHC Health Report: project-name**
+
+**Score:** 83/100 (B+)
+**Status:** PASS
+
+**Issues Found:**
+• Missing CONTRIBUTING.md
+• 2 stale branches found
+• Low test coverage (65%)
+
+**Recommendations:**
+• Add contribution guidelines
+• Clean up old branches
+• Increase test coverage
+
+[View Full Report](https://github.com/owner/repo/actions/runs/123456)
+```
+
+### Custom Webhook Integration
+
+**Generic Webhook Support:**
+```bash
+# Send to any webhook endpoint
+gphc check --notify webhook --webhook-url "https://your-service.com/webhook"
+```
+
+**Webhook Payload Format:**
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "repository": "owner/repository",
+  "score": 83,
+  "grade": "B+",
+  "status": "PASS",
+  "checks_passed": 12,
+  "checks_failed": 2,
+  "checks_warning": 3,
+  "issues": [
+    {
+      "id": "DOC-101",
+      "name": "Missing CONTRIBUTING.md",
+      "status": "FAIL",
+      "score": 0
+    }
+  ],
+  "recommendations": [
+    "Add contribution guidelines",
+    "Clean up old branches",
+    "Increase test coverage"
+  ],
+  "trend": {
+    "previous_score": 78,
+    "change": "+5",
+    "direction": "improving"
+  }
+}
+```
+
+### Advanced Notification Features
+
+**Conditional Notifications:**
+```yaml
+notifications:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    conditions:
+      - score_below: 80
+      - critical_failures: true
+      - score_dropped: 10
+    enabled: true
+```
+
+**Custom Message Templates:**
+```yaml
+notifications:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    template: |
+      🚀 *GPHC Report: {{.Repository}}*
+      Score: {{.Score}}/100 ({{.Grade}})
+      Status: {{.Status}}
+      
+      {{if .Issues}}
+      Issues Found:
+      {{range .Issues}}
+      • {{.Name}}
+      {{end}}
+      {{end}}
+      
+      {{if .Recommendations}}
+      Recommendations:
+      {{range .Recommendations}}
+      • {{.}}
+      {{end}}
+      {{end}}
+```
+
+### CI/CD Integration
+
+**GitHub Actions with Slack Notifications:**
+```yaml
+name: Health Check with Notifications
+on: [push, pull_request]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install GPHC
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+        
+      - name: Run Health Check with Slack Notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          gphc check --min-score 85 --notify slack --webhook-url $SLACK_WEBHOOK_URL
+```
+
+**GitLab CI with Discord Notifications:**
+```yaml
+# .gitlab-ci.yml
+health-check:
+  stage: health-check
+  image: golang:1.23
+  before_script:
+    - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+  script:
+    - gphc check --min-score 85 --notify discord --webhook-url $DISCORD_WEBHOOK_URL
+  only:
+    - merge_requests
+    - main
+```
+
+### Notification Triggers
+
+**Automatic Triggers:**
+```bash
+# Notify on health score below threshold
+gphc check --notify slack --min-score 80
+
+# Notify on critical failures
+gphc check --notify slack --fail-on-critical
+
+# Notify on score decline
+gphc check --notify slack --min-score 85 --fail-on-decline
+```
+
+**Manual Triggers:**
+```bash
+# Send current health status
+gphc notify slack
+
+# Send trend analysis
+gphc trend --days 7 --notify slack
+
+# Send multi-repository scan results
+gphc scan ~/projects --notify slack
+```
+
+### Team Benefits
+
+- **Real-time Awareness**: Team members get immediate updates about repository health
+- **Proactive Communication**: Issues are communicated before they become problems
+- **Team Accountability**: Everyone stays informed about code quality standards
+- **Progress Tracking**: Celebrate improvements and track quality trends together
+- **Centralized Updates**: All health information in one communication channel
+- **Integration**: Seamlessly fits into existing team workflows
+
+### Configuration Examples
+
+**Development Team Setup:**
+```yaml
+notifications:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/TEAM/DEV/WEBHOOK"
+    channel: "#development"
+    conditions:
+      - score_below: 75
+      - critical_failures: true
+    enabled: true
+```
+
+**DevOps Team Setup:**
+```yaml
+notifications:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/TEAM/DEVOPS/WEBHOOK"
+    channel: "#devops-alerts"
+    conditions:
+      - score_below: 90
+      - score_dropped: 5
+    enabled: true
+    
+  discord:
+    webhook_url: "https://discord.com/api/webhooks/TEAM/DEVOPS/WEBHOOK"
+    channel: "devops-alerts"
+    conditions:
+      - critical_failures: true
+    enabled: true
+```
+
+**Enterprise Setup:**
+```yaml
+notifications:
+  custom_webhook:
+    url: "https://enterprise-monitoring.com/gphc-webhook"
+    headers:
+      Authorization: "Bearer $GPHC_TOKEN"
+      Content-Type: "application/json"
+    conditions:
+      - score_below: 85
+      - critical_failures: true
+      - score_dropped: 10
+    enabled: true
+```
+
 ## Configuration
 
 Create a `gphc.yml` file in your repository root to customize settings:
@@ -1519,6 +1809,20 @@ Average Health: 85.0
 
 **Why it's important:**
 Very useful for companies or organizations that have multiple repositories.
+
+#### Slack / Webhook Notifications
+
+**What it does:**
+After execution, the health report is sent to Slack or Discord:
+
+```
+GPHC Report: 83/100
+Missing CONTRIBUTING.md
+2 stale branches found
+```
+
+**Why it's important:**
+Teams can immediately be informed about the health status of repositories in their work channel.
 
 #### Historical Health Tracking
 
