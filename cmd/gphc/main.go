@@ -1120,7 +1120,7 @@ func runTUI(cmd *cobra.Command, args []string) {
 
 	// Create TUI model
 	model := NewTUIModel(repoPath)
-	
+
 	// Run the TUI
 	program := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := program.Run(); err != nil {
@@ -1197,7 +1197,7 @@ func (m *TUIModel) View() string {
 		content = m.renderTrends()
 	}
 
-	return fmt.Sprintf("GPHC TUI - %s\n\n%s\n\nPress 'q' to quit, 'tab' to switch tabs, 'r' to refresh", 
+	return fmt.Sprintf("GPHC TUI - %s\n\n%s\n\nPress 'q' to quit, 'tab' to switch tabs, 'r' to refresh",
 		filepath.Base(m.repoPath), content)
 }
 
