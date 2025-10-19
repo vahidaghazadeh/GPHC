@@ -71,6 +71,14 @@
 - **Trend Navigation**: Browse through historical score trends interactively
 - **Enhanced Developer Experience**: Improved user experience for developers and technical teams
 
+### Web Dashboard
+- **Local Web Server**: Launch local HTML dashboard with `gphc serve`
+- **Multi-Project Monitoring**: View health scores for multiple repositories simultaneously
+- **Trend Analysis**: Historical health tracking and trend visualization
+- **Export Capabilities**: Generate comprehensive reports in various formats
+- **Team Collaboration**: Shared dashboard accessible to entire team
+- **Real-time Updates**: Live health monitoring with automatic refresh
+
 ## Installation
 
 ### Prerequisites
@@ -127,6 +135,15 @@ gphc check /path/to/repository
 
 # Run pre-commit checks on staged files
 gphc pre-commit
+
+# Launch interactive terminal UI
+gphc tui
+
+# Start web dashboard server
+gphc serve
+
+# Scan multiple repositories
+gphc scan ~/projects --recursive
 
 # Update GPHC to latest version
 gphc update
@@ -2405,6 +2422,7 @@ To prevent misleading commits and maintain transparency in history.
 - [x] Team collaboration metrics
 - [x] Integration with popular Git hosting platforms
 - [x] Interactive Terminal UI (TUI)
+- [x] Web Dashboard
 
 #### Interactive Terminal UI (TUI)
 
@@ -2419,6 +2437,25 @@ Colorful and interactive score display with ability to filter, view rule explana
 
 **Why it's important:**
 Much better user experience for developers and technical teams.
+
+#### Web Dashboard
+
+**What it does:**
+With the command:
+
+```bash
+gphc serve
+```
+
+Shows health results of projects on a local HTML dashboard (like localhost:8080).
+
+**Features:**
+- Browse multiple projects
+- View trends
+- Export reports
+
+**Why it's important:**
+Very useful for teams and internal monitoring.
 
 #### Multi-Repository Scan
 
