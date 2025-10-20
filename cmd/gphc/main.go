@@ -1502,17 +1502,10 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: linear-gradient(135deg, #20b2aa 0%, #008b8b 50%, #006666 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
             min-height: 100vh;
             color: #333;
             overflow-x: hidden;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         
         .container { 
@@ -1538,16 +1531,8 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             font-size: 2.5em; 
             margin-bottom: 10px;
             background: linear-gradient(45deg, #20b2aa, #008b8b, #006666);
-            background-size: 200% 200%;
-            animation: textGradientShift 8s ease infinite;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }
-        
-        @keyframes textGradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         
         .header p { 
@@ -1690,8 +1675,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         .btn { 
             background: linear-gradient(45deg, #20b2aa, #008b8b, #006666);
-            background-size: 200% 200%;
-            animation: buttonGradientShift 6s ease infinite;
             color: white; 
             border: none; 
             padding: 12px 24px; 
@@ -1705,13 +1688,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         .btn:hover { 
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(32, 178, 170, 0.4);
-            animation-duration: 2s;
-        }
-        
-        @keyframes buttonGradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         
         .btn-secondary {
