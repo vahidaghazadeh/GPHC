@@ -1113,8 +1113,8 @@ func findGitRepositories(rootPath string, recursive bool) ([]string, error) {
 			return err
 		}
 
-		// Skip hidden directories
-		if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
+		// Skip hidden directories except .git
+		if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." && info.Name() != ".git" {
 			return filepath.SkipDir
 		}
 
