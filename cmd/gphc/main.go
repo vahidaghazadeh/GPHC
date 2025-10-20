@@ -1501,7 +1501,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #20b2aa 0%, #008b8b 100%);
             min-height: 100vh;
             color: #333;
             overflow-x: hidden;
@@ -1529,7 +1529,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         .header h1 { 
             font-size: 2.5em; 
             margin-bottom: 10px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #20b2aa, #008b8b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -1575,7 +1575,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .card h2 i {
-            color: #667eea;
+            color: #20b2aa;
         }
         
         .score-container {
@@ -1613,7 +1613,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .stat-item {
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(32, 178, 170, 0.1);
             padding: 15px;
             border-radius: 10px;
             text-align: center;
@@ -1622,7 +1622,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         .stat-number {
             font-size: 1.8em;
             font-weight: bold;
-            color: #667eea;
+            color: #20b2aa;
         }
         
         .stat-label {
@@ -1642,7 +1642,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .feature-item {
-            background: rgba(102, 126, 234, 0.05);
+            background: rgba(32, 178, 170, 0.05);
             padding: 15px;
             border-radius: 10px;
             text-align: center;
@@ -1657,13 +1657,13 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .feature-item:hover {
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(32, 178, 170, 0.1);
             transform: translateY(-2px);
         }
         
         .feature-icon {
             font-size: 2em;
-            color: #667eea;
+            color: #20b2aa;
             margin-bottom: 10px;
         }
         
@@ -1673,7 +1673,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .btn { 
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #20b2aa, #008b8b);
             color: white; 
             border: none; 
             padding: 12px 24px; 
@@ -1686,7 +1686,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         .btn:hover { 
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(32, 178, 170, 0.4);
         }
         
         .btn-secondary {
