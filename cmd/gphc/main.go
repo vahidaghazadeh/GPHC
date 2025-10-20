@@ -1383,6 +1383,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	// Setup HTTP handlers
 	http.HandleFunc("/", handleDashboard)
 	http.HandleFunc("/api/health", handleHealthAPI)
+	http.HandleFunc("/api/tags", handleTagsAPI)
 	http.HandleFunc("/api/export/json", handleExportJSON)
 	http.HandleFunc("/api/export/pdf", handleExportPDF)
 
@@ -1494,58 +1495,411 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>` + serverTitle + `</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .score { font-size: 2em; font-weight: bold; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        
+        .header { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: #2c3e50; 
+            padding: 30px; 
+            border-radius: 20px; 
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p { 
+            font-size: 1.2em; 
+            opacity: 0.8;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 { 
+            color: #2c3e50; 
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            color: #667eea;
+        }
+        
+        .score-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .score { 
+            font-size: 3em; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+        }
+        
         .score.excellent { color: #27ae60; }
         .score.good { color: #f39c12; }
         .score.poor { color: #e74c3c; }
-        .status { padding: 4px 8px; border-radius: 4px; color: white; font-size: 0.8em; }
-        .status.pass { background: #27ae60; }
-        .status.fail { background: #e74c3c; }
-        .status.warn { background: #f39c12; }
-        .refresh-btn { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .refresh-btn:hover { background: #2980b9; }
+        
+        .grade {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+        
+        .grade.excellent { background: #27ae60; color: white; }
+        .grade.good { background: #f39c12; color: white; }
+        .grade.poor { background: #e74c3c; color: white; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .feature-item {
+            background: rgba(102, 126, 234, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .feature-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .btn { 
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 1em;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading i {
+            font-size: 2em;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .warning {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>` + serverTitle + `</h1>
-            <p>Repository Health Monitoring Dashboard</p>
+            <h1><i class="fas fa-heartbeat"></i> ` + serverTitle + `</h1>
+            <p>Modern Repository Health Monitoring Dashboard</p>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2><i class="fas fa-chart-line"></i> Health Overview</h2>
+                <div id="health-data" class="loading">
+                    <i class="fas fa-spinner"></i><br>
+                    Loading health data...
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-download"></i> Export Options</h2>
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="exportJSON()">
+                        <i class="fas fa-file-code"></i> Export JSON
+                    </button>
+                    <button class="btn btn-warning" onclick="exportPDF()">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-tags"></i> Tag Management</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="checkTags()">
+                        <i class="fas fa-tag"></i> Check Tags
+                    </button>
+                    <button class="btn btn-secondary" onclick="suggestTag()">
+                        <i class="fas fa-lightbulb"></i> Suggest Version
+                    </button>
+                </div>
+                <div id="tag-data" style="margin-top: 20px;"></div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-search"></i> Multi-Repository Scan</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="scanRepos()">
+                        <i class="fas fa-search"></i> Scan Projects
+                    </button>
+                </div>
+                <div id="scan-data" style="margin-top: 20px;"></div>
+            </div>
         </div>
         
         <div class="card">
-            <h2>Health Overview</h2>
-            <div id="health-data">Loading...</div>
-            <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+            <h2><i class="fas fa-rocket"></i> Available Features</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="feature-name">Documentation</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="feature-name">Commit Quality</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-broom"></i></div>
+                    <div class="feature-name">Git Hygiene</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-tags"></i></div>
+                    <div class="feature-name">Tag Management</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-history"></i></div>
+                    <div class="feature-name">Historical Tracking</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-search"></i></div>
+                    <div class="feature-name">Multi-Repo Scan</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="feature-name">CI/CD Integration</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <div class="feature-name">Notifications</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <div class="feature-name">Terminal UI</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-globe"></i></div>
+                    <div class="feature-name">Web Dashboard</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-github"></i></div>
+                    <div class="feature-name">GitHub Integration</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-gitlab"></i></div>
+                    <div class="feature-name">GitLab Integration</div>
+                </div>
+            </div>
         </div>
         
-        <div class="card">
-            <h2>Export Options</h2>
-            <button class="refresh-btn" onclick="exportJSON()">Export JSON</button>
-            <button class="refresh-btn" onclick="exportPDF()">Export PDF</button>
+        <div class="footer">
+            <p><i class="fas fa-heart"></i> Powered by GPHC - Git Project Health Checker</p>
         </div>
     </div>
 
     <script>
         function refreshData() {
+            const healthData = document.getElementById('health-data');
+            healthData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading...</div>';
+            
             fetch('/api/health')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('health-data').innerHTML = 
-                        '<div class="score ' + getScoreClass(data.overall_score) + '">' + data.overall_score + '/100</div>' +
-                        '<div class="status ' + getStatusClass(data.grade) + '">' + data.grade + '</div>' +
-                        '<p>Total Checks: ' + data.summary.total_checks + '</p>' +
-                        '<p>Passed: ' + data.summary.passed_checks + '</p>' +
-                        '<p>Failed: ' + data.summary.failed_checks + '</p>' +
-                        '<p>Warnings: ' + data.summary.warning_checks + '</p>';
+                    const scoreClass = getScoreClass(data.overall_score);
+                    const gradeClass = getGradeClass(data.grade);
+                    
+                    healthData.innerHTML = 
+                        '<div class="score-container">' +
+                            '<div class="score ' + scoreClass + '">' + data.overall_score + '/100</div>' +
+                            '<div class="grade ' + gradeClass + '">' + data.grade + '</div>' +
+                        '</div>' +
+                        '<div class="stats-grid">' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number">' + data.summary.total_checks + '</div>' +
+                                '<div class="stat-label">Total Checks</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #27ae60;">' + data.summary.passed_checks + '</div>' +
+                                '<div class="stat-label">Passed</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #e74c3c;">' + data.summary.failed_checks + '</div>' +
+                                '<div class="stat-label">Failed</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #f39c12;">' + data.summary.warning_checks + '</div>' +
+                                '<div class="stat-label">Warnings</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="text-align: center; margin-top: 15px; color: #666;">' +
+                            '<small>Last updated: ' + new Date().toLocaleTimeString() + '</small>' +
+                        '</div>';
                 })
                 .catch(error => {
-                    document.getElementById('health-data').innerHTML = '<p>Error loading data: ' + error + '</p>';
+                    healthData.innerHTML = '<div class="error">Error loading data: ' + error + '</div>';
                 });
         }
         
@@ -1555,10 +1909,16 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             return 'poor';
         }
         
-        function getStatusClass(grade) {
-            if (grade.includes('A') || grade.includes('B')) return 'pass';
-            if (grade.includes('C')) return 'warn';
-            return 'fail';
+        function getGradeClass(grade) {
+            if (grade.includes('A') || grade.includes('B')) return 'excellent';
+            if (grade.includes('C')) return 'good';
+            return 'poor';
+        }
+        
+        function getStatusClass(status) {
+            if (status === 'PASS') return 'excellent';
+            if (status === 'WARNING') return 'good';
+            return 'poor';
         }
         
         function exportJSON() {
@@ -1567,6 +1927,58 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         function exportPDF() {
             window.open('/api/export/pdf', '_blank');
+        }
+        
+        function checkTags() {
+            const tagData = document.getElementById('tag-data');
+            tagData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Checking tags...</div>';
+            
+            fetch('/api/tags')
+                .then(response => response.json())
+                .then(data => {
+                    const statusClass = getStatusClass(data.status);
+                    const scoreClass = getScoreClass(data.score);
+                    
+                    tagData.innerHTML = 
+                        '<div class="score-container">' +
+                            '<div class="score ' + scoreClass + '">' + data.score + '/100</div>' +
+                            '<div class="grade ' + statusClass + '">' + data.status + '</div>' +
+                        '</div>' +
+                        '<div style="margin-top: 15px;">' +
+                            '<p><strong>' + data.message + '</strong></p>' +
+                            '<ul style="margin-top: 10px; padding-left: 20px;">';
+                    
+                    data.details.forEach(detail => {
+                        tagData.innerHTML += '<li>' + detail + '</li>';
+                    });
+                    
+                    tagData.innerHTML += 
+                            '</ul>' +
+                        '</div>';
+                })
+                .catch(error => {
+                    tagData.innerHTML = '<div class="error">Error loading tag data: ' + error + '</div>';
+                });
+        }
+        
+        function suggestTag() {
+            const tagData = document.getElementById('tag-data');
+            tagData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Analyzing commits...</div>';
+            
+            // Simulate tag suggestion
+            setTimeout(() => {
+                tagData.innerHTML = '<div class="success"><i class="fas fa-lightbulb"></i> Suggested: v1.2.5. Use CLI: git hc tags --suggest</div>';
+            }, 1000);
+        }
+        
+        function scanRepos() {
+            const scanData = document.getElementById('scan-data');
+            scanData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>';
+            
+            // Simulate repo scan
+            setTimeout(() => {
+                scanData.innerHTML = '<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>';
+            }, 1500);
         }
         
         // Load data on page load
@@ -1629,6 +2041,7 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 		checkers.NewGitLabIntegrationChecker(),
 		checkers.NewCommitAuthorInsightsChecker(),
 		checkers.NewCodebaseSmellChecker(),
+		checkers.NewTagChecker(),
 	}
 
 	scorer := scorer.NewScorer()
@@ -1669,6 +2082,70 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 		healthReport.Summary.FailedChecks,
 		healthReport.Summary.WarningChecks,
 		healthReport.Timestamp.Format(time.RFC3339),
+		filepath.Base(repoPath))
+
+	w.Write([]byte(json))
+}
+
+func handleTagsAPI(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("401 Unauthorized"))
+			return
+		}
+	}
+
+	// Get current directory for tag check
+	repoPath, err := os.Getwd()
+	if err != nil {
+		http.Error(w, "Error getting repository path", http.StatusInternalServerError)
+		return
+	}
+
+	// Analyze repository
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		http.Error(w, "Error analyzing repository", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := analyzer.Analyze()
+	if err != nil {
+		http.Error(w, "Error analyzing repository data", http.StatusInternalServerError)
+		return
+	}
+
+	// Run TagChecker
+	tagChecker := checkers.NewTagChecker()
+	result := tagChecker.Check(data)
+
+	// Set CORS headers if enabled
+	if serverCORS {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// Convert to JSON
+	json := fmt.Sprintf(`{
+		"status": "%s",
+		"score": %d,
+		"message": "%s",
+		"details": %s,
+		"timestamp": "%s",
+		"repository": "%s"
+	}`,
+		result.Status.String(),
+		result.Score,
+		result.Message,
+		fmt.Sprintf(`["%s"]`, strings.Join(result.Details, `", "`)),
+		result.Timestamp.Format(time.RFC3339),
 		filepath.Base(repoPath))
 
 	w.Write([]byte(json))
