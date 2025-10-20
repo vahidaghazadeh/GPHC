@@ -112,53 +112,14 @@ Provides a web interface accessible via browser with:
 	Run:  runServe,
 }
 
+// tags command: manage and validate git tags/releases
 var tagsCmd = &cobra.Command{
-    Use:   "tags [path]",
-    Short: "Analyze git tags and release health",
-    Long:  "Validate semantic version tags, freshness, unreleased commits, and annotated tag policies.",
-    Args:  cobra.MaximumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
-        var repoPath string
-        if len(args) > 0 {
-            repoPath = args[0]
-        } else {
-            var err error
-            repoPath, err = os.Getwd()
-            if err != nil {
-                fmt.Printf("Error getting current directory: %v\n", err)
-                os.Exit(1)
-            }
-        }
-
-        if !isGitRepository(repoPath) {
-            fmt.Printf("Error: %s is not a Git repository\n", repoPath)
-            os.Exit(1)
-        }
-
-        analyzer, err := git.NewRepositoryAnalyzer(repoPath)
-        if err != nil {
-            fmt.Printf("Error analyzing repository: %v\n", err)
-            os.Exit(1)
-        }
-
-        data, err := analyzer.Analyze()
-        if err != nil {
-            fmt.Printf("Error analyzing repository data: %v\n", err)
-            os.Exit(1)
-        }
-
-        // Run only TagChecker for this command
-        tagChecker := checkers.NewTagChecker()
-        result := tagChecker.Check(data)
-
-        // Simple terminal output
-        fmt.Println("Tag & Release Health")
-        fmt.Println("====================")
-        fmt.Printf("%s: %d/100\n", result.Status.String(), result.Score)
-        for _, d := range result.Details {
-            fmt.Printf("- %s\n", d)
-        }
-    },
+	Use:   "tags [path]",
+	Short: "Analyze and manage Git tags and releases",
+	Long: `Validate semantic tags, check freshness and unreleased commits,
+suggest next semantic version, and optionally generate a changelog.`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runTags,
 }
 
 func init() {
@@ -197,6 +158,11 @@ func init() {
 	serveCmd.Flags().StringVarP(&serverPassword, "password", "w", "admin", "Password for basic authentication")
 	serveCmd.Flags().BoolVarP(&serverCORS, "cors", "c", true, "Enable CORS headers")
 	serveCmd.Flags().StringVarP(&serverTitle, "title", "t", "GPHC Dashboard", "Dashboard title")
+
+	// Add tags command flags
+	tagsCmd.Flags().BoolVar(&tagsSuggest, "suggest", false, "Suggest next semantic version")
+	tagsCmd.Flags().StringVar(&tagsChangelogOut, "changelog", "", "Generate changelog to file (e.g. CHANGELOG.md)")
+	tagsCmd.Flags().BoolVar(&tagsEnforce, "enforce-tags", false, "Fail if tag policies are violated")
 }
 
 var (
@@ -216,6 +182,11 @@ var (
 	serverPassword  string
 	serverCORS      bool
 	serverTitle     string
+
+	// tags command flags
+	tagsSuggest      bool
+	tagsChangelogOut string
+	tagsEnforce      bool
 )
 
 var checkCmd = &cobra.Command{
@@ -376,6 +347,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewStashChecker(),
 		checkers.NewGitHubIntegrationChecker(),
 		checkers.NewGitLabIntegrationChecker(),
+		checkers.NewTagChecker(),
 	}
 
 	// Run all checkers
@@ -1424,6 +1396,82 @@ func runServe(cmd *cobra.Command, args []string) {
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+func runTags(cmd *cobra.Command, args []string) {
+	var path string
+	if len(args) > 0 {
+		path = args[0]
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	if !isGitRepository(path) {
+		fmt.Printf("Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	// Initialize analyzer (not strictly needed for tags, but for consistency)
+	analyzer, err := git.NewRepositoryAnalyzer(path)
+	if err != nil {
+		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Run TagChecker alone for this command
+	tc := checkers.NewTagChecker()
+	res := tc.Check(data)
+
+	// Print concise report
+	fmt.Println("Tag & Release Health")
+	fmt.Println("====================")
+	fmt.Println()
+	fmt.Printf("Status: %s\n", res.Status.String())
+	fmt.Printf("Score: %d/%d\n", res.Score, 100)
+	fmt.Printf("Message: %s\n", res.Message)
+	for _, d := range res.Details {
+		fmt.Printf("- %s\n", d)
+	}
+
+	// Suggest next tag
+	if tagsSuggest {
+		next, err := checkers.SuggestNextTag()
+		if err == nil {
+			fmt.Printf("\nAuto-suggested next tag: %s\n", next)
+		}
+	}
+
+	// Generate changelog
+	if tagsChangelogOut != "" {
+		content, err := checkers.GenerateChangelog(tagsChangelogOut)
+		if err != nil {
+			fmt.Printf("Error generating changelog: %v\n", err)
+		} else {
+			if tagsChangelogOut != "" {
+				fmt.Printf("Changelog generated: %s\n", tagsChangelogOut)
+			} else {
+				fmt.Println(content)
+			}
+		}
+	}
+
+	if tagsEnforce {
+		// Simple policy enforcement: fail if status is FAIL or score < 50
+		if res.Status == types.StatusFail || res.Score < 50 {
+			fmt.Println("\nPolicy enforcement failed: tag policy violations detected")
+			os.Exit(1)
+		}
 	}
 }
 

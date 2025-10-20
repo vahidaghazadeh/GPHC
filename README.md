@@ -42,6 +42,9 @@ git hc serve
 # Scan multiple repositories
 git hc scan ~/projects --recursive
 
+# Analyze and manage Git tags
+git hc tags --suggest --changelog CHANGELOG.md
+
 # Update GPHC to latest version
 git hc update
 
@@ -69,6 +72,7 @@ git hc --help
 - **Semantic Commit Verification**: Verify commit messages match actual changes
 - **Interactive Terminal UI (TUI)**: Beautiful terminal interface for health monitoring
 - **Web Dashboard**: Local web server for team collaboration
+- **Tag Management**: Git tag validation, semantic versioning, and release management
 
 ## Documentation
 
@@ -91,6 +95,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [🔗 GitLab Integration](docs/gitlab-integration.md) - GitLab API integration
 - [👥 Author Insights](docs/author-insights.md) - Contributor analysis
 - [🏗️ Codebase Analysis](docs/codebase-analysis.md) - Structure and smell detection
+- [🏷️ Tag Management](docs/tag-management.md) - Git tag validation and release management
 
 ## Example Output
 
