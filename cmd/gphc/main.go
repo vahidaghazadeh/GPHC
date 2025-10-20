@@ -112,6 +112,55 @@ Provides a web interface accessible via browser with:
 	Run:  runServe,
 }
 
+var tagsCmd = &cobra.Command{
+    Use:   "tags [path]",
+    Short: "Analyze git tags and release health",
+    Long:  "Validate semantic version tags, freshness, unreleased commits, and annotated tag policies.",
+    Args:  cobra.MaximumNArgs(1),
+    Run: func(cmd *cobra.Command, args []string) {
+        var repoPath string
+        if len(args) > 0 {
+            repoPath = args[0]
+        } else {
+            var err error
+            repoPath, err = os.Getwd()
+            if err != nil {
+                fmt.Printf("Error getting current directory: %v\n", err)
+                os.Exit(1)
+            }
+        }
+
+        if !isGitRepository(repoPath) {
+            fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+            os.Exit(1)
+        }
+
+        analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+        if err != nil {
+            fmt.Printf("Error analyzing repository: %v\n", err)
+            os.Exit(1)
+        }
+
+        data, err := analyzer.Analyze()
+        if err != nil {
+            fmt.Printf("Error analyzing repository data: %v\n", err)
+            os.Exit(1)
+        }
+
+        // Run only TagChecker for this command
+        tagChecker := checkers.NewTagChecker()
+        result := tagChecker.Check(data)
+
+        // Simple terminal output
+        fmt.Println("Tag & Release Health")
+        fmt.Println("====================")
+        fmt.Printf("%s: %d/100\n", result.Status.String(), result.Score)
+        for _, d := range result.Details {
+            fmt.Printf("- %s\n", d)
+        }
+    },
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
@@ -125,6 +174,7 @@ func init() {
 	rootCmd.AddCommand(scanCmd)
 	rootCmd.AddCommand(tuiCmd)
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(tagsCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
