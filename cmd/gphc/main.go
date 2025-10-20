@@ -1379,6 +1379,17 @@ func runServe(cmd *cobra.Command, args []string) {
 
 // HTTP handlers
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("401 Unauthorized"))
+			return
+		}
+	}
+
 	html := `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1474,6 +1485,17 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("401 Unauthorized"))
+			return
+		}
+	}
+
 	// Get current directory for health check
 	repoPath, err := os.Getwd()
 	if err != nil {
@@ -1555,6 +1577,17 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleExportJSON(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("401 Unauthorized"))
+			return
+		}
+	}
+
 	// Get current directory for health check
 	repoPath, err := os.Getwd()
 	if err != nil {
@@ -1615,6 +1648,17 @@ func handleExportJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleExportPDF(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("401 Unauthorized"))
+			return
+		}
+	}
+
 	// For now, return a simple message since PDF export requires additional dependencies
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(`
