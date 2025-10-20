@@ -1504,12 +1504,15 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
+            overflow-x: hidden;
         }
         
         .container { 
             max-width: 1400px; 
             margin: 0 auto; 
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .header { 
@@ -1551,6 +1554,10 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         
         .card:hover {
@@ -1629,6 +1636,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 20px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
         }
         
         .feature-item {
@@ -1636,11 +1646,19 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             padding: 15px;
             border-radius: 10px;
             text-align: center;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         
         .feature-item:hover {
             background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
         }
         
         .feature-icon {
@@ -1740,6 +1758,30 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             .feature-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .feature-item {
+                min-height: 100px;
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 15px;
             }
         }
     </style>
