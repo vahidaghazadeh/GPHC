@@ -61,7 +61,21 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		return result
 	}
 
-	// 2) Semantic version validation
+	// 2) List all tags
+	if len(tags) > 0 {
+		details = append(details, fmt.Sprintf("Total tags: %d", len(tags)))
+		if len(tags) <= 10 {
+			// Show all tags if 10 or fewer
+			details = append(details, "Tags: "+strings.Join(tags, ", "))
+		} else {
+			// Show first 5 and last 5 if more than 10
+			firstFive := tags[:5]
+			lastFive := tags[len(tags)-5:]
+			details = append(details, "Tags: "+strings.Join(firstFive, ", ")+" ... "+strings.Join(lastFive, ", "))
+		}
+	}
+
+	// 3) Semantic version validation
 	semverOK, invalid := validateSemanticTags(tags)
 	if semverOK {
 		details = append(details, "Semantic Versioning: OK")
@@ -70,7 +84,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		details = append(details, "Invalid tags (non-semver): "+strings.Join(invalid, ", "))
 	}
 
-	// 3) Get latest tag and date
+	// 4) Get latest tag and date
 	latestTag, latestDate, err := latestTagAndDate()
 	if err == nil {
 		days := int(time.Since(latestDate).Hours() / 24)
@@ -84,7 +98,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		details = append(details, "Could not determine last tag date: "+err.Error())
 	}
 
-	// 4) Unreleased commits
+	// 5) Unreleased commits
 	unreleased, err := unreleasedCommitCount()
 	if err == nil {
 		details = append(details, fmt.Sprintf("Unreleased commits since last tag: %d", unreleased))
@@ -97,7 +111,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		details = append(details, "Could not count unreleased commits: "+err.Error())
 	}
 
-	// 5) Annotated vs Lightweight tags ratio
+	// 6) Annotated vs Lightweight tags ratio
 	annotatedOK, annotatedPct, err := annotatedTagStats()
 	if err == nil {
 		details = append(details, fmt.Sprintf("Annotated tags: %d%%", annotatedPct))
