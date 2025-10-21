@@ -3347,8 +3347,8 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function renderDiff(data) {
             const diffData = document.getElementById('diff-data');
             
-            if (data.lines.length === 0) {
-                diffData.innerHTML = '<div class="info">No changes found</div>';
+            if (!data.lines || data.lines.length === 0) {
+                diffData.innerHTML = '<div class="info" style="text-align: center; padding: 20px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3);"><i class="fas fa-check-circle" style="color: #3498db; font-size: 24px; margin-bottom: 10px;"></i><br><strong>No changes found</strong><br><span style="color: #7f8c8d; font-size: 14px;">Repository is clean - no staged or unstaged changes</span></div>';
                 return;
             }
             
@@ -3414,8 +3414,8 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function renderDiffFullscreen(data) {
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
             
-            if (data.lines.length === 0) {
-                fullscreenContent.innerHTML = '<div class="info">No changes found</div>';
+            if (!data.lines || data.lines.length === 0) {
+                fullscreenContent.innerHTML = '<div class="info" style="text-align: center; padding: 40px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3); margin: 20px;"><i class="fas fa-check-circle" style="color: #3498db; font-size: 48px; margin-bottom: 20px;"></i><br><strong style="font-size: 24px; color: #2c3e50;">No changes found</strong><br><span style="color: #7f8c8d; font-size: 16px;">Repository is clean - no staged or unstaged changes</span></div>';
                 return;
             }
             
@@ -3448,6 +3448,11 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function autoDetectLanguage(data) {
             const languageSelector = document.getElementById('language-selector');
             let detectedLanguage = '';
+            
+            if (!data.lines || data.lines.length === 0) {
+                languageSelector.value = '';
+                return;
+            }
             
             data.lines.forEach(line => {
                 if (line.type === 'file_header' || line.type === 'file_name') {
@@ -3709,31 +3714,36 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 	diffLines := strings.Split(string(output), "\n")
 	var diffData []map[string]interface{}
 
-	for _, line := range diffLines {
-		if line == "" {
-			continue
-		}
+	// If no output, return empty array
+	if len(strings.TrimSpace(string(output))) == 0 {
+		diffData = []map[string]interface{}{}
+	} else {
+		for _, line := range diffLines {
+			if line == "" {
+				continue
+			}
 
-		lineData := map[string]interface{}{
-			"content": line,
-			"type":    "context",
-		}
+			lineData := map[string]interface{}{
+				"content": line,
+				"type":    "context",
+			}
 
-		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
-			lineData["type"] = "addition"
-		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
-			lineData["type"] = "deletion"
-		} else if strings.HasPrefix(line, "@@") {
-			lineData["type"] = "hunk"
-		} else if strings.HasPrefix(line, "diff --git") {
-			lineData["type"] = "file_header"
-		} else if strings.HasPrefix(line, "index ") {
-			lineData["type"] = "index"
-		} else if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
-			lineData["type"] = "file_name"
-		}
+			if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+				lineData["type"] = "addition"
+			} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+				lineData["type"] = "deletion"
+			} else if strings.HasPrefix(line, "@@") {
+				lineData["type"] = "hunk"
+			} else if strings.HasPrefix(line, "diff --git") {
+				lineData["type"] = "file_header"
+			} else if strings.HasPrefix(line, "index ") {
+				lineData["type"] = "index"
+			} else if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
+				lineData["type"] = "file_name"
+			}
 
-		diffData = append(diffData, lineData)
+			diffData = append(diffData, lineData)
+		}
 	}
 
 	// Set CORS headers if enabled
