@@ -3758,33 +3758,50 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function renderDiffFullscreen(data) {
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
             
-            if (!data.lines || data.lines.length === 0) {
+            if (!data.files || data.files.length === 0) {
                 fullscreenContent.innerHTML = '<div class="info" style="text-align: center; padding: 40px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3); margin: 20px;"><i class="fas fa-check-circle" style="color: #3498db; font-size: 48px; margin-bottom: 20px;"></i><br><strong style="font-size: 24px; color: #2c3e50;">No changes found</strong><br><span style="color: #7f8c8d; font-size: 16px;">Repository is clean - no staged or unstaged changes</span></div>';
                 return;
             }
             
-            let additions = 0, deletions = 0, files = 0;
-            
-            data.lines.forEach(line => {
-                if (line.type === 'addition') additions++;
-                else if (line.type === 'deletion') deletions++;
-                else if (line.type === 'file_header') files++;
+            // Calculate total stats
+            let totalAdditions = 0, totalDeletions = 0;
+            data.files.forEach(file => {
+                totalAdditions += file.additions || 0;
+                totalDeletions += file.deletions || 0;
             });
             
             let html = '<div class="diff-stats">';
-            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
-            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
-            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + totalAdditions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + totalDeletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + data.files.length + ' files</div>';
             html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
             html += '</div>';
             
-            html += '<div class="diff-container">';
-            
-            data.lines.forEach(line => {
-                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+            // Render each file separately
+            data.files.forEach(file => {
+                html += '<div class="file-diff-container">';
+                html += '<div class="file-diff-header">';
+                html += '<div class="file-name"><i class="fas fa-file-code"></i> ' + escapeHtml(file.name) + '</div>';
+                html += '<div class="file-stats">';
+                html += '<span class="file-stat additions">+' + (file.additions || 0) + '</span>';
+                html += '<span class="file-stat deletions">-' + (file.deletions || 0) + '</span>';
+                html += '<span class="file-stat total">' + (file.totalLines || 0) + ' lines</span>';
+                html += '</div>';
+                html += '</div>';
+                
+                html += '<div class="file-diff-content">';
+                if (file.error) {
+                    html += '<div class="error">Error: ' + escapeHtml(file.error) + '</div>';
+                } else if (!file.lines || file.lines.length === 0) {
+                    html += '<div class="info">No changes in this file</div>';
+                } else {
+                    file.lines.forEach(line => {
+                        html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+                    });
+                }
+                html += '</div>';
+                html += '</div>';
             });
-            
-            html += '</div>';
             
             fullscreenContent.innerHTML = html;
         }
@@ -3793,39 +3810,39 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             const languageSelector = document.getElementById('language-selector');
             let detectedLanguage = '';
             
-            if (!data.lines || data.lines.length === 0) {
+            if (!data.files || data.files.length === 0) {
                 languageSelector.value = '';
                 return;
             }
             
-            data.lines.forEach(line => {
-                if (line.type === 'file_header' || line.type === 'file_name') {
-                    const content = line.content.toLowerCase();
-                    
-                    if (content.includes('.go')) detectedLanguage = 'go';
-                    else if (content.includes('.js')) detectedLanguage = 'javascript';
-                    else if (content.includes('.ts')) detectedLanguage = 'typescript';
-                    else if (content.includes('.py')) detectedLanguage = 'python';
-                    else if (content.includes('.java')) detectedLanguage = 'java';
-                    else if (content.includes('.cpp') || content.includes('.cc') || content.includes('.cxx')) detectedLanguage = 'cpp';
-                    else if (content.includes('.c') && !content.includes('.cpp')) detectedLanguage = 'c';
-                    else if (content.includes('.rs')) detectedLanguage = 'rust';
-                    else if (content.includes('.php')) detectedLanguage = 'php';
-                    else if (content.includes('.rb')) detectedLanguage = 'ruby';
-                    else if (content.includes('.swift')) detectedLanguage = 'swift';
-                    else if (content.includes('.kt')) detectedLanguage = 'kotlin';
-                    else if (content.includes('.scala')) detectedLanguage = 'scala';
-                    else if (content.includes('.html') || content.includes('.htm')) detectedLanguage = 'html';
-                    else if (content.includes('.css')) detectedLanguage = 'css';
-                    else if (content.includes('.json')) detectedLanguage = 'json';
-                    else if (content.includes('.yaml') || content.includes('.yml')) detectedLanguage = 'yaml';
-                    else if (content.includes('.xml')) detectedLanguage = 'xml';
-                    else if (content.includes('.md')) detectedLanguage = 'markdown';
-                    else if (content.includes('.sql')) detectedLanguage = 'sql';
-                    else if (content.includes('.sh')) detectedLanguage = 'bash';
-                    else if (content.includes('.ps1')) detectedLanguage = 'powershell';
-                }
-            });
+            // Check first file for language detection
+            const firstFile = data.files[0];
+            if (firstFile && firstFile.name) {
+                const fileName = firstFile.name.toLowerCase();
+                
+                if (fileName.includes('.go')) detectedLanguage = 'go';
+                else if (fileName.includes('.js')) detectedLanguage = 'javascript';
+                else if (fileName.includes('.ts')) detectedLanguage = 'typescript';
+                else if (fileName.includes('.py')) detectedLanguage = 'python';
+                else if (fileName.includes('.java')) detectedLanguage = 'java';
+                else if (fileName.includes('.cpp') || fileName.includes('.cc') || fileName.includes('.cxx')) detectedLanguage = 'cpp';
+                else if (fileName.includes('.c') && !fileName.includes('.cpp')) detectedLanguage = 'c';
+                else if (fileName.includes('.rs')) detectedLanguage = 'rust';
+                else if (fileName.includes('.php')) detectedLanguage = 'php';
+                else if (fileName.includes('.rb')) detectedLanguage = 'ruby';
+                else if (fileName.includes('.swift')) detectedLanguage = 'swift';
+                else if (fileName.includes('.kt')) detectedLanguage = 'kotlin';
+                else if (fileName.includes('.scala')) detectedLanguage = 'scala';
+                else if (fileName.includes('.html') || fileName.includes('.htm')) detectedLanguage = 'html';
+                else if (fileName.includes('.css')) detectedLanguage = 'css';
+                else if (fileName.includes('.json')) detectedLanguage = 'json';
+                else if (fileName.includes('.yaml') || fileName.includes('.yml')) detectedLanguage = 'yaml';
+                else if (fileName.includes('.xml')) detectedLanguage = 'xml';
+                else if (fileName.includes('.md')) detectedLanguage = 'markdown';
+                else if (fileName.includes('.sql')) detectedLanguage = 'sql';
+                else if (fileName.includes('.sh')) detectedLanguage = 'bash';
+                else if (fileName.includes('.ps1')) detectedLanguage = 'powershell';
+            }
             
             if (detectedLanguage) {
                 languageSelector.value = detectedLanguage;
