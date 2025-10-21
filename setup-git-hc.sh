@@ -13,6 +13,8 @@ GPHC_BINARY=""
 if command -v gphc >/dev/null 2>&1; then
     GPHC_BINARY="gphc"
 # Check common installation paths
+elif [ -f "$HOME/.local/bin/gphc" ]; then
+    GPHC_BINARY="$HOME/.local/bin/gphc"
 elif [ -f "$HOME/go/bin/gphc" ]; then
     GPHC_BINARY="$HOME/go/bin/gphc"
 elif [ -f "/usr/local/bin/gphc" ]; then
@@ -65,6 +67,8 @@ GPHC_BINARY=""
 if command -v gphc >/dev/null 2>&1; then
     GPHC_BINARY="gphc"
 # Check common installation paths
+elif [ -f "$HOME/.local/bin/gphc" ]; then
+    GPHC_BINARY="$HOME/.local/bin/gphc"
 elif [ -f "$HOME/go/bin/gphc" ]; then
     GPHC_BINARY="$HOME/go/bin/gphc"
 elif [ -f "/usr/local/bin/gphc" ]; then
@@ -145,6 +149,8 @@ if git hc version >/dev/null 2>&1; then
     echo "  git hc tui           - Launch interactive terminal UI"
     echo "  git hc serve         - Start web dashboard"
     echo "  git hc scan          - Scan multiple repositories"
+    echo "  git hc security      - Security scanning (secrets, dependencies)"
+    echo "  git hc tags          - Tag management and validation"
     echo "  git hc update        - Update GPHC"
     echo "  git hc version       - Show version information"
     echo "  git hc --help        - Show help"
