@@ -152,12 +152,29 @@ Examples:
 	Run:  runCommit,
 }
 
+var diffCmd = &cobra.Command{
+	Use:   "diff [file]",
+	Short: "Show colored diff of file changes",
+	Long: `Display colored diff of file changes with syntax highlighting.
+Shows additions in light green background and deletions in light red background.
+
+Examples:
+  git hc diff                    # Show diff of all staged files
+  git hc diff main.go            # Show diff of specific file
+  git hc diff --path /path/to/repo # Show diff for specific repository
+  git hc diff --staged           # Show staged changes only
+  git hc diff --unstaged         # Show unstaged changes only`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runDiff,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(preCommitCmd)
 	rootCmd.AddCommand(commitCmd)
+	rootCmd.AddCommand(diffCmd)
 	rootCmd.AddCommand(suggestCmd)
 	rootCmd.AddCommand(badgeCmd)
 	rootCmd.AddCommand(githubCmd)
@@ -182,6 +199,11 @@ func init() {
 	// Add commit command flags
 	commitCmd.Flags().BoolVar(&commitSuggest, "suggest", false, "Suggest commit message based on staged changes")
 	commitCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to analyze")
+
+	// Add diff command flags
+	diffCmd.Flags().BoolVar(&diffStaged, "staged", false, "Show staged changes only")
+	diffCmd.Flags().BoolVar(&diffUnstaged, "unstaged", false, "Show unstaged changes only")
+	diffCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to analyze")
 
 	// Add scan command flags
 	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
@@ -233,6 +255,10 @@ var (
 
 	// commit command flags
 	commitSuggest bool
+	
+	// diff command flags
+	diffStaged   bool
+	diffUnstaged bool
 )
 
 var checkCmd = &cobra.Command{
@@ -350,6 +376,69 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 		fmt.Printf("%d pre-commit check(s) failed\n", issues)
 		os.Exit(1)
 	}
+}
+
+func runDiff(cmd *cobra.Command, args []string) {
+	var path string
+	
+	// Check for --path flag first
+	if pathFlag != "" {
+		path = pathFlag
+	} else if len(args) > 0 {
+		// If args[0] is a file, use current directory as repo path
+		if _, err := os.Stat(args[0]); err == nil {
+			var err error
+			path, err = os.Getwd()
+			if err != nil {
+				fmt.Printf("Error getting current directory: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			path = args[0]
+		}
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if path is a git repository
+	if !isGitRepository(path) {
+		fmt.Printf("Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	// Determine what to show
+	var diffArgs []string
+	
+	if diffStaged {
+		diffArgs = []string{"diff", "--cached"}
+	} else if diffUnstaged {
+		diffArgs = []string{"diff"}
+	} else {
+		// Show both staged and unstaged changes
+		diffArgs = []string{"diff", "HEAD"}
+	}
+	
+	// Add specific file if provided
+	if len(args) > 0 && pathFlag == "" {
+		diffArgs = append(diffArgs, args[0])
+	}
+	
+	// Run git diff
+	cmd_exec := exec.Command("git", diffArgs...)
+	cmd_exec.Dir = path
+	output, err := cmd_exec.Output()
+	if err != nil {
+		fmt.Printf("Error running git diff: %v\n", err)
+		os.Exit(1)
+	}
+	
+	// Display colored diff
+	displayColoredDiff(string(output))
 }
 
 func runCommit(cmd *cobra.Command, args []string) {
@@ -1176,7 +1265,7 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 			strings.Contains(fileName, "restructure") || strings.Contains(baseName, "refactor") {
 			hasRefactor = true
 		}
-		
+
 		// Analyze file changes for summary
 		summary := analyzeFileChanges(repoPath, file, fileStatus)
 		if summary != "" {
@@ -1324,12 +1413,12 @@ func getGenericDescription(files []string) string {
 func analyzeFileChanges(repoPath string, filePath string, fileStatus string) string {
 	fileExt := strings.ToLower(filepath.Ext(filePath))
 	fileName := strings.ToLower(filepath.Base(filePath))
-	
+
 	// Skip binary files and large files
 	if isBinaryFile(fileExt) || isLargeFile(repoPath, filePath) {
 		return ""
 	}
-	
+
 	switch {
 	case strings.HasPrefix(fileStatus, "A"):
 		return analyzeAddedFile(repoPath, filePath, fileExt, fileName)
@@ -1349,10 +1438,10 @@ func analyzeAddedFile(repoPath string, filePath string, fileExt string, fileName
 	if err != nil {
 		return fmt.Sprintf("added %s", fileName)
 	}
-	
+
 	contentStr := string(content)
 	lines := strings.Split(contentStr, "\n")
-	
+
 	switch fileExt {
 	case ".go":
 		return analyzeGoFile(lines, fileName, "added")
@@ -1382,15 +1471,15 @@ func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileN
 	if err != nil {
 		return fmt.Sprintf("modified %s", fileName)
 	}
-	
+
 	diffStr := string(output)
 	lines := strings.Split(diffStr, "\n")
-	
+
 	// Count additions and deletions
 	additions := 0
 	deletions := 0
 	var changes []string
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
 			additions++
@@ -1402,7 +1491,7 @@ func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileN
 			deletions++
 		}
 	}
-	
+
 	// Generate summary
 	if len(changes) > 0 {
 		// Limit to 3 most important changes
@@ -1411,7 +1500,7 @@ func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileN
 		}
 		return fmt.Sprintf("modified %s: %s", fileName, strings.Join(changes, ", "))
 	}
-	
+
 	if additions > 0 && deletions > 0 {
 		return fmt.Sprintf("modified %s (+%d/-%d lines)", fileName, additions, deletions)
 	} else if additions > 0 {
@@ -1419,7 +1508,7 @@ func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileN
 	} else if deletions > 0 {
 		return fmt.Sprintf("modified %s (-%d lines)", fileName, deletions)
 	}
-	
+
 	return fmt.Sprintf("modified %s", fileName)
 }
 
@@ -1427,11 +1516,11 @@ func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileN
 func extractMeaningfulChange(line string, fileExt string) string {
 	line = strings.TrimPrefix(line, "+")
 	line = strings.TrimSpace(line)
-	
+
 	if line == "" || strings.HasPrefix(line, "//") || strings.HasPrefix(line, "#") {
 		return ""
 	}
-	
+
 	switch fileExt {
 	case ".go":
 		return extractGoChange(line)
@@ -1453,7 +1542,7 @@ func analyzeGoFile(lines []string, fileName string, action string) string {
 	var functions []string
 	var structs []string
 	var imports []string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "func ") {
@@ -1470,7 +1559,7 @@ func analyzeGoFile(lines []string, fileName string, action string) string {
 			imports = append(imports, "import")
 		}
 	}
-	
+
 	var parts []string
 	if len(functions) > 0 {
 		if len(functions) == 1 {
@@ -1489,11 +1578,11 @@ func analyzeGoFile(lines []string, fileName string, action string) string {
 	if len(imports) > 0 {
 		parts = append(parts, "imports")
 	}
-	
+
 	if len(parts) > 0 {
 		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
 	}
-	
+
 	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
 }
 
@@ -1503,7 +1592,7 @@ func extractGoFunctionName(line string) string {
 	if len(parts) < 2 {
 		return ""
 	}
-	
+
 	if parts[1] == "(" {
 		// Method with receiver
 		if len(parts) >= 4 {
@@ -1544,7 +1633,7 @@ func analyzeJSFile(lines []string, fileName string, action string) string {
 	var functions []string
 	var classes []string
 	var exports []string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.Contains(line, "function ") || strings.Contains(line, "=>") {
@@ -1561,7 +1650,7 @@ func analyzeJSFile(lines []string, fileName string, action string) string {
 			exports = append(exports, "export")
 		}
 	}
-	
+
 	var parts []string
 	if len(functions) > 0 {
 		if len(functions) == 1 {
@@ -1580,11 +1669,11 @@ func analyzeJSFile(lines []string, fileName string, action string) string {
 	if len(exports) > 0 {
 		parts = append(parts, "exports")
 	}
-	
+
 	if len(parts) > 0 {
 		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
 	}
-	
+
 	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
 }
 
@@ -1642,7 +1731,7 @@ func analyzePythonFile(lines []string, fileName string, action string) string {
 	var functions []string
 	var classes []string
 	var imports []string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "def ") {
@@ -1659,7 +1748,7 @@ func analyzePythonFile(lines []string, fileName string, action string) string {
 			imports = append(imports, "import")
 		}
 	}
-	
+
 	var parts []string
 	if len(functions) > 0 {
 		if len(functions) == 1 {
@@ -1678,11 +1767,11 @@ func analyzePythonFile(lines []string, fileName string, action string) string {
 	if len(imports) > 0 {
 		parts = append(parts, "imports")
 	}
-	
+
 	if len(parts) > 0 {
 		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
 	}
-	
+
 	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
 }
 
@@ -1722,7 +1811,7 @@ func analyzeJavaFile(lines []string, fileName string, action string) string {
 	var methods []string
 	var classes []string
 	var imports []string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.Contains(line, "public ") || strings.Contains(line, "private ") || strings.Contains(line, "protected ") {
@@ -1741,7 +1830,7 @@ func analyzeJavaFile(lines []string, fileName string, action string) string {
 			imports = append(imports, "import")
 		}
 	}
-	
+
 	var parts []string
 	if len(methods) > 0 {
 		if len(methods) == 1 {
@@ -1760,11 +1849,11 @@ func analyzeJavaFile(lines []string, fileName string, action string) string {
 	if len(imports) > 0 {
 		parts = append(parts, "imports")
 	}
-	
+
 	if len(parts) > 0 {
 		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
 	}
-	
+
 	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
 }
 
@@ -1808,7 +1897,7 @@ func extractJavaChange(line string) string {
 func analyzeMarkdownFile(lines []string, fileName string, action string) string {
 	var headers []string
 	var links []string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
@@ -1821,7 +1910,7 @@ func analyzeMarkdownFile(lines []string, fileName string, action string) string 
 			links = append(links, "link")
 		}
 	}
-	
+
 	var parts []string
 	if len(headers) > 0 {
 		if len(headers) == 1 {
@@ -1833,11 +1922,11 @@ func analyzeMarkdownFile(lines []string, fileName string, action string) string 
 	if len(links) > 0 {
 		parts = append(parts, "links")
 	}
-	
+
 	if len(parts) > 0 {
 		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
 	}
-	
+
 	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
 }
 
@@ -1897,6 +1986,36 @@ func isLargeFile(repoPath string, filePath string) bool {
 	}
 	// Consider files larger than 1MB as large
 	return info.Size() > 1024*1024
+}
+
+// displayColoredDiff displays git diff output with colored backgrounds
+func displayColoredDiff(diffOutput string) {
+	lines := strings.Split(diffOutput, "\n")
+	
+	for _, line := range lines {
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			// Addition: light green background
+			fmt.Printf("\033[48;5;22m%s\033[0m\n", line)
+		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			// Deletion: light red background
+			fmt.Printf("\033[48;5;52m%s\033[0m\n", line)
+		} else if strings.HasPrefix(line, "@@") {
+			// Hunk header: cyan background
+			fmt.Printf("\033[48;5;23m%s\033[0m\n", line)
+		} else if strings.HasPrefix(line, "diff --git") {
+			// File header: blue background
+			fmt.Printf("\033[48;5;17m%s\033[0m\n", line)
+		} else if strings.HasPrefix(line, "index ") {
+			// Index line: dark blue background
+			fmt.Printf("\033[48;5;18m%s\033[0m\n", line)
+		} else if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
+			// File names: yellow background
+			fmt.Printf("\033[48;5;58m%s\033[0m\n", line)
+		} else {
+			// Context lines: normal
+			fmt.Println(line)
+		}
+	}
 }
 
 func checkLargeFiles(files []string) bool {
