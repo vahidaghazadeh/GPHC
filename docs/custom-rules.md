@@ -119,13 +119,13 @@ custom_checks:
 ### Running Custom Rules
 ```bash
 # Run all checks including custom rules
-gphc check
+git hc check
 
 # Run only custom rules
-gphc check --custom-only
+git hc check --custom-only
 
 # Validate custom rules configuration
-gphc check --validate-config
+git hc check --validate-config
 ```
 
 ### Rule Results
@@ -192,7 +192,7 @@ quality:
 ```yaml
 # GitHub Actions
 - name: Custom Rules Check
-  run: gphc check --custom-only --min-score 80
+  run: git hc check --custom-only --min-score 80
 ```
 
 ### With Pre-commit
@@ -203,7 +203,7 @@ repos:
     hooks:
       - id: gphc-custom-rules
         name: GPHC Custom Rules
-        entry: gphc check --custom-only
+        entry: git hc check --custom-only
         language: system
 ```
 
@@ -218,13 +218,13 @@ repos:
 ### Debugging
 ```bash
 # Verbose output
-gphc check --verbose
+git hc check --verbose
 
 # Debug custom rules
-gphc check --debug-custom-rules
+git hc check --debug-custom-rules
 
 # Validate configuration
-gphc check --validate-config
+git hc check --validate-config
 ```
 
 ## Next Steps

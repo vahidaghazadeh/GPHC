@@ -11,7 +11,7 @@ Codebase analysis provides quick insights into project structure, test coverage,
 ### Analyzing Codebase Structure
 ```bash
 # Analyze codebase structure
-gphc codebase
+git hc codebase
 
 # Example output:
 Codebase Structure Analysis
@@ -42,7 +42,7 @@ Structure Health Score: 85/100 (B+)
 ### Detailed Analysis
 ```bash
 # Get detailed codebase analysis
-gphc codebase --detailed
+git hc codebase --detailed
 
 # Example output:
 Detailed Codebase Analysis
@@ -172,37 +172,37 @@ codebase_analysis:
 ### Project Health Monitoring
 ```bash
 # Monitor project structure
-gphc codebase --period 30
+git hc codebase --period 30
 
 # Check for structure issues
-gphc codebase --check-issues
+git hc codebase --check-issues
 
 # Analyze structure trends
-gphc codebase --trends
+git hc codebase --trends
 ```
 
 ### Team Onboarding
 ```bash
 # Generate structure overview
-gphc codebase --format markdown --output structure-overview.md
+git hc codebase --format markdown --output structure-overview.md
 
 # Check for onboarding issues
-gphc codebase --check-onboarding
+git hc codebase --check-onboarding
 
 # Generate team guide
-gphc codebase --generate-guide
+git hc codebase --generate-guide
 ```
 
 ### Code Review Analysis
 ```bash
 # Analyze structure for reviews
-gphc codebase --review-analysis
+git hc codebase --review-analysis
 
 # Check for review issues
-gphc codebase --check-review-issues
+git hc codebase --check-review-issues
 
 # Generate review checklist
-gphc codebase --review-checklist
+git hc codebase --review-checklist
 ```
 
 ## Integration Examples
@@ -211,19 +211,19 @@ gphc codebase --review-checklist
 ```yaml
 # GitHub Actions
 - name: Codebase Analysis
-  run: gphc codebase --format json --output codebase.json
+  run: git hc codebase --format json --output codebase.json
 
 - name: Check Structure Health
-  run: gphc codebase --min-score 80
+  run: git hc codebase --min-score 80
 ```
 
 ### Team Reporting
 ```bash
 # Generate weekly structure report
-gphc codebase --period 7 --format markdown --output structure-report.md
+git hc codebase --period 7 --format markdown --output structure-report.md
 
 # Generate monthly analysis
-gphc codebase --period 30 --format json --output monthly-analysis.json
+git hc codebase --period 30 --format json --output monthly-analysis.json
 ```
 
 ## Best Practices
@@ -253,13 +253,13 @@ gphc codebase --period 30 --format json --output monthly-analysis.json
 ### Debugging
 ```bash
 # Test codebase analysis
-gphc codebase --test
+git hc codebase --test
 
 # Verbose output
-gphc codebase --verbose
+git hc codebase --verbose
 
 # Check specific patterns
-gphc codebase --check-patterns
+git hc codebase --check-patterns
 ```
 
 ## Next Steps

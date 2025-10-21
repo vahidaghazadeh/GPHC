@@ -36,7 +36,7 @@ github:
 ### Branch Protection Analysis
 ```bash
 # Check branch protection rules
-gphc check --github
+git hc check --github
 
 # Example output:
 PASS [GH-101] Branch protection enabled
@@ -51,7 +51,7 @@ PASS [GH-102] Required reviewers configured
 ### CI/CD Configuration Check
 ```bash
 # Check GitHub Actions configuration
-gphc check --github
+git hc check --github
 
 # Example output:
 PASS [GH-201] CI/CD configuration exists
@@ -66,7 +66,7 @@ WARN [GH-202] Missing security checks
 ### Contributor Activity Analysis
 ```bash
 # Analyze contributor activity
-gphc check --github
+git hc check --github
 
 # Example output:
 PASS [GH-301] Active contributors
@@ -155,7 +155,7 @@ jobs:
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
       - name: Health Check with GitHub Integration
-        run: gphc check --github
+        run: git hc check --github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -165,7 +165,7 @@ jobs:
 #!/bin/sh
 # .git/hooks/pre-commit
 export GITHUB_TOKEN=your_token
-gphc pre-commit --github
+git hc pre-commit --github
 ```
 
 ## Configuration Options
@@ -230,13 +230,13 @@ github:
 ### Debugging
 ```bash
 # Test GitHub connection
-gphc check --github --test-connection
+git hc check --github --test-connection
 
 # Verbose GitHub output
-gphc check --github --verbose
+git hc check --github --verbose
 
 # Check specific repository
-gphc check --github --repo owner/repository
+git hc check --github --repo owner/repository
 ```
 
 ## Best Practices

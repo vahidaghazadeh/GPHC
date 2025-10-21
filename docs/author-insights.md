@@ -11,7 +11,7 @@ Author insights help teams understand contributor patterns, identify "bus factor
 ### Analyzing Contributors
 ```bash
 # Analyze commit authors
-gphc authors
+git hc authors
 
 # Example output:
 Author Analysis
@@ -33,7 +33,7 @@ Recommendation: Encourage more team participation
 ### Detailed Analysis
 ```bash
 # Get detailed author insights
-gphc authors --detailed
+git hc authors --detailed
 
 # Example output:
 Detailed Author Analysis
@@ -117,37 +117,37 @@ author_insights:
 ### Team Health Monitoring
 ```bash
 # Monitor team health
-gphc authors --period 30
+git hc authors --period 30
 
 # Check for bus factor risk
-gphc authors --check-bus-factor
+git hc authors --check-bus-factor
 
 # Analyze contributor trends
-gphc authors --trends
+git hc authors --trends
 ```
 
 ### Project Management
 ```bash
 # Generate contributor report
-gphc authors --format json --output contributors.json
+git hc authors --format json --output contributors.json
 
 # Check team balance
-gphc authors --check-balance
+git hc authors --check-balance
 
 # Identify inactive contributors
-gphc authors --check-inactive
+git hc authors --check-inactive
 ```
 
 ### Code Review Analysis
 ```bash
 # Analyze code review patterns
-gphc authors --review-analysis
+git hc authors --review-analysis
 
 # Check reviewer distribution
-gphc authors --reviewer-distribution
+git hc authors --reviewer-distribution
 
 # Identify review bottlenecks
-gphc authors --review-bottlenecks
+git hc authors --review-bottlenecks
 ```
 
 ## Integration Examples
@@ -156,19 +156,19 @@ gphc authors --review-bottlenecks
 ```yaml
 # GitHub Actions
 - name: Author Analysis
-  run: gphc authors --format json --output authors.json
+  run: git hc authors --format json --output authors.json
 
 - name: Check Bus Factor
-  run: gphc authors --check-bus-factor --min-contributors 3
+  run: git hc authors --check-bus-factor --min-contributors 3
 ```
 
 ### Team Reporting
 ```bash
 # Generate weekly team report
-gphc authors --period 7 --format markdown --output team-report.md
+git hc authors --period 7 --format markdown --output team-report.md
 
 # Generate monthly contributor analysis
-gphc authors --period 30 --format json --output monthly-analysis.json
+git hc authors --period 30 --format json --output monthly-analysis.json
 ```
 
 ## Best Practices
@@ -198,13 +198,13 @@ gphc authors --period 30 --format json --output monthly-analysis.json
 ### Debugging
 ```bash
 # Test author analysis
-gphc authors --test
+git hc authors --test
 
 # Verbose output
-gphc authors --verbose
+git hc authors --verbose
 
 # Check specific period
-gphc authors --period 30 --debug
+git hc authors --period 30 --debug
 ```
 
 ## Next Steps

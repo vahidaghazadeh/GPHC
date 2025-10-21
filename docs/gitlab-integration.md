@@ -39,7 +39,7 @@ gitlab:
 ### Merge Request Settings
 ```bash
 # Check merge request settings
-gphc check --gitlab
+git hc check --gitlab
 
 # Example output:
 PASS [GL-101] Merge request settings configured
@@ -54,7 +54,7 @@ PASS [GL-102] Pipeline required
 ### CI/CD Configuration Check
 ```bash
 # Check GitLab CI configuration
-gphc check --gitlab
+git hc check --gitlab
 
 # Example output:
 PASS [GL-201] CI/CD configuration exists
@@ -69,7 +69,7 @@ WARN [GL-202] Missing security scanning
 ### Project Settings Analysis
 ```bash
 # Analyze project settings
-gphc check --gitlab
+git hc check --gitlab
 
 # Example output:
 PASS [GL-301] Project visibility configured
@@ -147,7 +147,7 @@ health_check:
   stage: test
   script:
     - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
-    - gphc check --gitlab
+    - git hc check --gitlab
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
 ```
@@ -158,7 +158,7 @@ health_check:
 # .git/hooks/pre-commit
 export GITLAB_TOKEN=your_token
 export GITLAB_URL=https://gitlab.com
-gphc pre-commit --gitlab
+git hc pre-commit --gitlab
 ```
 
 ## Configuration Options
@@ -223,13 +223,13 @@ gitlab:
 ### Debugging
 ```bash
 # Test GitLab connection
-gphc check --gitlab --test-connection
+git hc check --gitlab --test-connection
 
 # Verbose GitLab output
-gphc check --gitlab --verbose
+git hc check --gitlab --verbose
 
 # Check specific project
-gphc check --gitlab --project 123
+git hc check --gitlab --project 123
 ```
 
 ## Best Practices

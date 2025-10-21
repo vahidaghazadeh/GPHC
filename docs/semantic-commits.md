@@ -120,7 +120,7 @@ docs: implement new database schema
 ```bash
 # Add to .git/hooks/pre-commit
 #!/bin/sh
-gphc pre-commit --semantic-check
+git hc pre-commit --semantic-check
 ```
 
 ### GitHub Actions
@@ -144,7 +144,7 @@ jobs:
       - name: Install GPHC
         run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
       - name: Semantic Commit Check
-        run: gphc check --semantic-commits
+        run: git hc check --semantic-commits
 ```
 
 ## Best Practices
@@ -197,13 +197,13 @@ Fixes #456
 ### Debugging
 ```bash
 # Check semantic commit analysis
-gphc check --semantic-commits --verbose
+git hc check --semantic-commits --verbose
 
 # Validate commit message format
-gphc check --validate-commit-message
+git hc check --validate-commit-message
 
 # Analyze specific commit
-gphc check --analyze-commit HEAD
+git hc check --analyze-commit HEAD
 ```
 
 ## Next Steps
