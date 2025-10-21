@@ -171,7 +171,7 @@ func init() {
 	secretsCmd.Flags().Bool("stashes", true, "Scan Git stashes for secrets")
 	secretsCmd.Flags().Bool("entropy", true, "Perform entropy analysis for random strings")
 	secretsCmd.Flags().String("severity", "medium", "Minimum severity level (low, medium, high)")
-	secretsCmd.Flags().Float64("confidence", 0.7, "Minimum confidence threshold (0.0-1.0)")
+	secretsCmd.Flags().Float64("confidence", 0.8, "Minimum confidence threshold (0.0-1.0)")
 	secretsCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
 	secretsCmd.Flags().String("output", "", "Output file path")
 	
