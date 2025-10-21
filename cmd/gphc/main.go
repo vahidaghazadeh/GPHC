@@ -2910,6 +2910,130 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
+        .diff-fullscreen .file-diff-container {
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .diff-fullscreen .file-diff-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diff-fullscreen .file-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        
+        .diff-fullscreen .file-name i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        
+        .diff-fullscreen .file-stats {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .diff-fullscreen .file-stat {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .file-stat.additions {
+            background: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+        
+        .diff-fullscreen .file-stat.deletions {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        
+        .diff-fullscreen .file-stat.total {
+            background: rgba(52, 152, 219, 0.3);
+            color: #3498db;
+        }
+        
+        .diff-fullscreen .file-diff-content {
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line {
+            padding: 2px 15px;
+            margin: 0;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #ffffff;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line:first-child {
+            padding-top: 8px;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line:last-child {
+            padding-bottom: 8px;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.addition {
+            background: rgba(46, 204, 113, 0.3);
+            border-left: 3px solid #2ecc71;
+            color: #2ecc71;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.deletion {
+            background: rgba(231, 76, 60, 0.3);
+            border-left: 3px solid #e74c3c;
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.hunk {
+            background: rgba(52, 152, 219, 0.3);
+            border-left: 3px solid #3498db;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.file_header {
+            background: rgba(155, 89, 182, 0.3);
+            border-left: 3px solid #9b59b6;
+            color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.index {
+            background: rgba(149, 165, 166, 0.3);
+            border-left: 3px solid #95a5a6;
+            color: #95a5a6;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.file_name {
+            background: rgba(241, 196, 15, 0.3);
+            border-left: 3px solid #f1c40f;
+            color: #f1c40f;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line.context {
+            color: #ecf0f1;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
         .diff-fullscreen .diff-stats {
             background: rgba(0, 0, 0, 0.5);
             padding: 15px;
