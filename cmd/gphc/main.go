@@ -2793,34 +2793,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             gap: 15px;
         }
         
-        .diff-language-selector {
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            padding: 12px 16px;
-            font-size: 14px;
-            min-width: 150px;
-            transition: all 0.3s ease;
-        }
-        
-        .diff-language-selector:hover {
-            background: rgba(0, 0, 0, 0.6);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .diff-language-selector:focus {
-            outline: none;
-            background: rgba(0, 0, 0, 0.7);
-            border-color: rgba(255, 255, 255, 0.7);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-        }
-        
-        .diff-language-selector option {
-            background: #667eea;
-            color: #fff;
-        }
-        
         .diff-fullscreen-close {
             background: rgba(231, 76, 60, 0.9);
             color: #fff;
@@ -3533,31 +3505,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         <div class="diff-fullscreen-header">
             <div class="diff-fullscreen-title">Code Changes - Fullscreen View</div>
             <div class="diff-fullscreen-controls">
-                <select id="language-selector" class="diff-language-selector" onchange="changeLanguage()">
-                    <option value="">Auto-detect</option>
-                    <option value="go">Go</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="python">Python</option>
-                    <option value="java">Java</option>
-                    <option value="cpp">C++</option>
-                    <option value="c">C</option>
-                    <option value="rust">Rust</option>
-                    <option value="php">PHP</option>
-                    <option value="ruby">Ruby</option>
-                    <option value="swift">Swift</option>
-                    <option value="kotlin">Kotlin</option>
-                    <option value="scala">Scala</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="json">JSON</option>
-                    <option value="yaml">YAML</option>
-                    <option value="xml">XML</option>
-                    <option value="markdown">Markdown</option>
-                    <option value="sql">SQL</option>
-                    <option value="bash">Bash</option>
-                    <option value="powershell">PowerShell</option>
-                </select>
                 <button class="diff-fullscreen-close" onclick="closeDiffFullscreen()">
                     <i class="fas fa-times"></i> Close
                 </button>
@@ -3865,6 +3812,20 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             });
             
             fullscreenContent.innerHTML = html;
+            
+            // Auto-detect language for each file after rendering
+            data.files.forEach(file => {
+                const detectedLanguage = detectLanguageFromFileName(file.name);
+                if (detectedLanguage) {
+                    const selector = document.getElementById('language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-'));
+                    if (selector) {
+                        selector.value = detectedLanguage;
+                        const fileContainer = selector.closest('.file-diff-container');
+                        const diffContent = fileContainer.querySelector('.file-diff-content');
+                        applyFileSyntaxHighlighting(diffContent, detectedLanguage);
+                    }
+                }
+            });
         }
         
         function autoDetectLanguage(data) {
@@ -3873,13 +3834,8 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         function changeLanguage() {
-            const languageSelector = document.getElementById('language-selector');
-            const selectedLanguage = languageSelector.value;
-            
-            if (selectedLanguage) {
-                // Apply syntax highlighting based on selected language
-                applySyntaxHighlighting(selectedLanguage);
-            }
+            // This function is no longer needed as each file has its own language selector
+            // Language selection is now handled per-file in changeFileLanguage function
         }
         
         function changeFileLanguage(selector, fileName) {
