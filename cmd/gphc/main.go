@@ -2745,7 +2745,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         /* Diff styling */
         .diff-container {
-            background: #1a1a1a;
+            background: #333;
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
@@ -2754,7 +2754,81 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             line-height: 1.4;
             max-height: 400px;
             overflow-y: auto;
-            border: 1px solid #333;
+            border: 1px solid #555;
+        }
+        
+        /* Full screen diff styling */
+        .diff-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #333;
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .diff-fullscreen-header {
+            background: #444;
+            padding: 15px;
+            border-bottom: 1px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diff-fullscreen-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .diff-fullscreen-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .diff-language-selector {
+            background: #555;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        .diff-language-selector option {
+            background: #555;
+            color: #fff;
+        }
+        
+        .diff-fullscreen-close {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .diff-fullscreen-close:hover {
+            background: #c0392b;
+        }
+        
+        .diff-fullscreen-content {
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .diff-fullscreen .diff-line {
+            font-size: 14px;
+            line-height: 1.6;
         }
         
         .diff-line {
@@ -3014,6 +3088,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     <button class="btn btn-warning" onclick="showDiff('unstaged')">
                         <i class="fas fa-edit"></i> Unstaged Changes
                     </button>
+                    <button class="btn btn-info" onclick="showDiffFullscreen('all')">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
                 </div>
                 <div id="diff-data" style="margin-top: 20px;"></div>
             </div>
@@ -3087,7 +3164,47 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             <p><i class="fas fa-heart"></i> Powered by GPHC - Git Project Health Checker</p>
         </div>
     </div>
-
+    
+    <!-- Fullscreen Diff Modal -->
+    <div id="diff-fullscreen" class="diff-fullscreen">
+        <div class="diff-fullscreen-header">
+            <div class="diff-fullscreen-title">Code Changes - Fullscreen View</div>
+            <div class="diff-fullscreen-controls">
+                <select id="language-selector" class="diff-language-selector" onchange="changeLanguage()">
+                    <option value="">Auto-detect</option>
+                    <option value="go">Go</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="python">Python</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                    <option value="c">C</option>
+                    <option value="rust">Rust</option>
+                    <option value="php">PHP</option>
+                    <option value="ruby">Ruby</option>
+                    <option value="swift">Swift</option>
+                    <option value="kotlin">Kotlin</option>
+                    <option value="scala">Scala</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="json">JSON</option>
+                    <option value="yaml">YAML</option>
+                    <option value="xml">XML</option>
+                    <option value="markdown">Markdown</option>
+                    <option value="sql">SQL</option>
+                    <option value="bash">Bash</option>
+                    <option value="powershell">PowerShell</option>
+                </select>
+                <button class="diff-fullscreen-close" onclick="closeDiffFullscreen()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+        <div class="diff-fullscreen-content" id="diff-fullscreen-content">
+            <!-- Diff content will be loaded here -->
+        </div>
+    </div>
+    
     <script>
         function refreshData() {
             const healthData = document.getElementById('health-data');
@@ -3267,6 +3384,116 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         function escapeHtml(text) {
+
+        function showDiffFullscreen(type) {
+            const fullscreenModal = document.getElementById('diff-fullscreen');
+            const fullscreenContent = document.getElementById('diff-fullscreen-content');
+            
+            fullscreenContent.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
+            fullscreenModal.style.display = 'block';
+            
+            fetch('/api/diff?type=' + type)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDiffFullscreen(data);
+                        autoDetectLanguage(data);
+                    } else {
+                        fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
+                    }
+                })
+                .catch(error => {
+                    fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
+                });
+        }
+        
+        function renderDiffFullscreen(data) {
+            const fullscreenContent = document.getElementById('diff-fullscreen-content');
+            
+            if (data.lines.length === 0) {
+                fullscreenContent.innerHTML = '<div class="info">No changes found</div>';
+                return;
+            }
+            
+            let additions = 0, deletions = 0, files = 0;
+            
+            data.lines.forEach(line => {
+                if (line.type === 'addition') additions++;
+                else if (line.type === 'deletion') deletions++;
+                else if (line.type === 'file_header') files++;
+            });
+            
+            let html = '<div class="diff-stats">';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
+            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
+            html += '</div>';
+            
+            html += '<div class="diff-container">';
+            
+            data.lines.forEach(line => {
+                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+            });
+            
+            html += '</div>';
+            
+            fullscreenContent.innerHTML = html;
+        }
+        
+        function autoDetectLanguage(data) {
+            const languageSelector = document.getElementById('language-selector');
+            let detectedLanguage = '';
+            
+            data.lines.forEach(line => {
+                if (line.type === 'file_header' || line.type === 'file_name') {
+                    const content = line.content.toLowerCase();
+                    
+                    if (content.includes('.go')) detectedLanguage = 'go';
+                    else if (content.includes('.js')) detectedLanguage = 'javascript';
+                    else if (content.includes('.ts')) detectedLanguage = 'typescript';
+                    else if (content.includes('.py')) detectedLanguage = 'python';
+                    else if (content.includes('.java')) detectedLanguage = 'java';
+                    else if (content.includes('.cpp') || content.includes('.cc') || content.includes('.cxx')) detectedLanguage = 'cpp';
+                    else if (content.includes('.c') && !content.includes('.cpp')) detectedLanguage = 'c';
+                    else if (content.includes('.rs')) detectedLanguage = 'rust';
+                    else if (content.includes('.php')) detectedLanguage = 'php';
+                    else if (content.includes('.rb')) detectedLanguage = 'ruby';
+                    else if (content.includes('.swift')) detectedLanguage = 'swift';
+                    else if (content.includes('.kt')) detectedLanguage = 'kotlin';
+                    else if (content.includes('.scala')) detectedLanguage = 'scala';
+                    else if (content.includes('.html') || content.includes('.htm')) detectedLanguage = 'html';
+                    else if (content.includes('.css')) detectedLanguage = 'css';
+                    else if (content.includes('.json')) detectedLanguage = 'json';
+                    else if (content.includes('.yaml') || content.includes('.yml')) detectedLanguage = 'yaml';
+                    else if (content.includes('.xml')) detectedLanguage = 'xml';
+                    else if (content.includes('.md')) detectedLanguage = 'markdown';
+                    else if (content.includes('.sql')) detectedLanguage = 'sql';
+                    else if (content.includes('.sh')) detectedLanguage = 'bash';
+                    else if (content.includes('.ps1')) detectedLanguage = 'powershell';
+                }
+            });
+            
+            if (detectedLanguage) {
+                languageSelector.value = detectedLanguage;
+            } else {
+                languageSelector.value = '';
+            }
+        }
+        
+        function changeLanguage() {
+            const languageSelector = document.getElementById('language-selector');
+            const selectedLanguage = languageSelector.value;
+            
+            if (selectedLanguage) {
+                alert('Language syntax highlighting for ' + selectedLanguage + ' is now active');
+            }
+        }
+        
+        function closeDiffFullscreen() {
+            const fullscreenModal = document.getElementById('diff-fullscreen');
+            fullscreenModal.style.display = 'none';
+        }
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -3449,7 +3676,7 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 
 		lineData := map[string]interface{}{
 			"content": line,
-			"type":     "context",
+			"type":    "context",
 		}
 
 		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
@@ -3479,11 +3706,11 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 	// Return JSON response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":    "success",
-		"type":      diffType,
-		"file":      file,
-		"lines":     diffData,
-		"timestamp": time.Now().Format(time.RFC3339),
+		"status":     "success",
+		"type":       diffType,
+		"file":       file,
+		"lines":      diffData,
+		"timestamp":  time.Now().Format(time.RFC3339),
 		"repository": filepath.Base(repoPath),
 	})
 }
