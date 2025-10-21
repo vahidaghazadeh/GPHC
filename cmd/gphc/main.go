@@ -1664,9 +1664,21 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         .feature-icon {
             font-size: 2em;
-            color: #20b2aa;
             margin-bottom: 10px;
         }
+        
+        .feature-item:nth-child(1) .feature-icon { color: #e74c3c; } /* Documentation - Red */
+        .feature-item:nth-child(2) .feature-icon { color: #3498db; } /* Commit Quality - Blue */
+        .feature-item:nth-child(3) .feature-icon { color: #2ecc71; } /* Git Hygiene - Green */
+        .feature-item:nth-child(4) .feature-icon { color: #f39c12; } /* Tag Management - Orange */
+        .feature-item:nth-child(5) .feature-icon { color: #9b59b6; } /* Historical Tracking - Purple */
+        .feature-item:nth-child(6) .feature-icon { color: #1abc9c; } /* Multi-Repo Scan - Turquoise */
+        .feature-item:nth-child(7) .feature-icon { color: #34495e; } /* CI/CD Integration - Dark Gray */
+        .feature-item:nth-child(8) .feature-icon { color: #e67e22; } /* Notifications - Dark Orange */
+        .feature-item:nth-child(9) .feature-icon { color: #27ae60; } /* Terminal UI - Dark Green */
+        .feature-item:nth-child(10) .feature-icon { color: #2980b9; } /* Web Dashboard - Dark Blue */
+        .feature-item:nth-child(11) .feature-icon { color: #333; } /* GitHub Integration - Black */
+        .feature-item:nth-child(12) .feature-icon { color: #fc6d26; } /* GitLab Integration - GitLab Orange */
         
         .feature-name {
             font-weight: bold;
