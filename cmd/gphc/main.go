@@ -2771,14 +2771,13 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .diff-fullscreen-header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.4);
             padding: 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
         }
         
         .diff-fullscreen-title {
@@ -2795,25 +2794,24 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .diff-language-selector {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.5);
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             padding: 12px 16px;
             font-size: 14px;
             min-width: 150px;
-            backdrop-filter: blur(5px);
             transition: all 0.3s ease;
         }
         
         .diff-language-selector:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.6);
             border-color: rgba(255, 255, 255, 0.5);
         }
         
         .diff-language-selector:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.7);
             border-color: rgba(255, 255, 255, 0.7);
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
         }
@@ -2824,7 +2822,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .diff-fullscreen-close {
-            background: rgba(231, 76, 60, 0.8);
+            background: rgba(231, 76, 60, 0.9);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -2832,7 +2830,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            backdrop-filter: blur(5px);
             transition: all 0.3s ease;
             box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
         }
@@ -2847,8 +2844,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             height: calc(100vh - 100px);
             overflow-y: auto;
             padding: 30px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: transparent;
         }
         
         .diff-fullscreen .diff-line {
@@ -2903,26 +2899,24 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .diff-fullscreen .diff-container {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 12px;
             padding: 20px;
             margin-top: 20px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             line-height: 1.5;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .diff-fullscreen .diff-stats {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.5);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
             font-size: 13px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .diff-fullscreen .diff-stats .stat {
