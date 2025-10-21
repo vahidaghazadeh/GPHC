@@ -141,6 +141,9 @@ func init() {
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
 	checkCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (default: stdout)")
 
+	// Add pre-commit command flags
+	preCommitCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to check")
+
 	// Add scan command flags
 	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
 	scanCmd.Flags().IntVarP(&minScore, "min-score", "m", 0, "Minimum health score threshold")
@@ -168,6 +171,7 @@ func init() {
 var (
 	exportFormat    string
 	outputFile      string
+	pathFlag        string
 	recursiveScan   bool
 	minScore        int
 	excludePatterns []string
@@ -219,18 +223,28 @@ This command will:
 }
 
 var preCommitCmd = &cobra.Command{
-	Use:   "pre-commit",
+	Use:   "pre-commit [path]",
 	Short: "Run quick pre-commit checks on staged files",
 	Long: `Run quick health checks suitable for pre-commit hooks.
 This command performs fast checks on staged files and current commit.
 Designed for integration with pre-commit framework and Husky.
-Returns non-zero exit code if issues are found.`,
-	Run: runPreCommit,
+Returns non-zero exit code if issues are found.
+
+Examples:
+  git hc pre-commit                    # Check current directory
+  git hc pre-commit /path/to/repo      # Check specific repository
+  git hc pre-commit --path /path/to/repo # Check specific repository`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runPreCommit,
 }
 
 func runPreCommit(cmd *cobra.Command, args []string) {
 	var path string
-	if len(args) > 0 {
+	
+	// Check for --path flag first
+	if pathFlag != "" {
+		path = pathFlag
+	} else if len(args) > 0 {
 		path = args[0]
 	} else {
 		var err error
