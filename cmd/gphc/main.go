@@ -3204,7 +3204,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             <!-- Diff content will be loaded here -->
         </div>
     </div>
-    
+
     <script>
         function refreshData() {
             const healthData = document.getElementById('health-data');
@@ -3316,75 +3316,79 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             }, 1000);
         }
         
-        
-        
-        
-        
-        function escapeHtml(text) {
-            const div = document.createElement("div");
-            div.textContent = text;
-            return div.innerHTML;
-        }
         function scanRepos() {
-            const scanData = document.getElementById("scan-data");
-            scanData.innerHTML = "<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>";
+            const scanData = document.getElementById('scan-data');
+            scanData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>';
             
+            // Simulate repo scan
             setTimeout(() => {
-                scanData.innerHTML = "<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>";
+                scanData.innerHTML = '<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>';
             }, 1500);
         }
         
         function showDiff(type) {
-            const diffData = document.getElementById("diff-data");
-            diffData.innerHTML = "<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>";
+            const diffData = document.getElementById('diff-data');
+            diffData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
             
-            fetch("/api/diff?type=" + type)
+            fetch('/api/diff?type=' + type)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === "success") {
+                    if (data.status === 'success') {
                         renderDiff(data);
                     } else {
-                        diffData.innerHTML = "<div class="error">Error loading diff: " + data.message + "</div>";
+                        diffData.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
                     }
                 })
                 .catch(error => {
-                    diffData.innerHTML = "<div class="error">Error loading diff: " + error + "</div>";
+                    diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
                 });
         }
         
         function renderDiff(data) {
-            const diffData = document.getElementById("diff-data");
+            const diffData = document.getElementById('diff-data');
             
-            if (!data || !data.lines || data.lines.length === 0) {
-                diffData.innerHTML = "<div class="info">No changes found</div>";
+            if (data.lines.length === 0) {
+                diffData.innerHTML = '<div class="info">No changes found</div>';
                 return;
             }
             
+            // Calculate stats
             let additions = 0, deletions = 0, files = 0;
+            let currentFile = '';
             
             data.lines.forEach(line => {
-                if (line.type === "addition") additions++;
-                else if (line.type === "deletion") deletions++;
-                else if (line.type === "file_header") files++;
+                if (line.type === 'addition') additions++;
+                else if (line.type === 'deletion') deletions++;
+                else if (line.type === 'file_header') {
+                    files++;
+                    currentFile = line.content;
+                }
             });
             
-            let html = "<div class="diff-stats">";
-            html += "<div class="stat additions"><i class="fas fa-plus"></i> +" + additions + "</div>";
-            html += "<div class="stat deletions"><i class="fas fa-minus"></i> -" + deletions + "</div>";
-            html += "<div class="stat files"><i class="fas fa-file"></i> " + files + " files</div>";
-            html += "<div class="stat"><i class="fas fa-clock"></i> " + new Date(data.timestamp).toLocaleTimeString() + "</div>";
-            html += "</div>";
+            let html = '<div class="diff-stats">';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
+            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
+            html += '</div>';
             
-            html += "<div class="diff-container">";
+            html += '<div class="diff-container">';
             
             data.lines.forEach(line => {
-                html += "<div class="diff-line " + line.type + "">" + escapeHtml(line.content) + "</div>";
+                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
             });
             
-            html += "</div>";
+            html += '</div>';
             
             diffData.innerHTML = html;
         }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         function showDiffFullscreen(type) {
             const fullscreenModal = document.getElementById('diff-fullscreen');
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
@@ -3410,14 +3414,14 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function renderDiffFullscreen(data) {
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
             
-            if (!data || !data.lines || data.lines.length === 0) {
+            if (data.lines.length === 0) {
                 fullscreenContent.innerHTML = '<div class="info">No changes found</div>';
                 return;
             }
             
             let additions = 0, deletions = 0, files = 0;
             
-            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
+            data.lines.forEach(line => {
                 if (line.type === 'addition') additions++;
                 else if (line.type === 'deletion') deletions++;
                 else if (line.type === 'file_header') files++;
@@ -3432,7 +3436,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             html += '<div class="diff-container">';
             
-            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
+            data.lines.forEach(line => {
                 html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
             });
             
@@ -3445,7 +3449,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             const languageSelector = document.getElementById('language-selector');
             let detectedLanguage = '';
             
-            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
+            data.lines.forEach(line => {
                 if (line.type === 'file_header' || line.type === 'file_name') {
                     const content = line.content.toLowerCase();
                     
@@ -3486,8 +3490,48 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             const selectedLanguage = languageSelector.value;
             
             if (selectedLanguage) {
-                alert('Language syntax highlighting for ' + selectedLanguage + ' is now active');
+                // Apply syntax highlighting based on selected language
+                applySyntaxHighlighting(selectedLanguage);
             }
+        }
+        
+        function applySyntaxHighlighting(language) {
+            const diffLines = document.querySelectorAll('.diff-fullscreen .diff-line');
+            
+            diffLines.forEach(line => {
+                const content = line.textContent;
+                if (content.startsWith('+') || content.startsWith('-')) {
+                    // Apply language-specific syntax highlighting
+                    line.innerHTML = highlightSyntax(content, language);
+                }
+            });
+        }
+        
+        function highlightSyntax(content, language) {
+            // Basic syntax highlighting patterns
+            let highlighted = escapeHtml(content);
+            
+            switch (language) {
+                case 'go':
+                    highlighted = highlighted.replace(/\b(func|package|import|var|const|type|struct|interface|if|else|for|range|return|defer|go|chan|select|case|default)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|nil)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'javascript':
+                case 'typescript':
+                    highlighted = highlighted.replace(/\b(function|const|let|var|if|else|for|while|return|class|interface|type|enum)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|null|undefined)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'python':
+                    highlighted = highlighted.replace(/\b(def|class|if|else|elif|for|while|return|import|from|try|except|finally|with|as|lambda)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(True|False|None)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'java':
+                    highlighted = highlighted.replace(/\b(public|private|protected|static|final|class|interface|extends|implements|if|else|for|while|return|import|package)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|null)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+            }
+            
+            return highlighted;
         }
         
         function closeDiffFullscreen() {
