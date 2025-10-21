@@ -3383,12 +3383,12 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             diffData.innerHTML = html;
         }
         
+        
         function escapeHtml(text) {
             const div = document.createElement("div");
             div.textContent = text;
             return div.innerHTML;
         }
-        
         function showDiffFullscreen(type) {
             const fullscreenModal = document.getElementById('diff-fullscreen');
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
