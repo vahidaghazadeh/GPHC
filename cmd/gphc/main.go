@@ -3318,44 +3318,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         
         
         
-        function renderDiff(data) {
-            const diffData = document.getElementById('diff-data');
-            
-            if (!data || !data.lines || data.lines.length === 0) {
-                diffData.innerHTML = '<div class="info">No changes found</div>';
-                return;
-            }
-            
-            // Calculate stats
-            let additions = 0, deletions = 0, files = 0;
-            let currentFile = '';
-            
-            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
-                if (line.type === 'addition') additions++;
-                else if (line.type === 'deletion') deletions++;
-                else if (line.type === 'file_header') {
-                    files++;
-                    currentFile = line.content;
-                }
-            });
-            
-            let html = '<div class="diff-stats">';
-            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
-            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
-            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
-            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
-            html += '</div>';
-            
-            html += '<div class="diff-container">';
-            
-            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
-                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
-            });
-            
-            html += '</div>';
-            
-            diffData.innerHTML = html;
-        }
         
         
         function escapeHtml(text) {
