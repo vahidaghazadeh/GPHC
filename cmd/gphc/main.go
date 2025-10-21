@@ -3384,7 +3384,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         function escapeHtml(text) {
-            const div = document.createElement('div');
+            const div = document.createElement("div");
             div.textContent = text;
             return div.innerHTML;
         }
