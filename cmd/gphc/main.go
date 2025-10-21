@@ -230,9 +230,9 @@ var (
 	tagsSuggest      bool
 	tagsChangelogOut string
 	tagsEnforce      bool
-	
+
 	// commit command flags
-	commitSuggest    bool
+	commitSuggest bool
 )
 
 var checkCmd = &cobra.Command{
@@ -358,7 +358,7 @@ func runCommit(cmd *cobra.Command, args []string) {
 		runSuggest(cmd, args)
 		return
 	}
-	
+
 	// Default behavior: show help
 	fmt.Println("Enhanced git commit command")
 	fmt.Println("Use --suggest flag to get commit message suggestions")
@@ -1116,6 +1116,7 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 	// Analyze file types and changes
 	var addedFiles, modifiedFiles, deletedFiles []string
 	var hasNewFeatures, hasBugFixes, hasDocs, hasRefactor bool
+	var changeSummary []string
 
 	for _, file := range stagedFiles {
 		// Get file status
@@ -1143,38 +1144,44 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 			deletedFiles = append(deletedFiles, fileName)
 		}
 
-	// Analyze file type and content
-	fileExt := strings.ToLower(filepath.Ext(fileName))
-	fileName = strings.ToLower(fileName)
-	baseName := strings.ToLower(filepath.Base(fileName))
+		// Analyze file type and content
+		fileExt := strings.ToLower(filepath.Ext(fileName))
+		fileName = strings.ToLower(fileName)
+		baseName := strings.ToLower(filepath.Base(fileName))
 
-	// Check for new features
-	if strings.Contains(fileName, "feat") || strings.Contains(fileName, "feature") ||
-		strings.Contains(fileName, "add") || strings.Contains(fileName, "new") ||
-		strings.Contains(baseName, "feat") || strings.Contains(baseName, "feature") {
-		hasNewFeatures = true
-	}
+		// Check for new features
+		if strings.Contains(fileName, "feat") || strings.Contains(fileName, "feature") ||
+			strings.Contains(fileName, "add") || strings.Contains(fileName, "new") ||
+			strings.Contains(baseName, "feat") || strings.Contains(baseName, "feature") {
+			hasNewFeatures = true
+		}
 
-	// Check for bug fixes
-	if strings.Contains(fileName, "fix") || strings.Contains(fileName, "bug") ||
-		strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") ||
-		strings.Contains(fileName, "patch") || strings.Contains(baseName, "fix") {
-		hasBugFixes = true
-	}
+		// Check for bug fixes
+		if strings.Contains(fileName, "fix") || strings.Contains(fileName, "bug") ||
+			strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") ||
+			strings.Contains(fileName, "patch") || strings.Contains(baseName, "fix") {
+			hasBugFixes = true
+		}
 
-	// Check for documentation
-	if strings.Contains(fileName, "readme") || strings.Contains(fileName, "doc") ||
-		strings.Contains(fileName, "guide") || strings.Contains(fileName, "manual") ||
-		fileExt == ".md" || fileExt == ".txt" || fileExt == ".rst" {
-		hasDocs = true
-	}
+		// Check for documentation
+		if strings.Contains(fileName, "readme") || strings.Contains(fileName, "doc") ||
+			strings.Contains(fileName, "guide") || strings.Contains(fileName, "manual") ||
+			fileExt == ".md" || fileExt == ".txt" || fileExt == ".rst" {
+			hasDocs = true
+		}
 
-	// Check for refactoring
-	if strings.Contains(fileName, "refactor") || strings.Contains(fileName, "clean") ||
-		strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") ||
-		strings.Contains(fileName, "restructure") || strings.Contains(baseName, "refactor") {
-		hasRefactor = true
-	}
+		// Check for refactoring
+		if strings.Contains(fileName, "refactor") || strings.Contains(fileName, "clean") ||
+			strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") ||
+			strings.Contains(fileName, "restructure") || strings.Contains(baseName, "refactor") {
+			hasRefactor = true
+		}
+		
+		// Analyze file changes for summary
+		summary := analyzeFileChanges(repoPath, file, fileStatus)
+		if summary != "" {
+			changeSummary = append(changeSummary, summary)
+		}
 	}
 
 	// Generate suggestion based on analysis
@@ -1216,6 +1223,15 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 	} else {
 		prefix = "chore"
 		description = fmt.Sprintf("update project files (%d files)", len(stagedFiles))
+	}
+
+	// Add change summary if available
+	if len(changeSummary) > 0 {
+		summaryText := strings.Join(changeSummary, ", ")
+		if len(summaryText) > 100 {
+			summaryText = summaryText[:97] + "..."
+		}
+		description += fmt.Sprintf(" - %s", summaryText)
 	}
 
 	return fmt.Sprintf("%s: %s", prefix, description)
@@ -1302,6 +1318,585 @@ func getGenericDescription(files []string) string {
 		}
 	}
 	return "files"
+}
+
+// analyzeFileChanges analyzes the content changes in a file
+func analyzeFileChanges(repoPath string, filePath string, fileStatus string) string {
+	fileExt := strings.ToLower(filepath.Ext(filePath))
+	fileName := strings.ToLower(filepath.Base(filePath))
+	
+	// Skip binary files and large files
+	if isBinaryFile(fileExt) || isLargeFile(repoPath, filePath) {
+		return ""
+	}
+	
+	switch {
+	case strings.HasPrefix(fileStatus, "A"):
+		return analyzeAddedFile(repoPath, filePath, fileExt, fileName)
+	case strings.HasPrefix(fileStatus, "M"):
+		return analyzeModifiedFile(repoPath, filePath, fileExt, fileName)
+	case strings.HasPrefix(fileStatus, "D"):
+		return fmt.Sprintf("removed %s", fileName)
+	default:
+		return ""
+	}
+}
+
+// analyzeAddedFile analyzes a newly added file
+func analyzeAddedFile(repoPath string, filePath string, fileExt string, fileName string) string {
+	// Read file content to analyze
+	content, err := os.ReadFile(filepath.Join(repoPath, filePath))
+	if err != nil {
+		return fmt.Sprintf("added %s", fileName)
+	}
+	
+	contentStr := string(content)
+	lines := strings.Split(contentStr, "\n")
+	
+	switch fileExt {
+	case ".go":
+		return analyzeGoFile(lines, fileName, "added")
+	case ".js", ".ts":
+		return analyzeJSFile(lines, fileName, "added")
+	case ".py":
+		return analyzePythonFile(lines, fileName, "added")
+	case ".java":
+		return analyzeJavaFile(lines, fileName, "added")
+	case ".md":
+		return analyzeMarkdownFile(lines, fileName, "added")
+	case ".json":
+		return analyzeJSONFile(contentStr, fileName, "added")
+	case ".yaml", ".yml":
+		return analyzeYAMLFile(contentStr, fileName, "added")
+	default:
+		return fmt.Sprintf("added %s (%d lines)", fileName, len(lines))
+	}
+}
+
+// analyzeModifiedFile analyzes a modified file
+func analyzeModifiedFile(repoPath string, filePath string, fileExt string, fileName string) string {
+	// Get git diff to see what changed
+	cmd := exec.Command("git", "diff", "--cached", filePath)
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Sprintf("modified %s", fileName)
+	}
+	
+	diffStr := string(output)
+	lines := strings.Split(diffStr, "\n")
+	
+	// Count additions and deletions
+	additions := 0
+	deletions := 0
+	var changes []string
+	
+	for _, line := range lines {
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			additions++
+			// Extract meaningful changes
+			if change := extractMeaningfulChange(line, fileExt); change != "" {
+				changes = append(changes, change)
+			}
+		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			deletions++
+		}
+	}
+	
+	// Generate summary
+	if len(changes) > 0 {
+		// Limit to 3 most important changes
+		if len(changes) > 3 {
+			changes = changes[:3]
+		}
+		return fmt.Sprintf("modified %s: %s", fileName, strings.Join(changes, ", "))
+	}
+	
+	if additions > 0 && deletions > 0 {
+		return fmt.Sprintf("modified %s (+%d/-%d lines)", fileName, additions, deletions)
+	} else if additions > 0 {
+		return fmt.Sprintf("modified %s (+%d lines)", fileName, additions)
+	} else if deletions > 0 {
+		return fmt.Sprintf("modified %s (-%d lines)", fileName, deletions)
+	}
+	
+	return fmt.Sprintf("modified %s", fileName)
+}
+
+// extractMeaningfulChange extracts meaningful information from a diff line
+func extractMeaningfulChange(line string, fileExt string) string {
+	line = strings.TrimPrefix(line, "+")
+	line = strings.TrimSpace(line)
+	
+	if line == "" || strings.HasPrefix(line, "//") || strings.HasPrefix(line, "#") {
+		return ""
+	}
+	
+	switch fileExt {
+	case ".go":
+		return extractGoChange(line)
+	case ".js", ".ts":
+		return extractJSChange(line)
+	case ".py":
+		return extractPythonChange(line)
+	case ".java":
+		return extractJavaChange(line)
+	case ".md":
+		return extractMarkdownChange(line)
+	default:
+		return ""
+	}
+}
+
+// Go-specific analysis
+func analyzeGoFile(lines []string, fileName string, action string) string {
+	var functions []string
+	var structs []string
+	var imports []string
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "func ") {
+			funcName := extractGoFunctionName(line)
+			if funcName != "" {
+				functions = append(functions, funcName)
+			}
+		} else if strings.HasPrefix(line, "type ") && strings.Contains(line, " struct") {
+			structName := extractGoStructName(line)
+			if structName != "" {
+				structs = append(structs, structName)
+			}
+		} else if strings.HasPrefix(line, "import ") {
+			imports = append(imports, "import")
+		}
+	}
+	
+	var parts []string
+	if len(functions) > 0 {
+		if len(functions) == 1 {
+			parts = append(parts, fmt.Sprintf("function %s", functions[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d functions", len(functions)))
+		}
+	}
+	if len(structs) > 0 {
+		if len(structs) == 1 {
+			parts = append(parts, fmt.Sprintf("struct %s", structs[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d structs", len(structs)))
+		}
+	}
+	if len(imports) > 0 {
+		parts = append(parts, "imports")
+	}
+	
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
+	}
+	
+	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
+}
+
+func extractGoFunctionName(line string) string {
+	// Extract function name from "func FunctionName(" or "func (r *Receiver) MethodName("
+	parts := strings.Fields(line)
+	if len(parts) < 2 {
+		return ""
+	}
+	
+	if parts[1] == "(" {
+		// Method with receiver
+		if len(parts) >= 4 {
+			return parts[3]
+		}
+	} else {
+		// Regular function
+		return strings.TrimSuffix(parts[1], "(")
+	}
+	return ""
+}
+
+func extractGoStructName(line string) string {
+	parts := strings.Fields(line)
+	if len(parts) >= 2 {
+		return parts[1]
+	}
+	return ""
+}
+
+func extractGoChange(line string) string {
+	if strings.Contains(line, "func ") {
+		funcName := extractGoFunctionName("func " + line)
+		if funcName != "" {
+			return fmt.Sprintf("add function %s", funcName)
+		}
+	} else if strings.Contains(line, "type ") && strings.Contains(line, " struct") {
+		structName := extractGoStructName(line)
+		if structName != "" {
+			return fmt.Sprintf("add struct %s", structName)
+		}
+	}
+	return ""
+}
+
+// JavaScript/TypeScript analysis
+func analyzeJSFile(lines []string, fileName string, action string) string {
+	var functions []string
+	var classes []string
+	var exports []string
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "function ") || strings.Contains(line, "=>") {
+			funcName := extractJSFunctionName(line)
+			if funcName != "" {
+				functions = append(functions, funcName)
+			}
+		} else if strings.Contains(line, "class ") {
+			className := extractJSClassName(line)
+			if className != "" {
+				classes = append(classes, className)
+			}
+		} else if strings.Contains(line, "export ") {
+			exports = append(exports, "export")
+		}
+	}
+	
+	var parts []string
+	if len(functions) > 0 {
+		if len(functions) == 1 {
+			parts = append(parts, fmt.Sprintf("function %s", functions[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d functions", len(functions)))
+		}
+	}
+	if len(classes) > 0 {
+		if len(classes) == 1 {
+			parts = append(parts, fmt.Sprintf("class %s", classes[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d classes", len(classes)))
+		}
+	}
+	if len(exports) > 0 {
+		parts = append(parts, "exports")
+	}
+	
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
+	}
+	
+	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
+}
+
+func extractJSFunctionName(line string) string {
+	// Extract function name from various JS function patterns
+	if strings.Contains(line, "function ") {
+		parts := strings.Fields(line)
+		for i, part := range parts {
+			if part == "function" && i+1 < len(parts) {
+				return strings.TrimSuffix(parts[i+1], "(")
+			}
+		}
+	} else if strings.Contains(line, "=>") {
+		// Arrow function
+		beforeArrow := strings.Split(line, "=>")[0]
+		beforeArrow = strings.TrimSpace(beforeArrow)
+		if strings.Contains(beforeArrow, "(") {
+			// Named arrow function
+			parts := strings.Split(beforeArrow, "(")
+			if len(parts) > 0 {
+				return strings.TrimSpace(parts[0])
+			}
+		}
+	}
+	return ""
+}
+
+func extractJSClassName(line string) string {
+	parts := strings.Fields(line)
+	for i, part := range parts {
+		if part == "class" && i+1 < len(parts) {
+			return strings.TrimSuffix(parts[i+1], "{")
+		}
+	}
+	return ""
+}
+
+func extractJSChange(line string) string {
+	if strings.Contains(line, "function ") {
+		funcName := extractJSFunctionName(line)
+		if funcName != "" {
+			return fmt.Sprintf("add function %s", funcName)
+		}
+	} else if strings.Contains(line, "class ") {
+		className := extractJSClassName(line)
+		if className != "" {
+			return fmt.Sprintf("add class %s", className)
+		}
+	}
+	return ""
+}
+
+// Python analysis
+func analyzePythonFile(lines []string, fileName string, action string) string {
+	var functions []string
+	var classes []string
+	var imports []string
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "def ") {
+			funcName := extractPythonFunctionName(line)
+			if funcName != "" {
+				functions = append(functions, funcName)
+			}
+		} else if strings.HasPrefix(line, "class ") {
+			className := extractPythonClassName(line)
+			if className != "" {
+				classes = append(classes, className)
+			}
+		} else if strings.HasPrefix(line, "import ") || strings.HasPrefix(line, "from ") {
+			imports = append(imports, "import")
+		}
+	}
+	
+	var parts []string
+	if len(functions) > 0 {
+		if len(functions) == 1 {
+			parts = append(parts, fmt.Sprintf("function %s", functions[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d functions", len(functions)))
+		}
+	}
+	if len(classes) > 0 {
+		if len(classes) == 1 {
+			parts = append(parts, fmt.Sprintf("class %s", classes[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d classes", len(classes)))
+		}
+	}
+	if len(imports) > 0 {
+		parts = append(parts, "imports")
+	}
+	
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
+	}
+	
+	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
+}
+
+func extractPythonFunctionName(line string) string {
+	parts := strings.Fields(line)
+	if len(parts) >= 2 {
+		return strings.TrimSuffix(parts[1], "(")
+	}
+	return ""
+}
+
+func extractPythonClassName(line string) string {
+	parts := strings.Fields(line)
+	if len(parts) >= 2 {
+		return strings.TrimSuffix(parts[1], "(")
+	}
+	return ""
+}
+
+func extractPythonChange(line string) string {
+	if strings.Contains(line, "def ") {
+		funcName := extractPythonFunctionName(line)
+		if funcName != "" {
+			return fmt.Sprintf("add function %s", funcName)
+		}
+	} else if strings.Contains(line, "class ") {
+		className := extractPythonClassName(line)
+		if className != "" {
+			return fmt.Sprintf("add class %s", className)
+		}
+	}
+	return ""
+}
+
+// Java analysis
+func analyzeJavaFile(lines []string, fileName string, action string) string {
+	var methods []string
+	var classes []string
+	var imports []string
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "public ") || strings.Contains(line, "private ") || strings.Contains(line, "protected ") {
+			if strings.Contains(line, "(") && strings.Contains(line, ")") {
+				methodName := extractJavaMethodName(line)
+				if methodName != "" {
+					methods = append(methods, methodName)
+				}
+			}
+		} else if strings.Contains(line, "class ") {
+			className := extractJavaClassName(line)
+			if className != "" {
+				classes = append(classes, className)
+			}
+		} else if strings.HasPrefix(line, "import ") {
+			imports = append(imports, "import")
+		}
+	}
+	
+	var parts []string
+	if len(methods) > 0 {
+		if len(methods) == 1 {
+			parts = append(parts, fmt.Sprintf("method %s", methods[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d methods", len(methods)))
+		}
+	}
+	if len(classes) > 0 {
+		if len(classes) == 1 {
+			parts = append(parts, fmt.Sprintf("class %s", classes[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d classes", len(classes)))
+		}
+	}
+	if len(imports) > 0 {
+		parts = append(parts, "imports")
+	}
+	
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
+	}
+	
+	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
+}
+
+func extractJavaMethodName(line string) string {
+	// Extract method name from Java method declaration
+	parts := strings.Fields(line)
+	for _, part := range parts {
+		if strings.Contains(part, "(") {
+			return strings.TrimSuffix(part, "(")
+		}
+	}
+	return ""
+}
+
+func extractJavaClassName(line string) string {
+	parts := strings.Fields(line)
+	for i, part := range parts {
+		if part == "class" && i+1 < len(parts) {
+			return strings.TrimSuffix(parts[i+1], "{")
+		}
+	}
+	return ""
+}
+
+func extractJavaChange(line string) string {
+	if strings.Contains(line, "public ") || strings.Contains(line, "private ") || strings.Contains(line, "protected ") {
+		methodName := extractJavaMethodName(line)
+		if methodName != "" {
+			return fmt.Sprintf("add method %s", methodName)
+		}
+	} else if strings.Contains(line, "class ") {
+		className := extractJavaClassName(line)
+		if className != "" {
+			return fmt.Sprintf("add class %s", className)
+		}
+	}
+	return ""
+}
+
+// Markdown analysis
+func analyzeMarkdownFile(lines []string, fileName string, action string) string {
+	var headers []string
+	var links []string
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#") {
+			header := strings.TrimPrefix(line, "#")
+			header = strings.TrimSpace(header)
+			if header != "" {
+				headers = append(headers, header)
+			}
+		} else if strings.Contains(line, "[") && strings.Contains(line, "](") {
+			links = append(links, "link")
+		}
+	}
+	
+	var parts []string
+	if len(headers) > 0 {
+		if len(headers) == 1 {
+			parts = append(parts, fmt.Sprintf("section '%s'", headers[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d sections", len(headers)))
+		}
+	}
+	if len(links) > 0 {
+		parts = append(parts, "links")
+	}
+	
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s %s (%s)", action, fileName, strings.Join(parts, ", "))
+	}
+	
+	return fmt.Sprintf("%s %s (%d lines)", action, fileName, len(lines))
+}
+
+func extractMarkdownChange(line string) string {
+	if strings.HasPrefix(line, "#") {
+		header := strings.TrimPrefix(line, "#")
+		header = strings.TrimSpace(header)
+		if header != "" {
+			return fmt.Sprintf("add section '%s'", header)
+		}
+	}
+	return ""
+}
+
+// JSON analysis
+func analyzeJSONFile(content string, fileName string, action string) string {
+	// Simple JSON analysis
+	if strings.Contains(content, "dependencies") {
+		return fmt.Sprintf("%s %s (dependencies)", action, fileName)
+	} else if strings.Contains(content, "scripts") {
+		return fmt.Sprintf("%s %s (scripts)", action, fileName)
+	} else if strings.Contains(content, "config") {
+		return fmt.Sprintf("%s %s (configuration)", action, fileName)
+	}
+	return fmt.Sprintf("%s %s", action, fileName)
+}
+
+// YAML analysis
+func analyzeYAMLFile(content string, fileName string, action string) string {
+	// Simple YAML analysis
+	if strings.Contains(content, "dependencies") {
+		return fmt.Sprintf("%s %s (dependencies)", action, fileName)
+	} else if strings.Contains(content, "services") {
+		return fmt.Sprintf("%s %s (services)", action, fileName)
+	} else if strings.Contains(content, "config") {
+		return fmt.Sprintf("%s %s (configuration)", action, fileName)
+	}
+	return fmt.Sprintf("%s %s", action, fileName)
+}
+
+// Utility functions
+func isBinaryFile(fileExt string) bool {
+	binaryExts := []string{".exe", ".dll", ".so", ".dylib", ".bin", ".img", ".iso", ".zip", ".tar", ".gz", ".rar", ".7z", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg", ".ico", ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".flv", ".webm"}
+	for _, ext := range binaryExts {
+		if fileExt == ext {
+			return true
+		}
+	}
+	return false
+}
+
+func isLargeFile(repoPath string, filePath string) bool {
+	fullPath := filepath.Join(repoPath, filePath)
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		return false
+	}
+	// Consider files larger than 1MB as large
+	return info.Size() > 1024*1024
 }
 
 func checkLargeFiles(files []string) bool {
