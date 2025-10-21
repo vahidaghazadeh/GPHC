@@ -2971,15 +2971,16 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             overflow-y: auto;
         }
         
-        .diff-fullscreen .file-diff-content .diff-line {
-            padding: 2px 15px;
-            margin: 0;
-            border-radius: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.4;
-            color: #ffffff;
-        }
+         .diff-fullscreen .file-diff-content .diff-line {
+             padding: 2px 15px;
+             margin: 0;
+             border-radius: 0;
+             font-family: 'Courier New', monospace;
+             font-size: 13px;
+             line-height: 1.4;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
         
         .diff-fullscreen .file-diff-content .diff-line:first-child {
             padding-top: 8px;
@@ -2989,58 +2990,66 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             padding-bottom: 8px;
         }
         
-        .diff-fullscreen .file-diff-content .diff-line.addition {
-            background: rgba(46, 204, 113, 0.3);
-            border-left: 3px solid #2ecc71;
-            color: #2ecc71;
-            font-weight: 500;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.deletion {
-            background: rgba(231, 76, 60, 0.3);
-            border-left: 3px solid #e74c3c;
-            color: #e74c3c;
-            font-weight: 500;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.hunk {
-            background: rgba(52, 152, 219, 0.3);
-            border-left: 3px solid #3498db;
-            color: #3498db;
-            font-weight: bold;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.file_header {
-            background: rgba(155, 89, 182, 0.3);
-            border-left: 3px solid #9b59b6;
-            color: #9b59b6;
-            font-weight: bold;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.index {
-            background: rgba(149, 165, 166, 0.3);
-            border-left: 3px solid #95a5a6;
-            color: #95a5a6;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.file_name {
-            background: rgba(241, 196, 15, 0.3);
-            border-left: 3px solid #f1c40f;
-            color: #f1c40f;
-        }
-        
-        .diff-fullscreen .file-diff-content .diff-line.context {
-            color: #ecf0f1;
-            background: rgba(255, 255, 255, 0.05);
-        }
+         .diff-fullscreen .file-diff-content .diff-line.addition {
+             background: rgba(46, 204, 113, 0.4) !important;
+             border-left: 3px solid #2ecc71;
+             color: #ffffff !important;
+             font-weight: 500;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.deletion {
+             background: rgba(231, 76, 60, 0.4) !important;
+             border-left: 3px solid #e74c3c;
+             color: #ffffff !important;
+             font-weight: 500;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.hunk {
+             background: rgba(52, 152, 219, 0.4) !important;
+             border-left: 3px solid #3498db;
+             color: #ffffff !important;
+             font-weight: bold;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.file_header {
+             background: rgba(155, 89, 182, 0.4) !important;
+             border-left: 3px solid #9b59b6;
+             color: #ffffff !important;
+             font-weight: bold;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.index {
+             background: rgba(149, 165, 166, 0.4) !important;
+             border-left: 3px solid #95a5a6;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.file_name {
+             background: rgba(241, 196, 15, 0.4) !important;
+             border-left: 3px solid #f1c40f;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.context {
+             color: #ffffff !important;
+             background: rgba(255, 255, 255, 0.1) !important;
+             opacity: 1 !important;
+         }
         
         .diff-fullscreen .diff-stats {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6) !important;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
             font-size: 13px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 1 !important;
         }
         
         .diff-fullscreen .diff-stats .stat {
@@ -3049,30 +3058,31 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             padding: 5px 12px;
             border-radius: 6px;
             font-weight: 500;
+            opacity: 1 !important;
         }
         
         .diff-fullscreen .diff-stats .stat.additions {
-            background: rgba(46, 204, 113, 0.2);
-            color: #2ecc71;
-            border: 1px solid rgba(46, 204, 113, 0.3);
+            background: rgba(46, 204, 113, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(46, 204, 113, 0.5);
         }
         
         .diff-fullscreen .diff-stats .stat.deletions {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-            border: 1px solid rgba(231, 76, 60, 0.3);
+            background: rgba(231, 76, 60, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(231, 76, 60, 0.5);
         }
         
         .diff-fullscreen .diff-stats .stat.files {
-            background: rgba(52, 152, 219, 0.2);
-            color: #3498db;
-            border: 1px solid rgba(52, 152, 219, 0.3);
+            background: rgba(52, 152, 219, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(52, 152, 219, 0.5);
         }
         
         .diff-fullscreen .diff-stats .stat:not(.additions):not(.deletions):not(.files) {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ecf0f1;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         
         .diff-line {
