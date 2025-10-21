@@ -3384,7 +3384,11 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         function escapeHtml(text) {
-
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         function showDiffFullscreen(type) {
             const fullscreenModal = document.getElementById('diff-fullscreen');
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
@@ -3493,10 +3497,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function closeDiffFullscreen() {
             const fullscreenModal = document.getElementById('diff-fullscreen');
             fullscreenModal.style.display = 'none';
-        }
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
         
         // Load data on page load
