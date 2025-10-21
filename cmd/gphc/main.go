@@ -3031,6 +3031,84 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             color: #3498db;
         }
         
+        .file-diff-container {
+            margin-bottom: 20px;
+            border: 1px solid rgba(52, 73, 94, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .file-diff-header {
+            background: rgba(52, 73, 94, 0.1);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(52, 73, 94, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .file-name i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        
+        .file-stats {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-stat {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .file-stat.additions {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .file-stat.deletions {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .file-stat.total {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+        
+        .file-diff-content {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .file-diff-content .diff-line {
+            padding: 2px 15px;
+            margin: 0;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .file-diff-content .diff-line:first-child {
+            padding-top: 8px;
+        }
+        
+        .file-diff-content .diff-line:last-child {
+            padding-bottom: 8px;
+        }
+        
         .feature-name {
             font-weight: bold;
             color: #2c3e50;
@@ -3467,38 +3545,50 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         function renderDiff(data) {
             const diffData = document.getElementById('diff-data');
             
-            if (!data.lines || data.lines.length === 0) {
+            if (!data.files || data.files.length === 0) {
                 diffData.innerHTML = '<div class="info" style="text-align: center; padding: 20px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3);"><i class="fas fa-check-circle" style="color: #3498db; font-size: 24px; margin-bottom: 10px;"></i><br><strong>No changes found</strong><br><span style="color: #7f8c8d; font-size: 14px;">Repository is clean - no staged or unstaged changes</span></div>';
                 return;
             }
             
-            // Calculate stats
-            let additions = 0, deletions = 0, files = 0;
-            let currentFile = '';
-            
-            data.lines.forEach(line => {
-                if (line.type === 'addition') additions++;
-                else if (line.type === 'deletion') deletions++;
-                else if (line.type === 'file_header') {
-                    files++;
-                    currentFile = line.content;
-                }
+            // Calculate total stats
+            let totalAdditions = 0, totalDeletions = 0;
+            data.files.forEach(file => {
+                totalAdditions += file.additions || 0;
+                totalDeletions += file.deletions || 0;
             });
             
             let html = '<div class="diff-stats">';
-            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
-            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
-            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + totalAdditions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + totalDeletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + data.files.length + ' files</div>';
             html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
             html += '</div>';
             
-            html += '<div class="diff-container">';
-            
-            data.lines.forEach(line => {
-                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+            // Render each file separately
+            data.files.forEach(file => {
+                html += '<div class="file-diff-container">';
+                html += '<div class="file-diff-header">';
+                html += '<div class="file-name"><i class="fas fa-file-code"></i> ' + escapeHtml(file.name) + '</div>';
+                html += '<div class="file-stats">';
+                html += '<span class="file-stat additions">+' + (file.additions || 0) + '</span>';
+                html += '<span class="file-stat deletions">-' + (file.deletions || 0) + '</span>';
+                html += '<span class="file-stat total">' + (file.totalLines || 0) + ' lines</span>';
+                html += '</div>';
+                html += '</div>';
+                
+                html += '<div class="file-diff-content">';
+                if (file.error) {
+                    html += '<div class="error">Error: ' + escapeHtml(file.error) + '</div>';
+                } else if (!file.lines || file.lines.length === 0) {
+                    html += '<div class="info">No changes in this file</div>';
+                } else {
+                    file.lines.forEach(line => {
+                        html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+                    });
+                }
+                html += '</div>';
+                html += '</div>';
             });
-            
-            html += '</div>';
             
             diffData.innerHTML = html;
         }
@@ -3794,35 +3884,32 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get diff type from query parameters
+	// Get diff type and file from query parameters
 	diffType := r.URL.Query().Get("type")
 	if diffType == "" {
 		diffType = "all"
 	}
-
-	// Get specific file if provided
 	file := r.URL.Query().Get("file")
 
-	// Determine git diff command
-	var diffArgs []string
+	// If specific file requested, return single file diff
+	if file != "" {
+		handleSingleFileDiff(w, repoPath, diffType, file)
+		return
+	}
+
+	// Get list of changed files first
+	var cmd *exec.Cmd
 	switch diffType {
 	case "staged":
-		diffArgs = []string{"diff", "--cached"}
+		cmd = exec.Command("git", "diff", "--cached", "--name-only")
 	case "unstaged":
-		diffArgs = []string{"diff"}
+		cmd = exec.Command("git", "diff", "--name-only")
 	case "all":
-		diffArgs = []string{"diff", "HEAD"}
+		cmd = exec.Command("git", "diff", "HEAD", "--name-only")
 	default:
-		diffArgs = []string{"diff", "HEAD"}
+		cmd = exec.Command("git", "diff", "HEAD", "--name-only")
 	}
 
-	// Add specific file if provided
-	if file != "" {
-		diffArgs = append(diffArgs, file)
-	}
-
-	// Run git diff
-	cmd := exec.Command("git", diffArgs...)
 	cmd.Dir = repoPath
 	output, err := cmd.Output()
 	if err != nil {
@@ -3830,59 +3917,135 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse diff output
-	diffLines := strings.Split(string(output), "\n")
-	var diffData []map[string]interface{}
+	// Parse file list
+	files := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var fileList []string
+	for _, f := range files {
+		if strings.TrimSpace(f) != "" {
+			fileList = append(fileList, strings.TrimSpace(f))
+		}
+	}
 
-	// If no output, return empty array
+	// If no files changed, return empty response
+	if len(fileList) == 0 {
+		response := map[string]interface{}{
+			"status":    "success",
+			"files":     []map[string]interface{}{},
+			"timestamp": time.Now().Format(time.RFC3339),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// Get diff for each file
+	var fileDiffs []map[string]interface{}
+	for _, fileName := range fileList {
+		fileDiff := getFileDiff(repoPath, diffType, fileName)
+		fileDiffs = append(fileDiffs, fileDiff)
+	}
+
+	response := map[string]interface{}{
+		"status":    "success",
+		"files":     fileDiffs,
+		"timestamp": time.Now().Format(time.RFC3339),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func handleSingleFileDiff(w http.ResponseWriter, repoPath, diffType, file string) {
+	fileDiff := getFileDiff(repoPath, diffType, file)
+	
+	response := map[string]interface{}{
+		"status":    "success",
+		"file":      fileDiff,
+		"timestamp": time.Now().Format(time.RFC3339),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func getFileDiff(repoPath, diffType, fileName string) map[string]interface{} {
+	// Build git diff command for specific file
+	var cmd *exec.Cmd
+	switch diffType {
+	case "staged":
+		cmd = exec.Command("git", "diff", "--cached", fileName)
+	case "unstaged":
+		cmd = exec.Command("git", "diff", fileName)
+	case "all":
+		cmd = exec.Command("git", "diff", "HEAD", fileName)
+	default:
+		cmd = exec.Command("git", "diff", "HEAD", fileName)
+	}
+
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+
+	if err != nil {
+		return map[string]interface{}{
+			"name":    fileName,
+			"error":   err.Error(),
+			"lines":   []map[string]interface{}{},
+		}
+	}
+
+	// Parse diff output
+	lines := strings.Split(string(output), "\n")
+	var diffLines []map[string]interface{}
+
+	// Check if there's no output (no changes)
 	if len(strings.TrimSpace(string(output))) == 0 {
-		diffData = []map[string]interface{}{}
+		diffLines = []map[string]interface{}{}
 	} else {
-		for _, line := range diffLines {
+		for _, line := range lines {
 			if line == "" {
 				continue
 			}
 
-			lineData := map[string]interface{}{
-				"content": line,
-				"type":    "context",
-			}
-
+			lineType := "context"
 			if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
-				lineData["type"] = "addition"
+				lineType = "addition"
 			} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
-				lineData["type"] = "deletion"
+				lineType = "deletion"
 			} else if strings.HasPrefix(line, "@@") {
-				lineData["type"] = "hunk"
-			} else if strings.HasPrefix(line, "diff --git") {
-				lineData["type"] = "file_header"
+				lineType = "hunk"
+			} else if strings.HasPrefix(line, "+++") {
+				lineType = "file_header"
 			} else if strings.HasPrefix(line, "index ") {
-				lineData["type"] = "index"
-			} else if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
-				lineData["type"] = "file_name"
+				lineType = "index"
+			} else if strings.HasPrefix(line, "diff --git") {
+				lineType = "file_name"
 			}
 
-			diffData = append(diffData, lineData)
+			diffLines = append(diffLines, map[string]interface{}{
+				"content": line,
+				"type":    lineType,
+			})
 		}
 	}
 
-	// Set CORS headers if enabled
-	if serverCORS {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	// Calculate stats for this file
+	additions := 0
+	deletions := 0
+	for _, line := range diffLines {
+		if line["type"] == "addition" {
+			additions++
+		} else if line["type"] == "deletion" {
+			deletions++
+		}
 	}
 
-	// Return JSON response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":     "success",
-		"type":       diffType,
-		"file":       file,
-		"lines":      diffData,
-		"timestamp":  time.Now().Format(time.RFC3339),
-		"repository": filepath.Base(repoPath),
-	})
+	return map[string]interface{}{
+		"name":       fileName,
+		"lines":      diffLines,
+		"additions":  additions,
+		"deletions":  deletions,
+		"totalLines": len(diffLines),
+	}
 }
 
 func handleTagsAPI(w http.ResponseWriter, r *http.Request) {
