@@ -932,15 +932,55 @@ func checkFileFormatting(repoPath string, files []string) bool {
 }
 
 func checkCommitMessage(repoPath string) bool {
+	// Check if we're in the middle of a commit (has COMMIT_EDITMSG)
+	commitMsgPath := filepath.Join(repoPath, ".git", "COMMIT_EDITMSG")
+	if _, err := os.Stat(commitMsgPath); err == nil {
+		// Read the commit message file
+		content, err := os.ReadFile(commitMsgPath)
+		if err != nil {
+			return false
+		}
+		
+		message := strings.TrimSpace(string(content))
+		// Remove comments (lines starting with #)
+		lines := strings.Split(message, "\n")
+		var cleanLines []string
+		for _, line := range lines {
+			if !strings.HasPrefix(strings.TrimSpace(line), "#") {
+				cleanLines = append(cleanLines, line)
+			}
+		}
+		message = strings.Join(cleanLines, "\n")
+		message = strings.TrimSpace(message)
+		
+		// Check conventional commit format
+		conventionalPrefixes := []string{
+			"feat:", "fix:", "docs:", "style:", "refactor:", "test:", "chore:",
+			"perf:", "ci:", "build:", "revert:", "feat!", "fix!",
+		}
+
+		for _, prefix := range conventionalPrefixes {
+			if strings.HasPrefix(message, prefix) {
+				return true
+			}
+		}
+		
+		return false
+	}
+	
+	// If not committing, check the last commit message
 	cmd := exec.Command("git", "log", "-1", "--pretty=%s")
 	cmd.Dir = repoPath
 
 	output, err := cmd.Output()
 	if err != nil {
-		return false
+		return true // If no commits yet, consider it valid
 	}
 
 	message := strings.TrimSpace(string(output))
+	if message == "" {
+		return true // Empty message is valid for first commit
+	}
 
 	// Check conventional commit format
 	conventionalPrefixes := []string{
