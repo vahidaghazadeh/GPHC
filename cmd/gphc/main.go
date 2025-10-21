@@ -2965,11 +2965,42 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             color: #3498db;
         }
         
-        .diff-fullscreen .file-diff-content {
-            padding: 0;
-            max-height: 400px;
-            overflow-y: auto;
-        }
+         .diff-fullscreen .file-diff-content {
+             padding: 0;
+             max-height: 400px;
+             overflow-y: auto;
+         }
+         
+         .diff-fullscreen .file-language-selector {
+             background: rgba(0, 0, 0, 0.3);
+             padding: 8px 15px;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+             display: flex;
+             align-items: center;
+             gap: 10px;
+         }
+         
+         .diff-fullscreen .file-language-selector label {
+             color: #ffffff;
+             font-size: 12px;
+             font-weight: 500;
+             margin: 0;
+         }
+         
+         .diff-fullscreen .file-language-selector select {
+             background: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255, 255, 255, 0.3);
+             border-radius: 4px;
+             color: #ffffff;
+             padding: 4px 8px;
+             font-size: 12px;
+             min-width: 120px;
+         }
+         
+         .diff-fullscreen .file-language-selector select option {
+             background: #2c3e50;
+             color: #ffffff;
+         }
         
          .diff-fullscreen .file-diff-content .diff-line {
              padding: 2px 15px;
@@ -3789,6 +3820,36 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 html += '</div>';
                 html += '</div>';
                 
+                // Add language selector for each file
+                html += '<div class="file-language-selector">';
+                html += '<label for="language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-') + '">Language:</label>';
+                html += '<select id="language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-') + '" onchange="changeFileLanguage(this, \'' + escapeHtml(file.name) + '\')">';
+                html += '<option value="">Auto-detect</option>';
+                html += '<option value="go">Go</option>';
+                html += '<option value="javascript">JavaScript</option>';
+                html += '<option value="typescript">TypeScript</option>';
+                html += '<option value="python">Python</option>';
+                html += '<option value="java">Java</option>';
+                html += '<option value="cpp">C++</option>';
+                html += '<option value="c">C</option>';
+                html += '<option value="rust">Rust</option>';
+                html += '<option value="php">PHP</option>';
+                html += '<option value="ruby">Ruby</option>';
+                html += '<option value="swift">Swift</option>';
+                html += '<option value="kotlin">Kotlin</option>';
+                html += '<option value="scala">Scala</option>';
+                html += '<option value="html">HTML</option>';
+                html += '<option value="css">CSS</option>';
+                html += '<option value="json">JSON</option>';
+                html += '<option value="yaml">YAML</option>';
+                html += '<option value="xml">XML</option>';
+                html += '<option value="markdown">Markdown</option>';
+                html += '<option value="sql">SQL</option>';
+                html += '<option value="bash">Bash</option>';
+                html += '<option value="powershell">PowerShell</option>';
+                html += '</select>';
+                html += '</div>';
+                
                 html += '<div class="file-diff-content">';
                 if (file.error) {
                     html += '<div class="error">Error: ' + escapeHtml(file.error) + '</div>';
@@ -3807,49 +3868,8 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         function autoDetectLanguage(data) {
-            const languageSelector = document.getElementById('language-selector');
-            let detectedLanguage = '';
-            
-            if (!data.files || data.files.length === 0) {
-                languageSelector.value = '';
-                return;
-            }
-            
-            // Check all files for language detection
-            data.files.forEach(file => {
-                if (file && file.name && !detectedLanguage) {
-                    const fileName = file.name.toLowerCase();
-                    
-                    if (fileName.includes('.go')) detectedLanguage = 'go';
-                    else if (fileName.includes('.js')) detectedLanguage = 'javascript';
-                    else if (fileName.includes('.ts')) detectedLanguage = 'typescript';
-                    else if (fileName.includes('.py')) detectedLanguage = 'python';
-                    else if (fileName.includes('.java')) detectedLanguage = 'java';
-                    else if (fileName.includes('.cpp') || fileName.includes('.cc') || fileName.includes('.cxx')) detectedLanguage = 'cpp';
-                    else if (fileName.includes('.c') && !fileName.includes('.cpp')) detectedLanguage = 'c';
-                    else if (fileName.includes('.rs')) detectedLanguage = 'rust';
-                    else if (fileName.includes('.php')) detectedLanguage = 'php';
-                    else if (fileName.includes('.rb')) detectedLanguage = 'ruby';
-                    else if (fileName.includes('.swift')) detectedLanguage = 'swift';
-                    else if (fileName.includes('.kt')) detectedLanguage = 'kotlin';
-                    else if (fileName.includes('.scala')) detectedLanguage = 'scala';
-                    else if (fileName.includes('.html') || fileName.includes('.htm')) detectedLanguage = 'html';
-                    else if (fileName.includes('.css')) detectedLanguage = 'css';
-                    else if (fileName.includes('.json')) detectedLanguage = 'json';
-                    else if (fileName.includes('.yaml') || fileName.includes('.yml')) detectedLanguage = 'yaml';
-                    else if (fileName.includes('.xml')) detectedLanguage = 'xml';
-                    else if (fileName.includes('.md')) detectedLanguage = 'markdown';
-                    else if (fileName.includes('.sql')) detectedLanguage = 'sql';
-                    else if (fileName.includes('.sh')) detectedLanguage = 'bash';
-                    else if (fileName.includes('.ps1')) detectedLanguage = 'powershell';
-                }
-            });
-            
-            if (detectedLanguage) {
-                languageSelector.value = detectedLanguage;
-            } else {
-                languageSelector.value = '';
-            }
+            // This function is no longer needed as each file has its own language selector
+            // Language detection is now handled per-file in changeFileLanguage function
         }
         
         function changeLanguage() {
@@ -3860,6 +3880,66 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 // Apply syntax highlighting based on selected language
                 applySyntaxHighlighting(selectedLanguage);
             }
+        }
+        
+        function changeFileLanguage(selector, fileName) {
+            const selectedLanguage = selector.value;
+            const fileContainer = selector.closest('.file-diff-container');
+            const diffContent = fileContainer.querySelector('.file-diff-content');
+            
+            if (selectedLanguage) {
+                // Apply syntax highlighting based on selected language
+                applyFileSyntaxHighlighting(diffContent, selectedLanguage);
+            } else {
+                // Auto-detect language from file name
+                const detectedLanguage = detectLanguageFromFileName(fileName);
+                if (detectedLanguage) {
+                    applyFileSyntaxHighlighting(diffContent, detectedLanguage);
+                    selector.value = detectedLanguage;
+                }
+            }
+        }
+        
+        function detectLanguageFromFileName(fileName) {
+            const fileNameLower = fileName.toLowerCase();
+            
+            if (fileNameLower.includes('.go')) return 'go';
+            else if (fileNameLower.includes('.js')) return 'javascript';
+            else if (fileNameLower.includes('.ts')) return 'typescript';
+            else if (fileNameLower.includes('.py')) return 'python';
+            else if (fileNameLower.includes('.java')) return 'java';
+            else if (fileNameLower.includes('.cpp') || fileNameLower.includes('.cc') || fileNameLower.includes('.cxx')) return 'cpp';
+            else if (fileNameLower.includes('.c') && !fileNameLower.includes('.cpp')) return 'c';
+            else if (fileNameLower.includes('.rs')) return 'rust';
+            else if (fileNameLower.includes('.php')) return 'php';
+            else if (fileNameLower.includes('.rb')) return 'ruby';
+            else if (fileNameLower.includes('.swift')) return 'swift';
+            else if (fileNameLower.includes('.kt')) return 'kotlin';
+            else if (fileNameLower.includes('.scala')) return 'scala';
+            else if (fileNameLower.includes('.html') || fileNameLower.includes('.htm')) return 'html';
+            else if (fileNameLower.includes('.css')) return 'css';
+            else if (fileNameLower.includes('.json')) return 'json';
+            else if (fileNameLower.includes('.yaml') || fileNameLower.includes('.yml')) return 'yaml';
+            else if (fileNameLower.includes('.xml')) return 'xml';
+            else if (fileNameLower.includes('.md')) return 'markdown';
+            else if (fileNameLower.includes('.sql')) return 'sql';
+            else if (fileNameLower.includes('.sh')) return 'bash';
+            else if (fileNameLower.includes('.ps1')) return 'powershell';
+            
+            return '';
+        }
+        
+        function applyFileSyntaxHighlighting(diffContent, language) {
+            // This is a placeholder for syntax highlighting
+            // In a real implementation, you would use a syntax highlighting library
+            // like Prism.js or highlight.js
+            
+            // For now, we'll just add a data attribute for potential future use
+            diffContent.setAttribute('data-language', language);
+            
+            // You could add actual syntax highlighting here
+            // Example with Prism.js:
+            // Prism.highlightAllUnder(diffContent);
         }
         
         function applySyntaxHighlighting(language) {
@@ -4109,7 +4189,7 @@ func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 
 func handleSingleFileDiff(w http.ResponseWriter, repoPath, diffType, file string) {
 	fileDiff := getFileDiff(repoPath, diffType, file)
-	
+
 	response := map[string]interface{}{
 		"status":    "success",
 		"file":      fileDiff,
@@ -4139,9 +4219,9 @@ func getFileDiff(repoPath, diffType, fileName string) map[string]interface{} {
 
 	if err != nil {
 		return map[string]interface{}{
-			"name":    fileName,
-			"error":   err.Error(),
-			"lines":   []map[string]interface{}{},
+			"name":  fileName,
+			"error": err.Error(),
+			"lines": []map[string]interface{}{},
 		}
 	}
 
