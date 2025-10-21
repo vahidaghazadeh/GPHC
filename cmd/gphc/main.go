@@ -2764,25 +2764,28 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             z-index: 9999;
             overflow: hidden;
             display: none;
         }
         
         .diff-fullscreen-header {
-            background: #444;
-            padding: 15px;
-            border-bottom: 1px solid #555;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
         
         .diff-fullscreen-title {
             color: #fff;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .diff-fullscreen-controls {
@@ -2792,43 +2795,88 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         }
         
         .diff-language-selector {
-            background: #555;
+            background: rgba(255, 255, 255, 0.15);
             color: #fff;
-            border: 1px solid #666;
-            border-radius: 4px;
-            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
             font-size: 14px;
             min-width: 150px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .diff-language-selector:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .diff-language-selector:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
         }
         
         .diff-language-selector option {
-            background: #555;
+            background: #667eea;
             color: #fff;
         }
         
         .diff-fullscreen-close {
-            background: #e74c3c;
+            background: rgba(231, 76, 60, 0.8);
             color: #fff;
             border: none;
-            border-radius: 4px;
-            padding: 8px 15px;
+            border-radius: 8px;
+            padding: 12px 20px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
         }
         
         .diff-fullscreen-close:hover {
-            background: #c0392b;
+            background: rgba(231, 76, 60, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.4);
         }
         
         .diff-fullscreen-content {
-            height: calc(100vh - 80px);
+            height: calc(100vh - 100px);
             overflow-y: auto;
-            padding: 20px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
         }
         
         .diff-fullscreen .diff-line {
             font-size: 14px;
             line-height: 1.6;
+        }
+        
+        .diff-fullscreen .diff-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .diff-fullscreen .diff-stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .diff-line {
