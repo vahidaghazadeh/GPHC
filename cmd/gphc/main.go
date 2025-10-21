@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -255,7 +256,7 @@ var (
 
 	// commit command flags
 	commitSuggest bool
-	
+
 	// diff command flags
 	diffStaged   bool
 	diffUnstaged bool
@@ -380,7 +381,7 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 
 func runDiff(cmd *cobra.Command, args []string) {
 	var path string
-	
+
 	// Check for --path flag first
 	if pathFlag != "" {
 		path = pathFlag
@@ -413,7 +414,7 @@ func runDiff(cmd *cobra.Command, args []string) {
 
 	// Determine what to show
 	var diffArgs []string
-	
+
 	if diffStaged {
 		diffArgs = []string{"diff", "--cached"}
 	} else if diffUnstaged {
@@ -422,12 +423,12 @@ func runDiff(cmd *cobra.Command, args []string) {
 		// Show both staged and unstaged changes
 		diffArgs = []string{"diff", "HEAD"}
 	}
-	
+
 	// Add specific file if provided
 	if len(args) > 0 && pathFlag == "" {
 		diffArgs = append(diffArgs, args[0])
 	}
-	
+
 	// Run git diff
 	cmd_exec := exec.Command("git", diffArgs...)
 	cmd_exec.Dir = path
@@ -436,7 +437,7 @@ func runDiff(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error running git diff: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Display colored diff
 	displayColoredDiff(string(output))
 }
@@ -1991,7 +1992,7 @@ func isLargeFile(repoPath string, filePath string) bool {
 // displayColoredDiff displays git diff output with colored backgrounds
 func displayColoredDiff(diffOutput string) {
 	lines := strings.Split(diffOutput, "\n")
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
 			// Addition: light green background
@@ -2445,6 +2446,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	http.HandleFunc("/", handleDashboard)
 	http.HandleFunc("/api/health", handleHealthAPI)
 	http.HandleFunc("/api/tags", handleTagsAPI)
+	http.HandleFunc("/api/diff", handleDiffAPI)
 	http.HandleFunc("/api/export/json", handleExportJSON)
 	http.HandleFunc("/api/export/pdf", handleExportPDF)
 
@@ -2741,6 +2743,100 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
         .feature-item:nth-child(11) .feature-icon { color: #333; } /* GitHub Integration - Black */
         .feature-item:nth-child(12) .feature-icon { color: #fc6d26; } /* GitLab Integration - GitLab Orange */
         
+        /* Diff styling */
+        .diff-container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        
+        .diff-line {
+            padding: 2px 8px;
+            margin: 1px 0;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .diff-line.addition {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 3px solid #2ecc71;
+            color: #2ecc71;
+        }
+        
+        .diff-line.deletion {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 3px solid #e74c3c;
+            color: #e74c3c;
+        }
+        
+        .diff-line.hunk {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 3px solid #3498db;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .diff-line.file_header {
+            background: rgba(155, 89, 182, 0.2);
+            border-left: 3px solid #9b59b6;
+            color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .diff-line.index {
+            background: rgba(149, 165, 166, 0.2);
+            border-left: 3px solid #95a5a6;
+            color: #95a5a6;
+        }
+        
+        .diff-line.file_name {
+            background: rgba(241, 196, 15, 0.2);
+            border-left: 3px solid #f1c40f;
+            color: #f1c40f;
+        }
+        
+        .diff-line.context {
+            color: #bdc3c7;
+        }
+        
+        .diff-stats {
+            background: rgba(52, 73, 94, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .diff-stats .stat {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        
+        .diff-stats .stat.additions {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+        
+        .diff-stats .stat.deletions {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .diff-stats .stat.files {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+        
         .feature-name {
             font-weight: bold;
             color: #2c3e50;
@@ -2904,6 +3000,22 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     </button>
                 </div>
                 <div id="tag-data" style="margin-top: 20px;"></div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-code-branch"></i> Code Changes</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="showDiff('all')">
+                        <i class="fas fa-eye"></i> Show All Changes
+                    </button>
+                    <button class="btn btn-success" onclick="showDiff('staged')">
+                        <i class="fas fa-check-circle"></i> Staged Changes
+                    </button>
+                    <button class="btn btn-warning" onclick="showDiff('unstaged')">
+                        <i class="fas fa-edit"></i> Unstaged Changes
+                    </button>
+                </div>
+                <div id="diff-data" style="margin-top: 20px;"></div>
             </div>
             
             <div class="card">
@@ -3097,6 +3209,69 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             }, 1500);
         }
         
+        function showDiff(type) {
+            const diffData = document.getElementById('diff-data');
+            diffData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
+            
+            fetch('/api/diff?type=' + type)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDiff(data);
+                    } else {
+                        diffData.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
+                    }
+                })
+                .catch(error => {
+                    diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
+                });
+        }
+        
+        function renderDiff(data) {
+            const diffData = document.getElementById('diff-data');
+            
+            if (data.lines.length === 0) {
+                diffData.innerHTML = '<div class="info">No changes found</div>';
+                return;
+            }
+            
+            // Calculate stats
+            let additions = 0, deletions = 0, files = 0;
+            let currentFile = '';
+            
+            data.lines.forEach(line => {
+                if (line.type === 'addition') additions++;
+                else if (line.type === 'deletion') deletions++;
+                else if (line.type === 'file_header') {
+                    files++;
+                    currentFile = line.content;
+                }
+            });
+            
+            let html = '<div class="diff-stats">';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + deletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + files + ' files</div>';
+            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
+            html += '</div>';
+            
+            html += '<div class="diff-container">';
+            
+            data.lines.forEach(line => {
+                html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+            });
+            
+            html += '</div>';
+            
+            diffData.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         // Load data on page load
         refreshData();
         
@@ -3201,6 +3376,116 @@ func handleHealthAPI(w http.ResponseWriter, r *http.Request) {
 		filepath.Base(repoPath))
 
 	w.Write([]byte(json))
+}
+
+func handleDiffAPI(w http.ResponseWriter, r *http.Request) {
+	// Check authentication if enabled
+	if serverAuth {
+		username, password, ok := r.BasicAuth()
+		if !ok || username != serverUsername || password != serverPassword {
+			w.Header().Set("WWW-Authenticate", `Basic realm="GPHC Dashboard"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Get repository path
+	repoPath, err := os.Getwd()
+	if err != nil {
+		http.Error(w, "Error getting repository path", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if it's a git repository
+	if !isGitRepository(repoPath) {
+		http.Error(w, "Not a git repository", http.StatusBadRequest)
+		return
+	}
+
+	// Get diff type from query parameters
+	diffType := r.URL.Query().Get("type")
+	if diffType == "" {
+		diffType = "all"
+	}
+
+	// Get specific file if provided
+	file := r.URL.Query().Get("file")
+
+	// Determine git diff command
+	var diffArgs []string
+	switch diffType {
+	case "staged":
+		diffArgs = []string{"diff", "--cached"}
+	case "unstaged":
+		diffArgs = []string{"diff"}
+	case "all":
+		diffArgs = []string{"diff", "HEAD"}
+	default:
+		diffArgs = []string{"diff", "HEAD"}
+	}
+
+	// Add specific file if provided
+	if file != "" {
+		diffArgs = append(diffArgs, file)
+	}
+
+	// Run git diff
+	cmd := exec.Command("git", diffArgs...)
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		http.Error(w, "Error running git diff", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse diff output
+	diffLines := strings.Split(string(output), "\n")
+	var diffData []map[string]interface{}
+
+	for _, line := range diffLines {
+		if line == "" {
+			continue
+		}
+
+		lineData := map[string]interface{}{
+			"content": line,
+			"type":     "context",
+		}
+
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			lineData["type"] = "addition"
+		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			lineData["type"] = "deletion"
+		} else if strings.HasPrefix(line, "@@") {
+			lineData["type"] = "hunk"
+		} else if strings.HasPrefix(line, "diff --git") {
+			lineData["type"] = "file_header"
+		} else if strings.HasPrefix(line, "index ") {
+			lineData["type"] = "index"
+		} else if strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
+			lineData["type"] = "file_name"
+		}
+
+		diffData = append(diffData, lineData)
+	}
+
+	// Set CORS headers if enabled
+	if serverCORS {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	}
+
+	// Return JSON response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":    "success",
+		"type":      diffType,
+		"file":      file,
+		"lines":     diffData,
+		"timestamp": time.Now().Format(time.RFC3339),
+		"repository": filepath.Base(repoPath),
+	})
 }
 
 func handleTagsAPI(w http.ResponseWriter, r *http.Request) {
