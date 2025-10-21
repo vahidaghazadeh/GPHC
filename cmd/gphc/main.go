@@ -122,11 +122,27 @@ suggest next semantic version, and optionally generate a changelog.`,
 	Run:  runTags,
 }
 
+var suggestCmd = &cobra.Command{
+	Use:   "suggest [path]",
+	Short: "Suggest commit message based on staged changes",
+	Long: `Analyze staged files and suggest conventional commit messages.
+This command examines the changes in staged files and suggests
+appropriate commit messages following conventional commit format.
+
+Examples:
+  git hc suggest                    # Suggest for current directory
+  git hc suggest /path/to/repo      # Suggest for specific repository
+  git hc suggest --path /path/to/repo # Suggest for specific repository`,
+	Args: cobra.MaximumNArgs(1),
+	Run:  runSuggest,
+}
+
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(preCommitCmd)
+	rootCmd.AddCommand(suggestCmd)
 	rootCmd.AddCommand(badgeCmd)
 	rootCmd.AddCommand(githubCmd)
 	rootCmd.AddCommand(gitlabCmd)
@@ -143,6 +159,9 @@ func init() {
 
 	// Add pre-commit command flags
 	preCommitCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to check")
+
+	// Add suggest command flags
+	suggestCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to analyze")
 
 	// Add scan command flags
 	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
@@ -308,6 +327,52 @@ func runPreCommit(cmd *cobra.Command, args []string) {
 		fmt.Printf("%d pre-commit check(s) failed\n", issues)
 		os.Exit(1)
 	}
+}
+
+func runSuggest(cmd *cobra.Command, args []string) {
+	var path string
+	
+	// Check for --path flag first
+	if pathFlag != "" {
+		path = pathFlag
+	} else if len(args) > 0 {
+		path = args[0]
+	} else {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Check if path is a git repository
+	if !isGitRepository(path) {
+		fmt.Printf("Error: %s is not a Git repository\n", path)
+		os.Exit(1)
+	}
+
+	// Check if there are staged files
+	stagedFiles, err := getStagedFiles(path)
+	if err != nil {
+		fmt.Printf("Error checking staged files: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(stagedFiles) == 0 {
+		fmt.Println("No staged files to analyze")
+		return
+	}
+
+	fmt.Printf("Analyzing %d staged files for commit message suggestion\n", len(stagedFiles))
+
+	// Analyze staged changes
+	suggestion := analyzeStagedChanges(path, stagedFiles)
+	
+	fmt.Println("\nSuggested commit message:")
+	fmt.Printf("  %s\n", suggestion)
+	fmt.Println("\nYou can use this message with:")
+	fmt.Printf("  git commit -m \"%s\"\n", suggestion)
 }
 
 func runCheck(cmd *cobra.Command, args []string) {
@@ -1009,6 +1074,106 @@ func checkCommitMessage(repoPath string) bool {
 	}
 
 	return false
+}
+
+func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
+	// Analyze file types and changes
+	var addedFiles, modifiedFiles, deletedFiles []string
+	var hasNewFeatures, hasBugFixes, hasDocs, hasRefactor bool
+	
+	for _, file := range stagedFiles {
+		// Get file status
+		cmd := exec.Command("git", "status", "--porcelain", file)
+		cmd.Dir = repoPath
+		output, err := cmd.Output()
+		if err != nil {
+			continue
+		}
+		
+		status := strings.TrimSpace(string(output))
+		if len(status) < 3 {
+			continue
+		}
+		
+		fileStatus := status[:2]
+		fileName := status[3:]
+		
+		switch {
+		case strings.HasPrefix(fileStatus, "A"):
+			addedFiles = append(addedFiles, fileName)
+		case strings.HasPrefix(fileStatus, "M"):
+			modifiedFiles = append(modifiedFiles, fileName)
+		case strings.HasPrefix(fileStatus, "D"):
+			deletedFiles = append(deletedFiles, fileName)
+		}
+		
+		// Analyze file type and content
+		fileExt := strings.ToLower(filepath.Ext(fileName))
+		fileName = strings.ToLower(fileName)
+		
+		// Check for new features
+		if strings.Contains(fileName, "feat") || strings.Contains(fileName, "feature") || 
+		   strings.Contains(fileName, "add") || strings.Contains(fileName, "new") {
+			hasNewFeatures = true
+		}
+		
+		// Check for bug fixes
+		if strings.Contains(fileName, "fix") || strings.Contains(fileName, "bug") || 
+		   strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") {
+			hasBugFixes = true
+		}
+		
+		// Check for documentation
+		if strings.Contains(fileName, "readme") || strings.Contains(fileName, "doc") || 
+		   fileExt == ".md" || fileExt == ".txt" {
+			hasDocs = true
+		}
+		
+		// Check for refactoring
+		if strings.Contains(fileName, "refactor") || strings.Contains(fileName, "clean") || 
+		   strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") {
+			hasRefactor = true
+		}
+	}
+	
+	// Generate suggestion based on analysis
+	var prefix, description string
+	
+	if hasNewFeatures && len(addedFiles) > 0 {
+		prefix = "feat"
+		description = "add new feature"
+	} else if hasBugFixes {
+		prefix = "fix"
+		description = "fix bug"
+	} else if hasDocs {
+		prefix = "docs"
+		description = "update documentation"
+	} else if hasRefactor {
+		prefix = "refactor"
+		description = "refactor code"
+	} else if len(addedFiles) > 0 {
+		prefix = "feat"
+		description = "add new functionality"
+	} else if len(modifiedFiles) > 0 {
+		prefix = "chore"
+		description = "update files"
+	} else if len(deletedFiles) > 0 {
+		prefix = "chore"
+		description = "remove files"
+	} else {
+		prefix = "chore"
+		description = "update project"
+	}
+	
+	// Add file count information
+	fileCount := len(stagedFiles)
+	if fileCount == 1 {
+		description += fmt.Sprintf(" (%s)", stagedFiles[0])
+	} else {
+		description += fmt.Sprintf(" (%d files)", fileCount)
+	}
+	
+	return fmt.Sprintf("%s: %s", prefix, description)
 }
 
 func checkLargeFiles(files []string) bool {
