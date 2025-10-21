@@ -3245,7 +3245,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     healthData.innerHTML = '<div class="error">Error loading data: ' + error + '</div>';
-                }); }
+                });
         }
         
         function getScoreClass(score) {
@@ -3295,7 +3295,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     
                     data.details.forEach(detail => {
                         tagData.innerHTML += '<li>' + detail + '</li>';
-                    }); }
+                    });
                     
                     tagData.innerHTML += 
                             '</ul>' +
@@ -3303,7 +3303,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     tagData.innerHTML = '<div class="error">Error loading tag data: ' + error + '</div>';
-                }); }
+                });
         }
         
         function suggestTag() {
@@ -3341,7 +3341,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
-                }); }
+                });
         }
         
         function renderDiff(data) {
@@ -3363,7 +3363,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     files++;
                     currentFile = line.content;
                 }
-            }); }
+            });
             
             let html = '<div class="diff-stats">';
             html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
@@ -3376,7 +3376,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
-            }); }
+            });
             
             html += '</div>';
             
@@ -3408,7 +3408,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
-                }); }
+                });
         }
         
         function renderDiffFullscreen(data) {
@@ -3425,7 +3425,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 if (line.type === 'addition') additions++;
                 else if (line.type === 'deletion') deletions++;
                 else if (line.type === 'file_header') files++;
-            }); }
+            });
             
             let html = '<div class="diff-stats">';
             html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
@@ -3438,7 +3438,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
-            }); }
+            });
             
             html += '</div>';
             
@@ -3476,7 +3476,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     else if (content.includes('.sh')) detectedLanguage = 'bash';
                     else if (content.includes('.ps1')) detectedLanguage = 'powershell';
                 }
-            }); }
+            });
             
             if (detectedLanguage) {
                 languageSelector.value = detectedLanguage;
