@@ -183,7 +183,7 @@ git hc check --format json --output dashboard-data.json
 
 ### Export Settings
 ```yaml
-# gphc.yml
+# git-hc.yml
 export:
   default_format: "json"
   include_timestamps: true
@@ -204,7 +204,7 @@ export:
 
 ### Custom Templates
 ```yaml
-# gphc.yml
+# git-hc.yml
 export:
   custom_templates:
     - name: "team-report"

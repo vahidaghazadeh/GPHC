@@ -85,7 +85,7 @@ git hc scan ~/projects --format markdown
 
 ### Scan Settings
 ```yaml
-# gphc.yml
+# git-hc.yml
 scan:
   recursive: true
   min_score: 70
@@ -340,7 +340,7 @@ pipeline {
 find ~/projects -name ".git" -type d
 
 # Use recursive flag
-gphc scan ~/projects --recursive
+git hc scan ~/projects --recursive
 ```
 
 #### Permission Denied
@@ -349,28 +349,28 @@ gphc scan ~/projects --recursive
 ls -la ~/projects
 
 # Use sudo if necessary
-sudo gphc scan /opt/repositories --recursive
+sudo git hc scan /opt/repositories --recursive
 ```
 
 #### Performance Issues
 ```bash
 # Reduce parallel jobs
-gphc scan ~/projects --parallel 2
+git hc scan ~/projects --parallel 2
 
 # Exclude large directories
-gphc scan ~/projects --exclude "node_modules" --exclude "vendor"
+git hc scan ~/projects --exclude "node_modules" --exclude "vendor"
 ```
 
 ### Error Handling
 ```bash
 # Continue on errors
-gphc scan ~/projects --continue-on-error
+git hc scan ~/projects --continue-on-error
 
 # Verbose output for debugging
-gphc scan ~/projects --verbose
+git hc scan ~/projects --verbose
 
 # Check specific repositories
-gphc scan ~/projects --check-specific project-a project-b
+git hc scan ~/projects --check-specific project-a project-b
 ```
 
 ## Best Practices

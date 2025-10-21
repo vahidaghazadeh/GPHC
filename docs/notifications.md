@@ -16,7 +16,7 @@ git hc check --notify slack --webhook-url https://hooks.slack.com/services/YOUR/
 
 ### Slack Configuration
 ```yaml
-# gphc.yml
+# git-hc.yml
 notifications:
   slack:
     enabled: true
@@ -55,13 +55,13 @@ git hc check --notify discord --webhook-url https://discord.com/api/webhooks/YOU
 
 ### Discord Configuration
 ```yaml
-# gphc.yml
+# git-hc.yml
 notifications:
   discord:
     enabled: true
     webhook_url: "https://discord.com/api/webhooks/YOUR/WEBHOOK/URL"
     username: "GPHC Bot"
-    avatar_url: "https://example.com/gphc-avatar.png"
+    avatar_url: "https://example.com/git-hc-avatar.png"
 ```
 
 ## Custom Webhooks
@@ -101,7 +101,7 @@ git hc check --notify webhook --webhook-url https://your-service.com/webhook
 
 ### Notification Settings
 ```yaml
-# gphc.yml
+# git-hc.yml
 notifications:
   enabled: true
   
@@ -130,7 +130,7 @@ notifications:
 
 ### Conditional Notifications
 ```yaml
-# gphc.yml
+# git-hc.yml
 notifications:
   conditions:
     - trigger: "score_below"
@@ -191,7 +191,7 @@ health_check:
 
 ### Message Templates
 ```yaml
-# gphc.yml
+# git-hc.yml
 notifications:
   templates:
     slack:

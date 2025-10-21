@@ -71,7 +71,7 @@ git hc serve --title "My Custom Dashboard"
 ```
 
 ### Configuration File
-Create a `gphc.yml` file for persistent configuration:
+Create a `git-hc.yml` file for persistent configuration:
 
 ```yaml
 # Server configuration
@@ -217,7 +217,7 @@ git hc serve --multi-project ~/projects
 
 ### Custom Themes
 ```yaml
-# gphc.yml
+# git-hc.yml
 dashboard:
   theme: "dark"  # dark, light, auto
   colors:

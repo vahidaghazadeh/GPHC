@@ -60,7 +60,7 @@ git hc pre-commit
 
 ### Pre-commit Settings
 ```yaml
-# gphc.yml
+# git-hc.yml
 pre_commit:
   enabled: true
   check_staged_files: true

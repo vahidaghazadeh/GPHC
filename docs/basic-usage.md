@@ -153,7 +153,7 @@ Summary:
 
 ## Configuration
 
-Create a `gphc.yml` file in your repository root:
+Create a `git-hc.yml` file in your repository root:
 
 ```yaml
 # Basic configuration
@@ -198,7 +198,7 @@ ls -la ~/.local/bin/git-hc-wrapper
 git status
 
 # Or specify the repository path
-gphc check /path/to/git/repository
+git hc check /path/to/git/repository
 ```
 
 #### Permission Issues

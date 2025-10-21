@@ -154,7 +154,7 @@ git hc tui --scan-recursive ~/projects
 
 ### Custom Themes
 ```yaml
-# gphc.yml
+# git-hc.yml
 tui:
   theme: "dark"  # dark, light, auto
   colors:
@@ -194,7 +194,7 @@ F3 -> Trends -> Export -> CSV
 
 ### TUI Settings
 ```yaml
-# gphc.yml
+# git-hc.yml
 tui:
   refresh_interval: "30s"
   theme: "dark"
@@ -304,7 +304,7 @@ git hc tui --compact-mode
 ### Configuration Issues
 ```bash
 # Reset configuration
-rm ~/.gphc.yml
+rm ~/.git-hc.yml
 git hc tui
 
 # Check configuration
