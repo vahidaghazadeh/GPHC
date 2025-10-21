@@ -3815,34 +3815,35 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 return;
             }
             
-            // Check first file for language detection
-            const firstFile = data.files[0];
-            if (firstFile && firstFile.name) {
-                const fileName = firstFile.name.toLowerCase();
-                
-                if (fileName.includes('.go')) detectedLanguage = 'go';
-                else if (fileName.includes('.js')) detectedLanguage = 'javascript';
-                else if (fileName.includes('.ts')) detectedLanguage = 'typescript';
-                else if (fileName.includes('.py')) detectedLanguage = 'python';
-                else if (fileName.includes('.java')) detectedLanguage = 'java';
-                else if (fileName.includes('.cpp') || fileName.includes('.cc') || fileName.includes('.cxx')) detectedLanguage = 'cpp';
-                else if (fileName.includes('.c') && !fileName.includes('.cpp')) detectedLanguage = 'c';
-                else if (fileName.includes('.rs')) detectedLanguage = 'rust';
-                else if (fileName.includes('.php')) detectedLanguage = 'php';
-                else if (fileName.includes('.rb')) detectedLanguage = 'ruby';
-                else if (fileName.includes('.swift')) detectedLanguage = 'swift';
-                else if (fileName.includes('.kt')) detectedLanguage = 'kotlin';
-                else if (fileName.includes('.scala')) detectedLanguage = 'scala';
-                else if (fileName.includes('.html') || fileName.includes('.htm')) detectedLanguage = 'html';
-                else if (fileName.includes('.css')) detectedLanguage = 'css';
-                else if (fileName.includes('.json')) detectedLanguage = 'json';
-                else if (fileName.includes('.yaml') || fileName.includes('.yml')) detectedLanguage = 'yaml';
-                else if (fileName.includes('.xml')) detectedLanguage = 'xml';
-                else if (fileName.includes('.md')) detectedLanguage = 'markdown';
-                else if (fileName.includes('.sql')) detectedLanguage = 'sql';
-                else if (fileName.includes('.sh')) detectedLanguage = 'bash';
-                else if (fileName.includes('.ps1')) detectedLanguage = 'powershell';
-            }
+            // Check all files for language detection
+            data.files.forEach(file => {
+                if (file && file.name && !detectedLanguage) {
+                    const fileName = file.name.toLowerCase();
+                    
+                    if (fileName.includes('.go')) detectedLanguage = 'go';
+                    else if (fileName.includes('.js')) detectedLanguage = 'javascript';
+                    else if (fileName.includes('.ts')) detectedLanguage = 'typescript';
+                    else if (fileName.includes('.py')) detectedLanguage = 'python';
+                    else if (fileName.includes('.java')) detectedLanguage = 'java';
+                    else if (fileName.includes('.cpp') || fileName.includes('.cc') || fileName.includes('.cxx')) detectedLanguage = 'cpp';
+                    else if (fileName.includes('.c') && !fileName.includes('.cpp')) detectedLanguage = 'c';
+                    else if (fileName.includes('.rs')) detectedLanguage = 'rust';
+                    else if (fileName.includes('.php')) detectedLanguage = 'php';
+                    else if (fileName.includes('.rb')) detectedLanguage = 'ruby';
+                    else if (fileName.includes('.swift')) detectedLanguage = 'swift';
+                    else if (fileName.includes('.kt')) detectedLanguage = 'kotlin';
+                    else if (fileName.includes('.scala')) detectedLanguage = 'scala';
+                    else if (fileName.includes('.html') || fileName.includes('.htm')) detectedLanguage = 'html';
+                    else if (fileName.includes('.css')) detectedLanguage = 'css';
+                    else if (fileName.includes('.json')) detectedLanguage = 'json';
+                    else if (fileName.includes('.yaml') || fileName.includes('.yml')) detectedLanguage = 'yaml';
+                    else if (fileName.includes('.xml')) detectedLanguage = 'xml';
+                    else if (fileName.includes('.md')) detectedLanguage = 'markdown';
+                    else if (fileName.includes('.sql')) detectedLanguage = 'sql';
+                    else if (fileName.includes('.sh')) detectedLanguage = 'bash';
+                    else if (fileName.includes('.ps1')) detectedLanguage = 'powershell';
+                }
+            });
             
             if (detectedLanguage) {
                 languageSelector.value = detectedLanguage;
