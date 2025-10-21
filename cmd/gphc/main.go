@@ -1848,51 +1848,51 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             <h2><i class="fas fa-rocket"></i> Available Features</h2>
             <div class="feature-grid">
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i>📄</div>
                     <div class="feature-name">Documentation</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="feature-icon"><i class="fas fa-code-branch"></i>🌿</div>
                     <div class="feature-name">Commit Quality</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-broom"></i></div>
+                    <div class="feature-icon"><i class="fas fa-broom"></i>🧹</div>
                     <div class="feature-name">Git Hygiene</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-tags"></i></div>
+                    <div class="feature-icon"><i class="fas fa-tags"></i>🏷️</div>
                     <div class="feature-name">Tag Management</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-history"></i></div>
+                    <div class="feature-icon"><i class="fas fa-history"></i>📈</div>
                     <div class="feature-name">Historical Tracking</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-search"></i></div>
+                    <div class="feature-icon"><i class="fas fa-search"></i>🔍</div>
                     <div class="feature-name">Multi-Repo Scan</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="feature-icon"><i class="fas fa-cogs"></i>⚙️</div>
                     <div class="feature-name">CI/CD Integration</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <div class="feature-icon"><i class="fas fa-bell"></i>🔔</div>
                     <div class="feature-name">Notifications</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <div class="feature-icon"><i class="fas fa-terminal"></i>💻</div>
                     <div class="feature-name">Terminal UI</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-globe"></i></div>
+                    <div class="feature-icon"><i class="fas fa-globe"></i>🌐</div>
                     <div class="feature-name">Web Dashboard</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-github"></i></div>
+                    <div class="feature-icon"><i class="fas fa-github"></i>🐙</div>
                     <div class="feature-name">GitHub Integration</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-gitlab"></i></div>
+                    <div class="feature-icon"><i class="fas fa-gitlab"></i>🦊</div>
                     <div class="feature-name">GitLab Integration</div>
                 </div>
             </div>
