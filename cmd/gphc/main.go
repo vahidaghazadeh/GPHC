@@ -124,23 +124,18 @@ suggest next semantic version, and optionally generate a changelog.`,
 
 var commitCmd = &cobra.Command{
 	Use:   "commit",
-	Short: "Commit-related operations",
-	Long:  `Git commit operations including message suggestion and validation.`,
-}
-
-var suggestCmd = &cobra.Command{
-	Use:   "suggest [path]",
-	Short: "Suggest commit message based on staged changes",
-	Long: `Analyze staged files and suggest conventional commit messages.
-This command examines the changes in staged files and suggests
-appropriate commit messages following conventional commit format.
+	Short: "Git commit with enhanced options",
+	Long: `Enhanced git commit command with additional options.
+This command extends the standard git commit with health checks,
+message suggestions, and validation features.
 
 Examples:
-  git hc commit suggest                    # Suggest for current directory
-  git hc commit suggest /path/to/repo      # Suggest for specific repository
-  git hc commit suggest --path /path/to/repo # Suggest for specific repository`,
-	Args: cobra.MaximumNArgs(1),
-	Run:  runSuggest,
+  git hc commit -m "message"              # Standard commit with health check
+  git hc commit -m --suggest              # Commit with suggested message
+  git hc commit --suggest                 # Suggest message and commit
+  git hc commit -m "message" --validate   # Commit with validation`,
+	Args: cobra.ArbitraryArgs,
+	Run:  runCommit,
 }
 
 func init() {
@@ -159,8 +154,10 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(tagsCmd)
 	
-	// Add commit subcommands
-	commitCmd.AddCommand(suggestCmd)
+	// Add commit flags
+	commitCmd.Flags().BoolVar(&suggestMessage, "suggest", false, "Suggest commit message based on staged changes")
+	commitCmd.Flags().BoolVar(&validateCommit, "validate", false, "Validate commit message format")
+	commitCmd.Flags().StringVarP(&commitMessage, "message", "m", "", "Commit message")
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
@@ -170,7 +167,6 @@ func init() {
 	preCommitCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to check")
 
 	// Add suggest command flags
-	suggestCmd.Flags().StringVarP(&pathFlag, "path", "p", "", "Repository path to analyze")
 
 	// Add scan command flags
 	scanCmd.Flags().BoolVarP(&recursiveScan, "recursive", "r", false, "Recursively scan subdirectories for Git repositories")
@@ -219,6 +215,11 @@ var (
 	tagsSuggest      bool
 	tagsChangelogOut string
 	tagsEnforce      bool
+	
+	// commit command flags
+	suggestMessage   bool
+	validateCommit   bool
+	commitMessage    string
 )
 
 var checkCmd = &cobra.Command{
@@ -382,6 +383,124 @@ func runSuggest(cmd *cobra.Command, args []string) {
 	fmt.Printf("  %s\n", suggestion)
 	fmt.Println("\nYou can use this message with:")
 	fmt.Printf("  git commit -m \"%s\"\n", suggestion)
+}
+
+func isValidCommitMessage(message string) bool {
+	// Check if message follows conventional commit format
+	// Format: type(scope): description
+	// Examples: feat: add feature, fix: resolve bug, docs: update README
+	
+	// Remove leading/trailing whitespace
+	message = strings.TrimSpace(message)
+	
+	// Check if message is empty
+	if message == "" {
+		return false
+	}
+	
+	// Check if message contains colon
+	if !strings.Contains(message, ":") {
+		return false
+	}
+	
+	// Split by colon
+	parts := strings.SplitN(message, ":", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	
+	// Check type part
+	typePart := strings.TrimSpace(parts[0])
+	validTypes := []string{"feat", "fix", "docs", "style", "refactor", "test", "chore", "perf", "ci", "build", "revert"}
+	
+	// Check if type is valid
+	isValidType := false
+	for _, validType := range validTypes {
+		if typePart == validType {
+			isValidType = true
+			break
+		}
+	}
+	
+	if !isValidType {
+		return false
+	}
+	
+	// Check description part
+	description := strings.TrimSpace(parts[1])
+	if description == "" {
+		return false
+	}
+	
+	return true
+}
+
+func runCommit(cmd *cobra.Command, args []string) {
+	// Determine repository path
+	var repoPath string
+	if len(args) > 0 {
+		repoPath = args[0]
+	} else {
+		repoPath = "."
+	}
+	
+	// Check if it's a git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+	
+	// Handle suggest flag
+	if suggestMessage {
+		// Get staged files
+		stagedFiles, err := getStagedFiles(repoPath)
+		if err != nil {
+			fmt.Printf("Error getting staged files: %v\n", err)
+			os.Exit(1)
+		}
+		
+		if len(stagedFiles) == 0 {
+			fmt.Println("No staged files found. Please stage files first with 'git add'")
+			os.Exit(1)
+		}
+		
+		// Generate suggested message
+		suggestedMessage := analyzeStagedChanges(repoPath, stagedFiles)
+		
+		// Always use suggested message when --suggest flag is used
+		commitMessage = suggestedMessage
+		fmt.Printf("Using suggested message: %s\n", suggestedMessage)
+	}
+	
+	// Validate commit message if requested
+	if validateCommit && commitMessage != "" {
+		if !isValidCommitMessage(commitMessage) {
+			fmt.Printf("Error: Commit message doesn't follow conventional format: %s\n", commitMessage)
+			fmt.Println("Expected format: type(scope): description")
+			fmt.Println("Examples: feat: add new feature, fix: resolve bug, docs: update README")
+			os.Exit(1)
+		}
+	}
+	
+	// Perform the commit
+	if commitMessage != "" {
+		// Execute git commit with the message
+		gitCmd := exec.Command("git", "commit", "-m", commitMessage)
+		gitCmd.Dir = repoPath
+		
+		output, err := gitCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("Error executing git commit: %v\n", err)
+			fmt.Printf("Git output: %s\n", string(output))
+			os.Exit(1)
+		}
+		
+		fmt.Printf("Commit successful: %s\n", commitMessage)
+		fmt.Printf("Git output: %s\n", string(output))
+	} else {
+		fmt.Println("Error: No commit message provided. Use -m flag or --suggest")
+		os.Exit(1)
+	}
 }
 
 func runCheck(cmd *cobra.Command, args []string) {
