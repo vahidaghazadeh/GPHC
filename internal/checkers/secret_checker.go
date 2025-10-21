@@ -79,19 +79,19 @@ func (c *SecretChecker) Check(data *types.RepositoryData) *types.CheckResult {
 		result.Status = types.StatusFail
 		result.Score = 0
 		result.Message = fmt.Sprintf("Found %d secrets in Git history", len(secrets))
-		
+
 		// Add details about found secrets
 		details := []string{
 			fmt.Sprintf("Total secrets found: %d", len(secrets)),
 			fmt.Sprintf("High severity secrets: %d", c.countHighSeveritySecrets(secrets)),
 		}
-		
+
 		// Add individual secret details
 		for i, secret := range secrets {
-			details = append(details, fmt.Sprintf("%d. %s (%s) in %s:%d", 
+			details = append(details, fmt.Sprintf("%d. %s (%s) in %s:%d",
 				i+1, secret.Type, secret.Severity, secret.File, secret.Line))
 		}
-		
+
 		result.Details = details
 	} else {
 		result.Details = []string{"No secrets found in Git history"}
@@ -502,19 +502,19 @@ func (c *SecretChecker) generateRemediation(secrets []Secret) string {
 	remediation += "1. Rotate/revoke all exposed credentials immediately\n"
 	remediation += "2. Rewrite Git history to remove secrets\n"
 	remediation += "3. Notify team members about the exposure\n\n"
-	
+
 	remediation += "Tools for History Rewriting:\n"
 	remediation += "- git filter-repo: https://github.com/newren/git-filter-repo\n"
 	remediation += "- BFG Repo-Cleaner: https://rtyley.github.io/bfg-repo-cleaner/\n\n"
-	
+
 	remediation += "Commands:\n"
 	remediation += "# Using git filter-repo\n"
 	remediation += "git filter-repo --replace-text <(echo 'SECRET_VALUE==>REDACTED')\n\n"
 	remediation += "# Using BFG\n"
 	remediation += "java -jar bfg.jar --replace-text replacements.txt\n\n"
-	
+
 	remediation += "After rewriting history:\n"
 	remediation += "git push --force-with-lease origin main\n"
-	
+
 	return remediation
 }

@@ -170,7 +170,7 @@ var secretsCmd = &cobra.Command{
 var dependenciesCmd = &cobra.Command{
 	Use:   "dependencies",
 	Short: "Scan transitive dependencies for vulnerabilities",
-	Long:  `Perform deep analysis of transitive dependencies to detect security vulnerabilities.
+	Long: `Perform deep analysis of transitive dependencies to detect security vulnerabilities.
 This includes both direct and indirect dependencies, helping identify supply chain attacks.
 
 Examples:
@@ -178,7 +178,7 @@ Examples:
   git hc security dependencies --depth deep       # Deep transitive analysis
   git hc security dependencies --format json      # JSON output format
   git hc security dependencies --severity high    # Only show high/critical vulnerabilities`,
-	Run:   runDependenciesScan,
+	Run: runDependenciesScan,
 }
 
 func init() {
@@ -189,14 +189,14 @@ func init() {
 	secretsCmd.Flags().Float64("confidence", 0.8, "Minimum confidence threshold (0.0-1.0)")
 	secretsCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
 	secretsCmd.Flags().String("output", "", "Output file path")
-	
+
 	dependenciesCmd.Flags().String("depth", "deep", "Scan depth (shallow, deep)")
 	dependenciesCmd.Flags().String("severity", "low", "Minimum severity level (low, medium, high, critical)")
 	dependenciesCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
 	dependenciesCmd.Flags().String("output", "", "Output file path")
 	dependenciesCmd.Flags().Bool("tree", true, "Show dependency tree structure")
 	dependenciesCmd.Flags().Bool("direct-only", false, "Only check direct dependencies")
-	
+
 	securityCmd.AddCommand(secretsCmd)
 	securityCmd.AddCommand(dependenciesCmd)
 }
@@ -2620,7 +2620,7 @@ func runSecretsScan(cmd *cobra.Command, args []string) {
 
 	// Run secret checker
 	secretChecker := checkers.NewSecretChecker()
-	
+
 	// Create RepositoryData for the checker
 	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
 	if err != nil {
@@ -2632,7 +2632,7 @@ func runSecretsScan(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error analyzing repository: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	result := secretChecker.Check(data)
 
 	// Process results
@@ -2645,32 +2645,32 @@ func runSecretsScan(cmd *cobra.Command, args []string) {
 	// For now, let's use a simpler approach
 	if result.Status == types.StatusFail && len(result.Details) > 0 {
 		fmt.Printf("🚨 Secrets found in Git history!\n\n")
-		
+
 		// Display details
 		for _, detail := range result.Details {
 			fmt.Printf("• %s\n", detail)
 		}
-		
+
 		// Show remediation
 		fmt.Printf("\n🚨 CRITICAL: Secrets found in Git history!\n\n")
 		fmt.Printf("Immediate Actions Required:\n")
 		fmt.Printf("1. Rotate/revoke all exposed credentials immediately\n")
 		fmt.Printf("2. Rewrite Git history to remove secrets\n")
 		fmt.Printf("3. Notify team members about the exposure\n\n")
-		
+
 		fmt.Printf("Tools for History Rewriting:\n")
 		fmt.Printf("- git filter-repo: https://github.com/newren/git-filter-repo\n")
 		fmt.Printf("- BFG Repo-Cleaner: https://rtyley.github.io/bfg-repo-cleaner/\n\n")
-		
+
 		fmt.Printf("Commands:\n")
 		fmt.Printf("# Using git filter-repo\n")
 		fmt.Printf("git filter-repo --replace-text <(echo 'SECRET_VALUE==>REDACTED')\n\n")
 		fmt.Printf("# Using BFG\n")
 		fmt.Printf("java -jar bfg.jar --replace-text replacements.txt\n\n")
-		
+
 		fmt.Printf("After rewriting history:\n")
 		fmt.Printf("git push --force-with-lease origin main\n")
-		
+
 		os.Exit(1)
 	} else {
 		fmt.Printf("✅ No secrets found in Git history!\n")
@@ -2707,7 +2707,7 @@ func runDependenciesScan(cmd *cobra.Command, args []string) {
 
 	// Run transitive dependency checker
 	depChecker := checkers.NewTransitiveDependencyChecker()
-	
+
 	// Create RepositoryData for the checker
 	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
 	if err != nil {
@@ -2719,7 +2719,7 @@ func runDependenciesScan(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error analyzing repository: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	result := depChecker.Check(data)
 
 	// Process results
@@ -2746,20 +2746,20 @@ func runDependenciesScan(cmd *cobra.Command, args []string) {
 		fmt.Printf("2. Review dependency tree to identify root causes\n")
 		fmt.Printf("3. Consider removing unnecessary dependencies\n")
 		fmt.Printf("4. Implement dependency scanning in CI/CD pipeline\n\n")
-		
+
 		fmt.Printf("Tools for Dependency Management:\n")
 		fmt.Printf("- npm audit fix (Node.js)\n")
 		fmt.Printf("- go get -u (Go)\n")
 		fmt.Printf("- pip install --upgrade (Python)\n")
 		fmt.Printf("- cargo update (Rust)\n")
 		fmt.Printf("- mvn versions:use-latest-releases (Java)\n\n")
-		
+
 		fmt.Printf("Prevention:\n")
 		fmt.Printf("- Use dependency scanning tools in CI/CD\n")
 		fmt.Printf("- Regularly update dependencies\n")
 		fmt.Printf("- Use lock files (package-lock.json, go.sum, etc.)\n")
 		fmt.Printf("- Monitor security advisories\n")
-		
+
 		os.Exit(1)
 	} else {
 		fmt.Printf("✅ No vulnerabilities found in dependencies!\n")
@@ -2770,14 +2770,14 @@ func runDependenciesScan(cmd *cobra.Command, args []string) {
 func outputDependenciesTable(result *types.CheckResult, showTree bool, minSeverity string) {
 	fmt.Printf("📊 Dependency Scan Results\n")
 	fmt.Printf("==========================\n\n")
-	
+
 	// Display details
 	for _, detail := range result.Details {
 		fmt.Printf("%s\n", detail)
 	}
-	
+
 	fmt.Printf("Security Score: %d/100\n\n", result.Score)
-	
+
 	// Note: Dependency tree display would need to be implemented differently
 	// since Details is now []string instead of map[string]interface{}
 	if showTree {
@@ -2791,7 +2791,7 @@ func outputDependenciesTable(result *types.CheckResult, showTree bool, minSeveri
 // printDependencyTree recursively prints the dependency tree
 func printDependencyTree(dep *checkers.Dependency, depth int) {
 	indent := strings.Repeat("  ", depth)
-	
+
 	// Determine icon based on vulnerability status
 	icon := "📦"
 	if dep.Vulnerable {
@@ -2806,7 +2806,7 @@ func printDependencyTree(dep *checkers.Dependency, depth int) {
 			icon = "🔸"
 		}
 	}
-	
+
 	// Print dependency info
 	fmt.Printf("%s%s %s@%s", indent, icon, dep.Name, dep.Version)
 	if dep.Direct {
@@ -2816,12 +2816,12 @@ func printDependencyTree(dep *checkers.Dependency, depth int) {
 		fmt.Printf(" [%s]", strings.ToUpper(dep.Severity))
 	}
 	fmt.Printf("\n")
-	
+
 	// Print vulnerabilities
 	for _, vuln := range dep.Vulnerabilities {
 		fmt.Printf("%s  🔍 %s: %s (CVSS: %.1f)\n", indent, vuln.ID, vuln.Description, vuln.CVSS)
 	}
-	
+
 	// Recursively print children
 	for _, child := range dep.Children {
 		printDependencyTree(child, depth+1)
@@ -2835,7 +2835,7 @@ func outputDependenciesJSON(result *types.CheckResult, outputFile string) {
 		fmt.Printf("Error marshaling JSON: %v\n", err)
 		return
 	}
-	
+
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, jsonData, 0644)
 		if err != nil {
@@ -2855,7 +2855,7 @@ func outputDependenciesYAML(result *types.CheckResult, outputFile string) {
 		fmt.Printf("Error marshaling YAML: %v\n", err)
 		return
 	}
-	
+
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, yamlData, 0644)
 		if err != nil {

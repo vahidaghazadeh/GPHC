@@ -19,15 +19,15 @@ type TransitiveDependencyChecker struct {
 
 // Dependency represents a single dependency
 type Dependency struct {
-	Name         string                 `json:"name"`
-	Version      string                 `json:"version"`
-	Direct       bool                   `json:"direct"`
-	Vulnerable   bool                   `json:"vulnerable"`
-	Severity     string                 `json:"severity"`
-	Description  string                 `json:"description"`
-	Path         []string               `json:"path"`
-	Children     []*Dependency          `json:"children"`
-	Vulnerabilities []Vulnerability      `json:"vulnerabilities"`
+	Name            string          `json:"name"`
+	Version         string          `json:"version"`
+	Direct          bool            `json:"direct"`
+	Vulnerable      bool            `json:"vulnerable"`
+	Severity        string          `json:"severity"`
+	Description     string          `json:"description"`
+	Path            []string        `json:"path"`
+	Children        []*Dependency   `json:"children"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
 }
 
 // Vulnerability represents a security vulnerability
@@ -43,12 +43,12 @@ type Vulnerability struct {
 // DependencyTree represents the complete dependency tree
 type DependencyTree struct {
 	Root       *Dependency `json:"root"`
-	Total      int          `json:"total"`
-	Vulnerable int          `json:"vulnerable"`
-	Critical   int          `json:"critical"`
-	High       int          `json:"high"`
-	Medium     int          `json:"medium"`
-	Low        int          `json:"low"`
+	Total      int         `json:"total"`
+	Vulnerable int         `json:"vulnerable"`
+	Critical   int         `json:"critical"`
+	High       int         `json:"high"`
+	Medium     int         `json:"medium"`
+	Low        int         `json:"low"`
 }
 
 // NewTransitiveDependencyChecker creates a new TransitiveDependencyChecker
@@ -102,7 +102,7 @@ func (c *TransitiveDependencyChecker) Check(data *types.RepositoryData) *types.C
 	// Update result based on findings
 	if tree.Vulnerable > 0 {
 		result.Status = types.StatusFail
-		result.Message = fmt.Sprintf("Found %d vulnerable dependencies (%d critical, %d high)", 
+		result.Message = fmt.Sprintf("Found %d vulnerable dependencies (%d critical, %d high)",
 			tree.Vulnerable, tree.Critical, tree.High)
 	} else {
 		result.Status = types.StatusPass
@@ -124,21 +124,21 @@ func (c *TransitiveDependencyChecker) Check(data *types.RepositoryData) *types.C
 // detectProjectType detects the type of project based on manifest files
 func (c *TransitiveDependencyChecker) detectProjectType(repoPath string) string {
 	manifestFiles := map[string]string{
-		"go.mod":           "go",
-		"package.json":     "nodejs",
-		"yarn.lock":        "nodejs",
+		"go.mod":            "go",
+		"package.json":      "nodejs",
+		"yarn.lock":         "nodejs",
 		"package-lock.json": "nodejs",
-		"requirements.txt": "python",
-		"Pipfile":          "python",
-		"Pipfile.lock":     "python",
-		"composer.json":    "php",
-		"composer.lock":    "php",
-		"Cargo.toml":       "rust",
-		"Cargo.lock":       "rust",
-		"pom.xml":          "java",
-		"build.gradle":     "java",
-		"Gemfile":          "ruby",
-		"Gemfile.lock":     "ruby",
+		"requirements.txt":  "python",
+		"Pipfile":           "python",
+		"Pipfile.lock":      "python",
+		"composer.json":     "php",
+		"composer.lock":     "php",
+		"Cargo.toml":        "rust",
+		"Cargo.lock":        "rust",
+		"pom.xml":           "java",
+		"build.gradle":      "java",
+		"Gemfile":           "ruby",
+		"Gemfile.lock":      "ruby",
 	}
 
 	for manifest, projectType := range manifestFiles {
@@ -235,7 +235,7 @@ func (c *TransitiveDependencyChecker) parseGoModDirectDeps(content string, depen
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if line == "require (" {
 			inRequire = true
 			continue
@@ -502,7 +502,7 @@ func (c *TransitiveDependencyChecker) parseMavenTree(node map[string]interface{}
 			if depMap, ok := depInfo.(map[string]interface{}); ok {
 				name := ""
 				version := "unknown"
-				
+
 				if n, exists := depMap["groupId"]; exists {
 					name = n.(string)
 				}
@@ -551,7 +551,7 @@ func (c *TransitiveDependencyChecker) parsePomXml(repoPath string, tree *Depende
 
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.Contains(line, "<dependencies>") {
 			inDependencies = true
 			continue
@@ -636,11 +636,11 @@ func (c *TransitiveDependencyChecker) checkVulnerabilities(tree *DependencyTree)
 func (c *TransitiveDependencyChecker) checkDependencyVulnerabilities(dep *Dependency) {
 	// Simulate vulnerability checking (in real implementation, this would query vulnerability databases)
 	vulnerabilities := c.getKnownVulnerabilities(dep.Name, dep.Version)
-	
+
 	if len(vulnerabilities) > 0 {
 		dep.Vulnerable = true
 		dep.Vulnerabilities = vulnerabilities
-		
+
 		// Set severity based on highest severity vulnerability
 		highestSeverity := "low"
 		for _, vuln := range vulnerabilities {
@@ -764,10 +764,10 @@ func (c *TransitiveDependencyChecker) calculateScore(tree *DependencyTree) int {
 	score := 100
 
 	// Deduct points based on vulnerability severity
-	score -= tree.Critical * 20  // -20 points per critical
-	score -= tree.High * 10      // -10 points per high
-	score -= tree.Medium * 5     // -5 points per medium
-	score -= tree.Low * 2        // -2 points per low
+	score -= tree.Critical * 20 // -20 points per critical
+	score -= tree.High * 10     // -10 points per high
+	score -= tree.Medium * 5    // -5 points per medium
+	score -= tree.Low * 2       // -2 points per low
 
 	// Ensure score doesn't go below 0
 	if score < 0 {
