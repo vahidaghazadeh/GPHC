@@ -48,6 +48,9 @@ git hc tags --suggest --changelog CHANGELOG.md
 # Scan for secrets in Git history
 git hc security secrets --history
 
+# Scan transitive dependencies for vulnerabilities
+git hc security dependencies --depth deep
+
 # Update GPHC to latest version
 git hc update
 
@@ -77,6 +80,7 @@ git hc --help
 - **Web Dashboard**: Local web server for team collaboration
 - **Tag Management**: Git tag validation, semantic versioning, and release management
 - **Secret Scanning**: Deep scan of Git history for exposed secrets and credentials
+- **Transitive Dependency Vetting**: Comprehensive analysis of direct and indirect dependencies for security vulnerabilities
 
 ## Documentation
 
@@ -101,6 +105,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [🏗️ Codebase Analysis](docs/codebase-analysis.md) - Structure and smell detection
 - [🏷️ Tag Management](docs/tag-management.md) - Git tag validation and release management
 - [🔒 Secret Scanning](docs/secret-scanning.md) - Git history secret detection and remediation
+- [🛡️ Transitive Dependency Vetting](docs/transitive-dependency-vetting.md) - Deep dependency vulnerability analysis
 
 ## Example Output
 

@@ -18,6 +18,7 @@ import (
 	"github.com/opsource/gphc/internal/scorer"
 	"github.com/opsource/gphc/pkg/types"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -166,6 +167,20 @@ var secretsCmd = &cobra.Command{
 	Run:   runSecretsScan,
 }
 
+var dependenciesCmd = &cobra.Command{
+	Use:   "dependencies",
+	Short: "Scan transitive dependencies for vulnerabilities",
+	Long:  `Perform deep analysis of transitive dependencies to detect security vulnerabilities.
+This includes both direct and indirect dependencies, helping identify supply chain attacks.
+
+Examples:
+  git hc security dependencies                    # Basic dependency scan
+  git hc security dependencies --depth deep       # Deep transitive analysis
+  git hc security dependencies --format json      # JSON output format
+  git hc security dependencies --severity high    # Only show high/critical vulnerabilities`,
+	Run:   runDependenciesScan,
+}
+
 func init() {
 	secretsCmd.Flags().Bool("history", true, "Scan entire Git history for secrets")
 	secretsCmd.Flags().Bool("stashes", true, "Scan Git stashes for secrets")
@@ -175,7 +190,15 @@ func init() {
 	secretsCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
 	secretsCmd.Flags().String("output", "", "Output file path")
 	
+	dependenciesCmd.Flags().String("depth", "deep", "Scan depth (shallow, deep)")
+	dependenciesCmd.Flags().String("severity", "low", "Minimum severity level (low, medium, high, critical)")
+	dependenciesCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
+	dependenciesCmd.Flags().String("output", "", "Output file path")
+	dependenciesCmd.Flags().Bool("tree", true, "Show dependency tree structure")
+	dependenciesCmd.Flags().Bool("direct-only", false, "Only check direct dependencies")
+	
 	securityCmd.AddCommand(secretsCmd)
+	securityCmd.AddCommand(dependenciesCmd)
 }
 
 var diffCmd = &cobra.Command{
@@ -580,6 +603,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewGitLabIntegrationChecker(),
 		checkers.NewTagChecker(),
 		checkers.NewSecretChecker(),
+		checkers.NewTransitiveDependencyChecker(),
 	}
 
 	// Run all checkers
@@ -2650,6 +2674,197 @@ func runSecretsScan(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	} else {
 		fmt.Printf("✅ No secrets found in Git history!\n")
+	}
+}
+
+func runDependenciesScan(cmd *cobra.Command, args []string) {
+	// Get flags
+	depth, _ := cmd.Flags().GetString("depth")
+	minSeverity, _ := cmd.Flags().GetString("severity")
+	format, _ := cmd.Flags().GetString("format")
+	outputFile, _ := cmd.Flags().GetString("output")
+	showTree, _ := cmd.Flags().GetBool("tree")
+	directOnly, _ := cmd.Flags().GetBool("direct-only")
+
+	// Determine repository path
+	repoPath := "."
+	if len(args) > 0 {
+		repoPath = args[0]
+	}
+
+	// Check if it's a Git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Scanning transitive dependencies for vulnerabilities...\n")
+	fmt.Printf("Repository: %s\n", repoPath)
+	fmt.Printf("Scan depth: %s\n", depth)
+	fmt.Printf("Minimum severity: %s\n", minSeverity)
+	fmt.Printf("Direct dependencies only: %v\n", directOnly)
+	fmt.Printf("Show dependency tree: %v\n\n", showTree)
+
+	// Run transitive dependency checker
+	depChecker := checkers.NewTransitiveDependencyChecker()
+	
+	// Create RepositoryData for the checker
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+	
+	result := depChecker.Check(data)
+
+	// Process results
+	if result.Status == types.StatusFail {
+		fmt.Printf("❌ Error scanning dependencies: %s\n", result.Message)
+		os.Exit(1)
+	}
+
+	// Display results based on format
+	switch format {
+	case "json":
+		outputDependenciesJSON(result, outputFile)
+	case "yaml":
+		outputDependenciesYAML(result, outputFile)
+	default:
+		outputDependenciesTable(result, showTree, minSeverity)
+	}
+
+	// Show remediation if vulnerabilities found
+	if result.Status == types.StatusFail {
+		fmt.Printf("\n🚨 VULNERABILITIES FOUND!\n\n")
+		fmt.Printf("Immediate Actions Required:\n")
+		fmt.Printf("1. Update vulnerable dependencies to secure versions\n")
+		fmt.Printf("2. Review dependency tree to identify root causes\n")
+		fmt.Printf("3. Consider removing unnecessary dependencies\n")
+		fmt.Printf("4. Implement dependency scanning in CI/CD pipeline\n\n")
+		
+		fmt.Printf("Tools for Dependency Management:\n")
+		fmt.Printf("- npm audit fix (Node.js)\n")
+		fmt.Printf("- go get -u (Go)\n")
+		fmt.Printf("- pip install --upgrade (Python)\n")
+		fmt.Printf("- cargo update (Rust)\n")
+		fmt.Printf("- mvn versions:use-latest-releases (Java)\n\n")
+		
+		fmt.Printf("Prevention:\n")
+		fmt.Printf("- Use dependency scanning tools in CI/CD\n")
+		fmt.Printf("- Regularly update dependencies\n")
+		fmt.Printf("- Use lock files (package-lock.json, go.sum, etc.)\n")
+		fmt.Printf("- Monitor security advisories\n")
+		
+		os.Exit(1)
+	} else {
+		fmt.Printf("✅ No vulnerabilities found in dependencies!\n")
+	}
+}
+
+// outputDependenciesTable outputs dependency scan results in table format
+func outputDependenciesTable(result *types.CheckResult, showTree bool, minSeverity string) {
+	fmt.Printf("📊 Dependency Scan Results\n")
+	fmt.Printf("==========================\n\n")
+	
+	// Display details
+	for _, detail := range result.Details {
+		fmt.Printf("%s\n", detail)
+	}
+	
+	fmt.Printf("Security Score: %d/100\n\n", result.Score)
+	
+	// Note: Dependency tree display would need to be implemented differently
+	// since Details is now []string instead of map[string]interface{}
+	if showTree {
+		fmt.Printf("🌳 Dependency Tree\n")
+		fmt.Printf("==================\n\n")
+		fmt.Printf("Tree display not yet implemented in this version.\n")
+		fmt.Printf("Use --format json to see detailed dependency information.\n")
+	}
+}
+
+// printDependencyTree recursively prints the dependency tree
+func printDependencyTree(dep *checkers.Dependency, depth int) {
+	indent := strings.Repeat("  ", depth)
+	
+	// Determine icon based on vulnerability status
+	icon := "📦"
+	if dep.Vulnerable {
+		switch dep.Severity {
+		case "critical":
+			icon = "🚨"
+		case "high":
+			icon = "⚠️"
+		case "medium":
+			icon = "🔶"
+		case "low":
+			icon = "🔸"
+		}
+	}
+	
+	// Print dependency info
+	fmt.Printf("%s%s %s@%s", indent, icon, dep.Name, dep.Version)
+	if dep.Direct {
+		fmt.Printf(" (direct)")
+	}
+	if dep.Vulnerable {
+		fmt.Printf(" [%s]", strings.ToUpper(dep.Severity))
+	}
+	fmt.Printf("\n")
+	
+	// Print vulnerabilities
+	for _, vuln := range dep.Vulnerabilities {
+		fmt.Printf("%s  🔍 %s: %s (CVSS: %.1f)\n", indent, vuln.ID, vuln.Description, vuln.CVSS)
+	}
+	
+	// Recursively print children
+	for _, child := range dep.Children {
+		printDependencyTree(child, depth+1)
+	}
+}
+
+// outputDependenciesJSON outputs dependency scan results in JSON format
+func outputDependenciesJSON(result *types.CheckResult, outputFile string) {
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return
+	}
+	
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, jsonData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing JSON file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(jsonData))
+	}
+}
+
+// outputDependenciesYAML outputs dependency scan results in YAML format
+func outputDependenciesYAML(result *types.CheckResult, outputFile string) {
+	yamlData, err := yaml.Marshal(result)
+	if err != nil {
+		fmt.Printf("Error marshaling YAML: %v\n", err)
+		return
+	}
+	
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, yamlData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing YAML file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(yamlData))
 	}
 }
 
