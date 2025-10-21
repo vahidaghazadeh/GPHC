@@ -3316,33 +3316,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             }, 1000);
         }
         
-        function scanRepos() {
-            const scanData = document.getElementById('scan-data');
-            scanData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>';
-            
-            // Simulate repo scan
-            setTimeout(() => {
-                scanData.innerHTML = '<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>';
-            }, 1500);
-        }
         
-        function showDiff(type) {
-            const diffData = document.getElementById('diff-data');
-            diffData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
-            
-            fetch('/api/diff?type=' + type)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        renderDiff(data);
-                    } else {
-                        diffData.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
-                    }
-                })
-                .catch(error => {
-                    diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
-                });
-        }
         
         function renderDiff(data) {
             const diffData = document.getElementById('diff-data');
@@ -3388,6 +3362,66 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             const div = document.createElement("div");
             div.textContent = text;
             return div.innerHTML;
+        }
+        function scanRepos() {
+            const scanData = document.getElementById("scan-data");
+            scanData.innerHTML = "<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>";
+            
+            setTimeout(() => {
+                scanData.innerHTML = "<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>";
+            }, 1500);
+        }
+        
+        function showDiff(type) {
+            const diffData = document.getElementById("diff-data");
+            diffData.innerHTML = "<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>";
+            
+            fetch("/api/diff?type=" + type)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        renderDiff(data);
+                    } else {
+                        diffData.innerHTML = "<div class="error">Error loading diff: " + data.message + "</div>";
+                    }
+                })
+                .catch(error => {
+                    diffData.innerHTML = "<div class="error">Error loading diff: " + error + "</div>";
+                });
+        }
+        
+        function renderDiff(data) {
+            const diffData = document.getElementById("diff-data");
+            
+            if (!data || !data.lines || data.lines.length === 0) {
+                diffData.innerHTML = "<div class="info">No changes found</div>";
+                return;
+            }
+            
+            let additions = 0, deletions = 0, files = 0;
+            
+            data.lines.forEach(line => {
+                if (line.type === "addition") additions++;
+                else if (line.type === "deletion") deletions++;
+                else if (line.type === "file_header") files++;
+            });
+            
+            let html = "<div class="diff-stats">";
+            html += "<div class="stat additions"><i class="fas fa-plus"></i> +" + additions + "</div>";
+            html += "<div class="stat deletions"><i class="fas fa-minus"></i> -" + deletions + "</div>";
+            html += "<div class="stat files"><i class="fas fa-file"></i> " + files + " files</div>";
+            html += "<div class="stat"><i class="fas fa-clock"></i> " + new Date(data.timestamp).toLocaleTimeString() + "</div>";
+            html += "</div>";
+            
+            html += "<div class="diff-container">";
+            
+            data.lines.forEach(line => {
+                html += "<div class="diff-line " + line.type + "">" + escapeHtml(line.content) + "</div>";
+            });
+            
+            html += "</div>";
+            
+            diffData.innerHTML = html;
         }
         function showDiffFullscreen(type) {
             const fullscreenModal = document.getElementById('diff-fullscreen');
