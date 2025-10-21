@@ -122,6 +122,12 @@ suggest next semantic version, and optionally generate a changelog.`,
 	Run:  runTags,
 }
 
+var commitCmd = &cobra.Command{
+	Use:   "commit",
+	Short: "Commit-related operations",
+	Long:  `Git commit operations including message suggestion and validation.`,
+}
+
 var suggestCmd = &cobra.Command{
 	Use:   "suggest [path]",
 	Short: "Suggest commit message based on staged changes",
@@ -130,9 +136,9 @@ This command examines the changes in staged files and suggests
 appropriate commit messages following conventional commit format.
 
 Examples:
-  git hc suggest                    # Suggest for current directory
-  git hc suggest /path/to/repo      # Suggest for specific repository
-  git hc suggest --path /path/to/repo # Suggest for specific repository`,
+  git hc commit suggest                    # Suggest for current directory
+  git hc commit suggest /path/to/repo      # Suggest for specific repository
+  git hc commit suggest --path /path/to/repo # Suggest for specific repository`,
 	Args: cobra.MaximumNArgs(1),
 	Run:  runSuggest,
 }
@@ -142,7 +148,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(preCommitCmd)
-	rootCmd.AddCommand(suggestCmd)
+	rootCmd.AddCommand(commitCmd)
 	rootCmd.AddCommand(badgeCmd)
 	rootCmd.AddCommand(githubCmd)
 	rootCmd.AddCommand(gitlabCmd)
@@ -152,6 +158,9 @@ func init() {
 	rootCmd.AddCommand(tuiCmd)
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(tagsCmd)
+	
+	// Add commit subcommands
+	commitCmd.AddCommand(suggestCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
@@ -1079,7 +1088,8 @@ func checkCommitMessage(repoPath string) bool {
 func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 	// Analyze file types and changes
 	var addedFiles, modifiedFiles, deletedFiles []string
-	var hasNewFeatures, hasBugFixes, hasDocs, hasRefactor bool
+	var hasNewFeatures, hasBugFixes, hasDocs, hasRefactor, hasTests, hasConfig bool
+	var fileTypes = make(map[string]int)
 	
 	for _, file := range stagedFiles {
 		// Get file status
@@ -1110,28 +1120,53 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 		// Analyze file type and content
 		fileExt := strings.ToLower(filepath.Ext(fileName))
 		fileName = strings.ToLower(fileName)
+		baseName := strings.ToLower(filepath.Base(fileName))
+		
+		// Count file types
+		if fileExt != "" {
+			fileTypes[fileExt]++
+		}
 		
 		// Check for new features
 		if strings.Contains(fileName, "feat") || strings.Contains(fileName, "feature") || 
-		   strings.Contains(fileName, "add") || strings.Contains(fileName, "new") {
+		   strings.Contains(fileName, "add") || strings.Contains(fileName, "new") ||
+		   strings.Contains(baseName, "feat") || strings.Contains(baseName, "feature") {
 			hasNewFeatures = true
 		}
 		
 		// Check for bug fixes
 		if strings.Contains(fileName, "fix") || strings.Contains(fileName, "bug") || 
-		   strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") {
+		   strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") ||
+		   strings.Contains(fileName, "patch") || strings.Contains(baseName, "fix") {
 			hasBugFixes = true
 		}
 		
 		// Check for documentation
 		if strings.Contains(fileName, "readme") || strings.Contains(fileName, "doc") || 
-		   fileExt == ".md" || fileExt == ".txt" {
+		   strings.Contains(fileName, "guide") || strings.Contains(fileName, "manual") ||
+		   fileExt == ".md" || fileExt == ".txt" || fileExt == ".rst" {
 			hasDocs = true
+		}
+		
+		// Check for tests
+		if strings.Contains(fileName, "test") || strings.Contains(fileName, "spec") ||
+		   strings.Contains(fileName, "mock") || strings.Contains(baseName, "test") ||
+		   fileExt == ".test.js" || fileExt == ".spec.js" {
+			hasTests = true
+		}
+		
+		// Check for configuration
+		if strings.Contains(fileName, "config") || strings.Contains(fileName, "conf") ||
+		   strings.Contains(fileName, "setting") || strings.Contains(baseName, "config") ||
+		   fileExt == ".json" || fileExt == ".yaml" || fileExt == ".yml" ||
+		   baseName == "package.json" || baseName == "dockerfile" {
+			hasConfig = true
 		}
 		
 		// Check for refactoring
 		if strings.Contains(fileName, "refactor") || strings.Contains(fileName, "clean") || 
-		   strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") {
+		   strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") ||
+		   strings.Contains(fileName, "restructure") || strings.Contains(baseName, "refactor") {
 			hasRefactor = true
 		}
 	}
@@ -1141,39 +1176,150 @@ func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
 	
 	if hasNewFeatures && len(addedFiles) > 0 {
 		prefix = "feat"
-		description = "add new feature"
+		if len(addedFiles) == 1 {
+			description = fmt.Sprintf("add %s", getFeatureDescription(addedFiles[0]))
+		} else {
+			description = fmt.Sprintf("add new features (%d files)", len(addedFiles))
+		}
 	} else if hasBugFixes {
 		prefix = "fix"
-		description = "fix bug"
+		if len(modifiedFiles) == 1 {
+			description = fmt.Sprintf("fix %s", getFixDescription(modifiedFiles[0]))
+		} else {
+			description = fmt.Sprintf("fix bugs and issues (%d files)", len(modifiedFiles))
+		}
+	} else if hasTests {
+		prefix = "test"
+		if len(addedFiles) > 0 {
+			description = fmt.Sprintf("add tests for %s", getTestDescription(stagedFiles))
+		} else {
+			description = fmt.Sprintf("update tests (%d files)", len(stagedFiles))
+		}
 	} else if hasDocs {
 		prefix = "docs"
-		description = "update documentation"
+		if len(stagedFiles) == 1 {
+			description = fmt.Sprintf("update %s", getDocDescription(stagedFiles[0]))
+		} else {
+			description = fmt.Sprintf("update documentation (%d files)", len(stagedFiles))
+		}
+	} else if hasConfig {
+		prefix = "chore"
+		description = fmt.Sprintf("update configuration (%d files)", len(stagedFiles))
 	} else if hasRefactor {
 		prefix = "refactor"
-		description = "refactor code"
+		description = fmt.Sprintf("refactor %s (%d files)", getRefactorDescription(stagedFiles), len(stagedFiles))
 	} else if len(addedFiles) > 0 {
 		prefix = "feat"
-		description = "add new functionality"
+		description = fmt.Sprintf("add %s (%d files)", getGenericDescription(addedFiles), len(addedFiles))
 	} else if len(modifiedFiles) > 0 {
 		prefix = "chore"
-		description = "update files"
+		description = fmt.Sprintf("update %s (%d files)", getGenericDescription(modifiedFiles), len(modifiedFiles))
 	} else if len(deletedFiles) > 0 {
 		prefix = "chore"
-		description = "remove files"
+		description = fmt.Sprintf("remove %s (%d files)", getGenericDescription(deletedFiles), len(deletedFiles))
 	} else {
 		prefix = "chore"
-		description = "update project"
-	}
-	
-	// Add file count information
-	fileCount := len(stagedFiles)
-	if fileCount == 1 {
-		description += fmt.Sprintf(" (%s)", stagedFiles[0])
-	} else {
-		description += fmt.Sprintf(" (%d files)", fileCount)
+		description = fmt.Sprintf("update project files (%d files)", len(stagedFiles))
 	}
 	
 	return fmt.Sprintf("%s: %s", prefix, description)
+}
+
+// Helper functions for more specific descriptions
+func getFeatureDescription(fileName string) string {
+	baseName := strings.ToLower(filepath.Base(fileName))
+	ext := strings.ToLower(filepath.Ext(fileName))
+	
+	if strings.Contains(baseName, "component") {
+		return "new component"
+	} else if strings.Contains(baseName, "api") {
+		return "new API endpoint"
+	} else if strings.Contains(baseName, "util") || strings.Contains(baseName, "helper") {
+		return "utility function"
+	} else if ext == ".js" || ext == ".ts" {
+		return "new functionality"
+	} else if ext == ".css" || ext == ".scss" {
+		return "new styles"
+	} else {
+		return "new feature"
+	}
+}
+
+func getFixDescription(fileName string) string {
+	baseName := strings.ToLower(filepath.Base(fileName))
+	
+	if strings.Contains(baseName, "bug") {
+		return "critical bug"
+	} else if strings.Contains(baseName, "error") {
+		return "error handling"
+	} else if strings.Contains(baseName, "issue") {
+		return "reported issue"
+	} else {
+		return "bug"
+	}
+}
+
+func getTestDescription(files []string) string {
+	if len(files) == 1 {
+		baseName := strings.ToLower(filepath.Base(files[0]))
+		if strings.Contains(baseName, "unit") {
+			return "unit tests"
+		} else if strings.Contains(baseName, "integration") {
+			return "integration tests"
+		} else if strings.Contains(baseName, "e2e") {
+			return "end-to-end tests"
+		}
+	}
+	return "test coverage"
+}
+
+func getDocDescription(fileName string) string {
+	baseName := strings.ToLower(filepath.Base(fileName))
+	
+	if strings.Contains(baseName, "readme") {
+		return "README"
+	} else if strings.Contains(baseName, "api") {
+		return "API documentation"
+	} else if strings.Contains(baseName, "guide") {
+		return "user guide"
+	} else {
+		return "documentation"
+	}
+}
+
+func getRefactorDescription(files []string) string {
+	if len(files) == 1 {
+		baseName := strings.ToLower(filepath.Base(files[0]))
+		if strings.Contains(baseName, "component") {
+			return "component structure"
+		} else if strings.Contains(baseName, "api") {
+			return "API structure"
+		} else if strings.Contains(baseName, "util") {
+			return "utility functions"
+		}
+	}
+	return "code structure"
+}
+
+func getGenericDescription(files []string) string {
+	if len(files) == 1 {
+		ext := strings.ToLower(filepath.Ext(files[0]))
+		switch ext {
+		case ".js", ".ts":
+			return "JavaScript/TypeScript files"
+		case ".css", ".scss":
+			return "stylesheets"
+		case ".html":
+			return "HTML templates"
+		case ".json":
+			return "JSON configuration"
+		case ".md":
+			return "documentation"
+		default:
+			return "files"
+		}
+	}
+	return "files"
 }
 
 func checkLargeFiles(files []string) bool {
