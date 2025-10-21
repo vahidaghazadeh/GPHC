@@ -45,6 +45,9 @@ git hc scan ~/projects --recursive
 # Analyze and manage Git tags
 git hc tags --suggest --changelog CHANGELOG.md
 
+# Scan for secrets in Git history
+git hc security secrets --history
+
 # Update GPHC to latest version
 git hc update
 
@@ -73,6 +76,7 @@ git hc --help
 - **Interactive Terminal UI (TUI)**: Beautiful terminal interface for health monitoring
 - **Web Dashboard**: Local web server for team collaboration
 - **Tag Management**: Git tag validation, semantic versioning, and release management
+- **Secret Scanning**: Deep scan of Git history for exposed secrets and credentials
 
 ## Documentation
 
@@ -96,6 +100,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [👥 Author Insights](docs/author-insights.md) - Contributor analysis
 - [🏗️ Codebase Analysis](docs/codebase-analysis.md) - Structure and smell detection
 - [🏷️ Tag Management](docs/tag-management.md) - Git tag validation and release management
+- [🔒 Secret Scanning](docs/secret-scanning.md) - Git history secret detection and remediation
 
 ## Example Output
 

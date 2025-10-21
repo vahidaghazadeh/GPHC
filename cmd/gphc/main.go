@@ -153,6 +153,31 @@ Examples:
 	Run:  runCommit,
 }
 
+var securityCmd = &cobra.Command{
+	Use:   "security",
+	Short: "Security scanning and analysis",
+	Long:  `Perform security scans including secret detection in Git history`,
+}
+
+var secretsCmd = &cobra.Command{
+	Use:   "secrets",
+	Short: "Scan for secrets in Git history",
+	Long:  `Scan the entire Git history and stashes for exposed secrets and credentials`,
+	Run:   runSecretsScan,
+}
+
+func init() {
+	secretsCmd.Flags().Bool("history", true, "Scan entire Git history for secrets")
+	secretsCmd.Flags().Bool("stashes", true, "Scan Git stashes for secrets")
+	secretsCmd.Flags().Bool("entropy", true, "Perform entropy analysis for random strings")
+	secretsCmd.Flags().String("severity", "medium", "Minimum severity level (low, medium, high)")
+	secretsCmd.Flags().Float64("confidence", 0.7, "Minimum confidence threshold (0.0-1.0)")
+	secretsCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
+	secretsCmd.Flags().String("output", "", "Output file path")
+	
+	securityCmd.AddCommand(secretsCmd)
+}
+
 var diffCmd = &cobra.Command{
 	Use:   "diff [file]",
 	Short: "Show colored diff of file changes",
@@ -186,6 +211,7 @@ func init() {
 	rootCmd.AddCommand(tuiCmd)
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(tagsCmd)
+	rootCmd.AddCommand(securityCmd)
 
 	// Add export format flags
 	checkCmd.Flags().StringVarP(&exportFormat, "format", "f", "terminal", "Output format: terminal, json, yaml, markdown, html")
@@ -553,6 +579,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewGitHubIntegrationChecker(),
 		checkers.NewGitLabIntegrationChecker(),
 		checkers.NewTagChecker(),
+		checkers.NewSecretChecker(),
 	}
 
 	// Run all checkers
@@ -2536,6 +2563,93 @@ func runTags(cmd *cobra.Command, args []string) {
 			fmt.Println("\nPolicy enforcement failed: tag policy violations detected")
 			os.Exit(1)
 		}
+	}
+}
+
+func runSecretsScan(cmd *cobra.Command, args []string) {
+	// Get flags
+	scanHistory, _ := cmd.Flags().GetBool("history")
+	scanStashes, _ := cmd.Flags().GetBool("stashes")
+	scanEntropy, _ := cmd.Flags().GetBool("entropy")
+	minSeverity, _ := cmd.Flags().GetString("severity")
+	minConfidence, _ := cmd.Flags().GetFloat64("confidence")
+
+	// Determine repository path
+	repoPath := "."
+	if len(args) > 0 {
+		repoPath = args[0]
+	}
+
+	// Check if it's a Git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Scanning for secrets in Git history...\n")
+	fmt.Printf("Repository: %s\n", repoPath)
+	fmt.Printf("Scanning history: %v\n", scanHistory)
+	fmt.Printf("Scanning stashes: %v\n", scanStashes)
+	fmt.Printf("Entropy analysis: %v\n", scanEntropy)
+	fmt.Printf("Minimum severity: %s\n", minSeverity)
+	fmt.Printf("Minimum confidence: %.2f\n\n", minConfidence)
+
+	// Run secret checker
+	secretChecker := checkers.NewSecretChecker()
+	
+	// Create RepositoryData for the checker
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+	
+	result := secretChecker.Check(data)
+
+	// Process results
+	if result.Status == types.StatusFail {
+		fmt.Printf("❌ Error scanning for secrets: %s\n", result.Message)
+		os.Exit(1)
+	}
+
+	// Extract secrets from details (we'll need to modify this approach)
+	// For now, let's use a simpler approach
+	if result.Status == types.StatusFail && len(result.Details) > 0 {
+		fmt.Printf("🚨 Secrets found in Git history!\n\n")
+		
+		// Display details
+		for _, detail := range result.Details {
+			fmt.Printf("• %s\n", detail)
+		}
+		
+		// Show remediation
+		fmt.Printf("\n🚨 CRITICAL: Secrets found in Git history!\n\n")
+		fmt.Printf("Immediate Actions Required:\n")
+		fmt.Printf("1. Rotate/revoke all exposed credentials immediately\n")
+		fmt.Printf("2. Rewrite Git history to remove secrets\n")
+		fmt.Printf("3. Notify team members about the exposure\n\n")
+		
+		fmt.Printf("Tools for History Rewriting:\n")
+		fmt.Printf("- git filter-repo: https://github.com/newren/git-filter-repo\n")
+		fmt.Printf("- BFG Repo-Cleaner: https://rtyley.github.io/bfg-repo-cleaner/\n\n")
+		
+		fmt.Printf("Commands:\n")
+		fmt.Printf("# Using git filter-repo\n")
+		fmt.Printf("git filter-repo --replace-text <(echo 'SECRET_VALUE==>REDACTED')\n\n")
+		fmt.Printf("# Using BFG\n")
+		fmt.Printf("java -jar bfg.jar --replace-text replacements.txt\n\n")
+		
+		fmt.Printf("After rewriting history:\n")
+		fmt.Printf("git push --force-with-lease origin main\n")
+		
+		os.Exit(1)
+	} else {
+		fmt.Printf("✅ No secrets found in Git history!\n")
 	}
 }
 
