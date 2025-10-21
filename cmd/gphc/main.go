@@ -3245,7 +3245,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     healthData.innerHTML = '<div class="error">Error loading data: ' + error + '</div>';
-                });
+                }); }
         }
         
         function getScoreClass(score) {
@@ -3295,7 +3295,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     
                     data.details.forEach(detail => {
                         tagData.innerHTML += '<li>' + detail + '</li>';
-                    });
+                    }); }
                     
                     tagData.innerHTML += 
                             '</ul>' +
@@ -3303,7 +3303,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     tagData.innerHTML = '<div class="error">Error loading tag data: ' + error + '</div>';
-                });
+                }); }
         }
         
         function suggestTag() {
@@ -3341,13 +3341,13 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
-                });
+                }); }
         }
         
         function renderDiff(data) {
             const diffData = document.getElementById('diff-data');
             
-            if (data.lines.length === 0) {
+            if (!data || !data.lines || data.lines.length === 0) {
                 diffData.innerHTML = '<div class="info">No changes found</div>';
                 return;
             }
@@ -3356,14 +3356,14 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             let additions = 0, deletions = 0, files = 0;
             let currentFile = '';
             
-            data.lines.forEach(line => {
+            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 if (line.type === 'addition') additions++;
                 else if (line.type === 'deletion') deletions++;
                 else if (line.type === 'file_header') {
                     files++;
                     currentFile = line.content;
                 }
-            });
+            }); }
             
             let html = '<div class="diff-stats">';
             html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
@@ -3374,9 +3374,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             html += '<div class="diff-container">';
             
-            data.lines.forEach(line => {
+            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
-            });
+            }); }
             
             html += '</div>';
             
@@ -3408,24 +3408,24 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                 })
                 .catch(error => {
                     fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
-                });
+                }); }
         }
         
         function renderDiffFullscreen(data) {
             const fullscreenContent = document.getElementById('diff-fullscreen-content');
             
-            if (data.lines.length === 0) {
+            if (!data || !data.lines || data.lines.length === 0) {
                 fullscreenContent.innerHTML = '<div class="info">No changes found</div>';
                 return;
             }
             
             let additions = 0, deletions = 0, files = 0;
             
-            data.lines.forEach(line => {
+            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 if (line.type === 'addition') additions++;
                 else if (line.type === 'deletion') deletions++;
                 else if (line.type === 'file_header') files++;
-            });
+            }); }
             
             let html = '<div class="diff-stats">';
             html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + additions + '</div>';
@@ -3436,9 +3436,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             
             html += '<div class="diff-container">';
             
-            data.lines.forEach(line => {
+            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
-            });
+            }); }
             
             html += '</div>';
             
@@ -3449,7 +3449,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
             const languageSelector = document.getElementById('language-selector');
             let detectedLanguage = '';
             
-            data.lines.forEach(line => {
+            if (data data.lines.forEach(line => {data.lines.forEach(line => { data.lines) { data.lines.forEach(line => {
                 if (line.type === 'file_header' || line.type === 'file_name') {
                     const content = line.content.toLowerCase();
                     
@@ -3476,7 +3476,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
                     else if (content.includes('.sh')) detectedLanguage = 'bash';
                     else if (content.includes('.ps1')) detectedLanguage = 'powershell';
                 }
-            });
+            }); }
             
             if (detectedLanguage) {
                 languageSelector.value = detectedLanguage;
