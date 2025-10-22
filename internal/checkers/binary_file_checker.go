@@ -114,7 +114,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 		result.Details = append(result.Details, "┌─────────────────┬──────────┬──────────┬──────────┬──────────┐")
 		result.Details = append(result.Details, "│ File Type       │ Count    │ Size     │ Severity │ Status   │")
 		result.Details = append(result.Details, "├─────────────────┼──────────┼──────────┼──────────┼──────────┤")
-		
+
 		// Executable files summary
 		if len(report.ExecutableFiles) > 0 {
 			execSize := 0.0
@@ -129,7 +129,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 			}
 			result.Details = append(result.Details, fmt.Sprintf("│ Executable      │ %-8d │ %-8.1f │ %-8s │ Active   │", execCount, execSize, execSeverity))
 		}
-		
+
 		// Large files summary
 		if len(report.LargeFiles) > 0 {
 			largeSize := 0.0
@@ -144,7 +144,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 			}
 			result.Details = append(result.Details, fmt.Sprintf("│ Large Files     │ %-8d │ %-8.1f │ %-8s │ Active   │", largeCount, largeSize, largeSeverity))
 		}
-		
+
 		// Suspicious files summary
 		if len(report.SuspiciousFiles) > 0 {
 			suspSize := 0.0
@@ -159,10 +159,96 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 			}
 			result.Details = append(result.Details, fmt.Sprintf("│ Suspicious      │ %-8d │ %-8.1f │ %-8s │ Active   │", suspCount, suspSize, suspSeverity))
 		}
-		
+
 		result.Details = append(result.Details, "└─────────────────┴──────────┴──────────┴──────────┴──────────┘")
 		result.Details = append(result.Details, "")
-		result.Details = append(result.Details, "💡 Use --format json for detailed file listings")
+		
+		// Add file listings in simple format (not table)
+		if len(report.ExecutableFiles) > 0 {
+			result.Details = append(result.Details, "🔧 Executable Files:")
+			maxExecutable := 10
+			if len(report.ExecutableFiles) > maxExecutable {
+				for i := 0; i < maxExecutable; i++ {
+					file := report.ExecutableFiles[i]
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+				result.Details = append(result.Details, fmt.Sprintf("  ... and %d more files (use --format json for complete list)", len(report.ExecutableFiles)-maxExecutable))
+			} else {
+				for _, file := range report.ExecutableFiles {
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+			}
+			result.Details = append(result.Details, "")
+		}
+		
+		if len(report.LargeFiles) > 0 {
+			result.Details = append(result.Details, "📦 Large Files:")
+			maxLarge := 15
+			if len(report.LargeFiles) > maxLarge {
+				for i := 0; i < maxLarge; i++ {
+					file := report.LargeFiles[i]
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+				result.Details = append(result.Details, fmt.Sprintf("  ... and %d more files (use --format json for complete list)", len(report.LargeFiles)-maxLarge))
+			} else {
+				for _, file := range report.LargeFiles {
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+			}
+			result.Details = append(result.Details, "")
+		}
+		
+		if len(report.SuspiciousFiles) > 0 {
+			result.Details = append(result.Details, "⚠️ Suspicious Files:")
+			maxSuspicious := 20
+			if len(report.SuspiciousFiles) > maxSuspicious {
+				for i := 0; i < maxSuspicious; i++ {
+					file := report.SuspiciousFiles[i]
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+				result.Details = append(result.Details, fmt.Sprintf("  ... and %d more files (use --format json for complete list)", len(report.SuspiciousFiles)-maxSuspicious))
+			} else {
+				for _, file := range report.SuspiciousFiles {
+					status := ""
+					if file.InGitignore {
+						status = " (ignored)"
+					} else if file.InHistory {
+						status = " (in history)"
+					}
+					result.Details = append(result.Details, fmt.Sprintf("  • %s [%s] %.1f MB%s", file.Path, file.Severity, file.SizeMB, status))
+				}
+			}
+		}
 	}
 
 	return result
