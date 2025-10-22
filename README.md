@@ -51,6 +51,9 @@ git hc security secrets --history
 # Scan transitive dependencies for vulnerabilities
 git hc security dependencies --depth deep
 
+# Validate Git security policies
+git hc security policy --check-signing
+
 # Update GPHC to latest version
 git hc update
 
@@ -81,6 +84,7 @@ git hc --help
 - **Tag Management**: Git tag validation, semantic versioning, and release management
 - **Secret Scanning**: Deep scan of Git history for exposed secrets and credentials
 - **Transitive Dependency Vetting**: Comprehensive analysis of direct and indirect dependencies for security vulnerabilities
+- **Git Policy Validation**: Validate Git security policies including commit signatures, push policies, and sensitive file detection
 
 ## Documentation
 
@@ -106,6 +110,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [🏷️ Tag Management](docs/tag-management.md) - Git tag validation and release management
 - [🔒 Secret Scanning](docs/secret-scanning.md) - Git history secret detection and remediation
 - [🛡️ Transitive Dependency Vetting](docs/transitive-dependency-vetting.md) - Deep dependency vulnerability analysis
+- [⚙️ Git Policy Validation](docs/git-policy-validation.md) - Git security policy validation and compliance
 
 ## Example Output
 

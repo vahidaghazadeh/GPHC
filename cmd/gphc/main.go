@@ -181,6 +181,21 @@ Examples:
 	Run: runDependenciesScan,
 }
 
+var policyCmd = &cobra.Command{
+	Use:   "policy",
+	Short: "Validate Git security policies and configurations",
+	Long: `Validate Git security policies including commit signatures, push policies,
+sensitive file detection, and branch protection settings.
+
+Examples:
+  git hc security policy                          # Basic policy validation
+  git hc security policy --check-signing          # Focus on commit signatures
+  git hc security policy --check-files            # Focus on sensitive files
+  git hc security policy --format json            # JSON output format
+  git hc security policy --severity high          # Only show high/critical issues`,
+	Run: runPolicyValidation,
+}
+
 func init() {
 	secretsCmd.Flags().Bool("history", true, "Scan entire Git history for secrets")
 	secretsCmd.Flags().Bool("stashes", true, "Scan Git stashes for secrets")
@@ -196,9 +211,18 @@ func init() {
 	dependenciesCmd.Flags().String("output", "", "Output file path")
 	dependenciesCmd.Flags().Bool("tree", true, "Show dependency tree structure")
 	dependenciesCmd.Flags().Bool("direct-only", false, "Only check direct dependencies")
-
+	
+	policyCmd.Flags().Bool("check-signing", true, "Check commit signature verification")
+	policyCmd.Flags().Bool("check-files", true, "Check for sensitive files")
+	policyCmd.Flags().Bool("check-push", true, "Check push policies")
+	policyCmd.Flags().Bool("check-branches", true, "Check branch protection")
+	policyCmd.Flags().String("severity", "low", "Minimum severity level (low, medium, high, critical)")
+	policyCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
+	policyCmd.Flags().String("output", "", "Output file path")
+	
 	securityCmd.AddCommand(secretsCmd)
 	securityCmd.AddCommand(dependenciesCmd)
+	securityCmd.AddCommand(policyCmd)
 }
 
 var diffCmd = &cobra.Command{
@@ -604,6 +628,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewTagChecker(),
 		checkers.NewSecretChecker(),
 		checkers.NewTransitiveDependencyChecker(),
+		checkers.NewGitPolicyChecker(),
 	}
 
 	// Run all checkers
@@ -2856,6 +2881,145 @@ func outputDependenciesYAML(result *types.CheckResult, outputFile string) {
 		return
 	}
 
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, yamlData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing YAML file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(yamlData))
+	}
+}
+
+func runPolicyValidation(cmd *cobra.Command, args []string) {
+	// Get flags
+	checkSigning, _ := cmd.Flags().GetBool("check-signing")
+	checkFiles, _ := cmd.Flags().GetBool("check-files")
+	checkPush, _ := cmd.Flags().GetBool("check-push")
+	checkBranches, _ := cmd.Flags().GetBool("check-branches")
+	minSeverity, _ := cmd.Flags().GetString("severity")
+	format, _ := cmd.Flags().GetString("format")
+	outputFile, _ := cmd.Flags().GetString("output")
+
+	// Determine repository path
+	repoPath := "."
+	if len(args) > 0 {
+		repoPath = args[0]
+	}
+
+	// Check if it's a Git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Validating Git security policies...\n")
+	fmt.Printf("Repository: %s\n", repoPath)
+	fmt.Printf("Check signing: %v\n", checkSigning)
+	fmt.Printf("Check files: %v\n", checkFiles)
+	fmt.Printf("Check push policies: %v\n", checkPush)
+	fmt.Printf("Check branch protection: %v\n", checkBranches)
+	fmt.Printf("Minimum severity: %s\n\n", minSeverity)
+
+	// Run Git policy checker
+	policyChecker := checkers.NewGitPolicyChecker()
+	
+	// Create RepositoryData for the checker
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+	
+	result := policyChecker.Check(data)
+
+	// Process results
+	if result.Status == types.StatusFail {
+		fmt.Printf("❌ Error validating policies: %s\n", result.Message)
+		os.Exit(1)
+	}
+
+	// Display results based on format
+	switch format {
+	case "json":
+		outputPolicyJSON(result, outputFile)
+	case "yaml":
+		outputPolicyYAML(result, outputFile)
+	default:
+		outputPolicyTable(result, minSeverity)
+	}
+
+	// Show remediation if violations found
+	if result.Status == types.StatusFail {
+		fmt.Printf("\n🚨 POLICY VIOLATIONS FOUND!\n\n")
+		fmt.Printf("Immediate Actions Required:\n")
+		fmt.Printf("1. Review and fix policy violations\n")
+		fmt.Printf("2. Enable commit signing for important commits\n")
+		fmt.Printf("3. Add sensitive files to .gitignore\n")
+		fmt.Printf("4. Configure branch protection rules\n")
+		fmt.Printf("5. Review push policies and permissions\n\n")
+		
+		fmt.Printf("Security Best Practices:\n")
+		fmt.Printf("- Enable GPG commit signing\n")
+		fmt.Printf("- Use .gitignore for sensitive files\n")
+		fmt.Printf("- Configure branch protection\n")
+		fmt.Printf("- Use signed commits for releases\n")
+		fmt.Printf("- Regular security policy audits\n")
+		
+		os.Exit(1)
+	} else {
+		fmt.Printf("✅ All Git security policies are properly configured!\n")
+	}
+}
+
+// outputPolicyTable outputs policy validation results in table format
+func outputPolicyTable(result *types.CheckResult, minSeverity string) {
+	fmt.Printf("📊 Git Policy Validation Results\n")
+	fmt.Printf("=================================\n\n")
+	
+	// Display details
+	for _, detail := range result.Details {
+		fmt.Printf("%s\n", detail)
+	}
+	
+	fmt.Printf("Security Score: %d/100\n\n", result.Score)
+}
+
+// outputPolicyJSON outputs policy validation results in JSON format
+func outputPolicyJSON(result *types.CheckResult, outputFile string) {
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return
+	}
+	
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, jsonData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing JSON file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(jsonData))
+	}
+}
+
+// outputPolicyYAML outputs policy validation results in YAML format
+func outputPolicyYAML(result *types.CheckResult, outputFile string) {
+	yamlData, err := yaml.Marshal(result)
+	if err != nil {
+		fmt.Printf("Error marshaling YAML: %v\n", err)
+		return
+	}
+	
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, yamlData, 0644)
 		if err != nil {
