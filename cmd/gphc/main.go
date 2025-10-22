@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -196,6 +197,21 @@ Examples:
 	Run: runPolicyValidation,
 }
 
+var binariesCmd = &cobra.Command{
+	Use:   "binaries",
+	Short: "Audit executable and large files for security risks",
+	Long: `Scan repository for executable files, large files, and suspicious file types
+that pose security risks or repository health issues.
+
+Examples:
+  git hc security binaries                        # Basic binary audit
+  git hc security binaries --max-size 50mb        # Set custom size threshold
+  git hc security binaries --check-history        # Include Git history scan
+  git hc security binaries --format json          # JSON output format
+  git hc security binaries --severity high        # Only show high/critical issues`,
+	Run: runBinariesAudit,
+}
+
 func init() {
 	secretsCmd.Flags().Bool("history", true, "Scan entire Git history for secrets")
 	secretsCmd.Flags().Bool("stashes", true, "Scan Git stashes for secrets")
@@ -211,7 +227,7 @@ func init() {
 	dependenciesCmd.Flags().String("output", "", "Output file path")
 	dependenciesCmd.Flags().Bool("tree", true, "Show dependency tree structure")
 	dependenciesCmd.Flags().Bool("direct-only", false, "Only check direct dependencies")
-	
+
 	policyCmd.Flags().Bool("check-signing", true, "Check commit signature verification")
 	policyCmd.Flags().Bool("check-files", true, "Check for sensitive files")
 	policyCmd.Flags().Bool("check-push", true, "Check push policies")
@@ -219,10 +235,20 @@ func init() {
 	policyCmd.Flags().String("severity", "low", "Minimum severity level (low, medium, high, critical)")
 	policyCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
 	policyCmd.Flags().String("output", "", "Output file path")
-	
+
+	binariesCmd.Flags().String("max-size", "10mb", "Maximum file size threshold (e.g., 10mb, 50mb, 100mb)")
+	binariesCmd.Flags().Bool("check-history", true, "Check Git history for binary files")
+	binariesCmd.Flags().Bool("check-executables", true, "Check for executable files")
+	binariesCmd.Flags().Bool("check-large", true, "Check for large files")
+	binariesCmd.Flags().Bool("check-suspicious", true, "Check for suspicious file types")
+	binariesCmd.Flags().String("severity", "low", "Minimum severity level (low, medium, high, critical)")
+	binariesCmd.Flags().String("format", "table", "Output format (table, json, yaml)")
+	binariesCmd.Flags().String("output", "", "Output file path")
+
 	securityCmd.AddCommand(secretsCmd)
 	securityCmd.AddCommand(dependenciesCmd)
 	securityCmd.AddCommand(policyCmd)
+	securityCmd.AddCommand(binariesCmd)
 }
 
 var diffCmd = &cobra.Command{
@@ -629,6 +655,7 @@ func runCheck(cmd *cobra.Command, args []string) {
 		checkers.NewSecretChecker(),
 		checkers.NewTransitiveDependencyChecker(),
 		checkers.NewGitPolicyChecker(),
+		checkers.NewBinaryFileChecker(),
 	}
 
 	// Run all checkers
@@ -2925,7 +2952,7 @@ func runPolicyValidation(cmd *cobra.Command, args []string) {
 
 	// Run Git policy checker
 	policyChecker := checkers.NewGitPolicyChecker()
-	
+
 	// Create RepositoryData for the checker
 	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
 	if err != nil {
@@ -2937,7 +2964,7 @@ func runPolicyValidation(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error analyzing repository: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	result := policyChecker.Check(data)
 
 	// Process results
@@ -2966,14 +2993,14 @@ func runPolicyValidation(cmd *cobra.Command, args []string) {
 		fmt.Printf("3. Add sensitive files to .gitignore\n")
 		fmt.Printf("4. Configure branch protection rules\n")
 		fmt.Printf("5. Review push policies and permissions\n\n")
-		
+
 		fmt.Printf("Security Best Practices:\n")
 		fmt.Printf("- Enable GPG commit signing\n")
 		fmt.Printf("- Use .gitignore for sensitive files\n")
 		fmt.Printf("- Configure branch protection\n")
 		fmt.Printf("- Use signed commits for releases\n")
 		fmt.Printf("- Regular security policy audits\n")
-		
+
 		os.Exit(1)
 	} else {
 		fmt.Printf("✅ All Git security policies are properly configured!\n")
@@ -2984,12 +3011,12 @@ func runPolicyValidation(cmd *cobra.Command, args []string) {
 func outputPolicyTable(result *types.CheckResult, minSeverity string) {
 	fmt.Printf("📊 Git Policy Validation Results\n")
 	fmt.Printf("=================================\n\n")
-	
+
 	// Display details
 	for _, detail := range result.Details {
 		fmt.Printf("%s\n", detail)
 	}
-	
+
 	fmt.Printf("Security Score: %d/100\n\n", result.Score)
 }
 
@@ -3000,7 +3027,7 @@ func outputPolicyJSON(result *types.CheckResult, outputFile string) {
 		fmt.Printf("Error marshaling JSON: %v\n", err)
 		return
 	}
-	
+
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, jsonData, 0644)
 		if err != nil {
@@ -3020,7 +3047,169 @@ func outputPolicyYAML(result *types.CheckResult, outputFile string) {
 		fmt.Printf("Error marshaling YAML: %v\n", err)
 		return
 	}
+
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, yamlData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing YAML file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(yamlData))
+	}
+}
+
+func runBinariesAudit(cmd *cobra.Command, args []string) {
+	// Get flags
+	maxSizeStr, _ := cmd.Flags().GetString("max-size")
+	checkHistory, _ := cmd.Flags().GetBool("check-history")
+	checkExecutables, _ := cmd.Flags().GetBool("check-executables")
+	checkLarge, _ := cmd.Flags().GetBool("check-large")
+	checkSuspicious, _ := cmd.Flags().GetBool("check-suspicious")
+	minSeverity, _ := cmd.Flags().GetString("severity")
+	format, _ := cmd.Flags().GetString("format")
+	outputFile, _ := cmd.Flags().GetString("output")
+
+	// Parse max size
+	maxSizeMB := parseSizeToMB(maxSizeStr)
+
+	// Determine repository path
+	repoPath := "."
+	if len(args) > 0 {
+		repoPath = args[0]
+	}
+
+	// Check if it's a Git repository
+	if !isGitRepository(repoPath) {
+		fmt.Printf("Error: %s is not a Git repository\n", repoPath)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔍 Auditing executable and large files...\n")
+	fmt.Printf("Repository: %s\n", repoPath)
+	fmt.Printf("Max size threshold: %s (%.1f MB)\n", maxSizeStr, maxSizeMB)
+	fmt.Printf("Check history: %v\n", checkHistory)
+	fmt.Printf("Check executables: %v\n", checkExecutables)
+	fmt.Printf("Check large files: %v\n", checkLarge)
+	fmt.Printf("Check suspicious files: %v\n", checkSuspicious)
+	fmt.Printf("Minimum severity: %s\n\n", minSeverity)
+
+	// Run binary file checker
+	binaryChecker := checkers.NewBinaryFileChecker()
 	
+	// Create RepositoryData for the checker
+	analyzer, err := git.NewRepositoryAnalyzer(repoPath)
+	if err != nil {
+		fmt.Printf("Error initializing repository analyzer: %v\n", err)
+		os.Exit(1)
+	}
+	data, err := analyzer.Analyze()
+	if err != nil {
+		fmt.Printf("Error analyzing repository: %v\n", err)
+		os.Exit(1)
+	}
+	
+	result := binaryChecker.CheckWithOptions(data, checkExecutables, checkLarge, checkSuspicious, checkHistory, maxSizeMB)
+
+	// Process results
+	if result.Status == types.StatusFail {
+		fmt.Printf("❌ Binary audit found issues: %s\n", result.Message)
+	} else {
+		fmt.Printf("✅ Binary audit passed: %s\n", result.Message)
+	}
+
+	// Display results based on format
+	switch format {
+	case "json":
+		outputBinariesJSON(result, outputFile)
+	case "yaml":
+		outputBinariesYAML(result, outputFile)
+	default:
+		outputBinariesTable(result, minSeverity)
+	}
+
+	// Show remediation if violations found
+	if result.Status == types.StatusFail {
+		fmt.Printf("\n🚨 BINARY FILE ISSUES FOUND!\n\n")
+		fmt.Printf("Immediate Actions Required:\n")
+		fmt.Printf("1. Review and remove unnecessary binary files\n")
+		fmt.Printf("2. Use Git LFS for large files\n")
+		fmt.Printf("3. Add binary file patterns to .gitignore\n")
+		fmt.Printf("4. Remove suspicious files from repository\n")
+		fmt.Printf("5. Clean up Git history if needed\n\n")
+
+		fmt.Printf("Best Practices:\n")
+		fmt.Printf("- Use Git LFS for files > 100MB\n")
+		fmt.Printf("- Avoid committing executable files\n")
+		fmt.Printf("- Use .gitignore for binary patterns\n")
+		fmt.Printf("- Regular binary file audits\n")
+		fmt.Printf("- Use package managers for dependencies\n")
+
+		os.Exit(1)
+	} else {
+		fmt.Printf("✅ No suspicious binary or large files found!\n")
+	}
+}
+
+// parseSizeToMB parses size string to MB
+func parseSizeToMB(sizeStr string) float64 {
+	sizeStr = strings.ToLower(strings.TrimSpace(sizeStr))
+
+	// Remove common suffixes
+	sizeStr = strings.TrimSuffix(sizeStr, "mb")
+	sizeStr = strings.TrimSuffix(sizeStr, "m")
+
+	// Parse number
+	size, err := strconv.ParseFloat(sizeStr, 64)
+	if err != nil {
+		return 10.0 // Default 10MB
+	}
+
+	return size
+}
+
+// outputBinariesTable outputs binary audit results in table format
+func outputBinariesTable(result *types.CheckResult, minSeverity string) {
+	fmt.Printf("📊 Binary File Audit Results\n")
+	fmt.Printf("============================\n\n")
+	
+	// Display all details including file listings
+	for _, detail := range result.Details {
+		fmt.Printf("%s\n", detail)
+	}
+	
+	fmt.Printf("\nSecurity Score: %d/100\n\n", result.Score)
+}
+
+// outputBinariesJSON outputs binary audit results in JSON format
+func outputBinariesJSON(result *types.CheckResult, outputFile string) {
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return
+	}
+
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, jsonData, 0644)
+		if err != nil {
+			fmt.Printf("Error writing JSON file: %v\n", err)
+			return
+		}
+		fmt.Printf("Results written to %s\n", outputFile)
+	} else {
+		fmt.Printf("%s\n", string(jsonData))
+	}
+}
+
+// outputBinariesYAML outputs binary audit results in YAML format
+func outputBinariesYAML(result *types.CheckResult, outputFile string) {
+	yamlData, err := yaml.Marshal(result)
+	if err != nil {
+		fmt.Printf("Error marshaling YAML: %v\n", err)
+		return
+	}
+
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, yamlData, 0644)
 		if err != nil {
