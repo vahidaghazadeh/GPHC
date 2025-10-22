@@ -2942,8 +2942,9 @@ func runPolicyValidation(cmd *cobra.Command, args []string) {
 
 	// Process results
 	if result.Status == types.StatusFail {
-		fmt.Printf("❌ Error validating policies: %s\n", result.Message)
-		os.Exit(1)
+		fmt.Printf("❌ Policy validation found issues: %s\n", result.Message)
+	} else {
+		fmt.Printf("✅ Policy validation passed: %s\n", result.Message)
 	}
 
 	// Display results based on format

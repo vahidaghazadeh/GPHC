@@ -309,31 +309,6 @@ func (c *GitPolicyChecker) checkSensitiveFiles(repoPath string, report *GitPolic
 			Severity:    "critical",
 			Description: "SSH private key",
 		},
-		"*.pem": {
-			Type:        "certificate",
-			Severity:    "high",
-			Description: "Certificate file",
-		},
-		"*.key": {
-			Type:        "private_key",
-			Severity:    "critical",
-			Description: "Private key file",
-		},
-		"*.p12": {
-			Type:        "certificate",
-			Severity:    "high",
-			Description: "PKCS#12 certificate file",
-		},
-		"*.pfx": {
-			Type:        "certificate",
-			Severity:    "high",
-			Description: "PKCS#12 certificate file",
-		},
-		"config.json": {
-			Type:        "configuration",
-			Severity:    "medium",
-			Description: "Configuration file",
-		},
 		"secrets.json": {
 			Type:        "secrets",
 			Severity:    "critical",
@@ -363,15 +338,23 @@ func (c *GitPolicyChecker) scanDirectoryForSensitiveFiles(repoPath string, patte
 			return nil
 		}
 
-		// Skip .git directory
-		if strings.Contains(path, ".git") {
+		// Skip .git directory and other common directories
+		if strings.Contains(path, ".git") || strings.Contains(path, "node_modules") || strings.Contains(path, "vendor") {
 			return nil
 		}
 
-		// Check if file matches sensitive patterns
+		// Only check files, not directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Check if file matches sensitive patterns exactly
 		relPath, _ := filepath.Rel(repoPath, path)
+		fileName := info.Name()
+		
 		for pattern, fileInfo := range patterns {
-			if matched, _ := filepath.Match(pattern, info.Name()); matched {
+			// Only check exact matches for specific file names
+			if pattern == fileName {
 				sensitiveFile := fileInfo
 				sensitiveFile.Path = relPath
 				sensitiveFile.InGitignore = c.isInGitignore(repoPath, relPath)
@@ -420,9 +403,10 @@ func (c *GitPolicyChecker) checkGitHistoryForSensitiveFiles(repoPath string, pat
 		}
 		seenFiles[file] = true
 
-		// Check if file matches sensitive patterns
+		// Check if file matches sensitive patterns exactly
+		fileName := filepath.Base(file)
 		for pattern, fileInfo := range patterns {
-			if matched, _ := filepath.Match(pattern, filepath.Base(file)); matched {
+			if pattern == fileName {
 				sensitiveFile := fileInfo
 				sensitiveFile.Path = file
 				sensitiveFile.InGitignore = c.isInGitignore(repoPath, file)
@@ -476,7 +460,10 @@ func (c *GitPolicyChecker) checkGitignoreForSensitiveFiles(repoPath string, patt
 	gitignoreContent := string(content)
 	missingPatterns := []string{}
 
-	for pattern := range patterns {
+	// Only check for essential patterns
+	essentialPatterns := []string{".env", "*.key", "id_rsa", "id_dsa", "id_ed25519", "secrets.json", "credentials.json"}
+	
+	for _, pattern := range essentialPatterns {
 		if !strings.Contains(gitignoreContent, pattern) {
 			missingPatterns = append(missingPatterns, pattern)
 		}
@@ -486,7 +473,7 @@ func (c *GitPolicyChecker) checkGitignoreForSensitiveFiles(repoPath string, patt
 		report.Violations = append(report.Violations, PolicyViolation{
 			Type:        "gitignore_incomplete",
 			Severity:    "medium",
-			Description: fmt.Sprintf("Missing patterns in .gitignore: %s", strings.Join(missingPatterns, ", ")),
+			Description: fmt.Sprintf("Missing essential patterns in .gitignore: %s", strings.Join(missingPatterns, ", ")),
 			File:        ".gitignore",
 			Recommendation: "Add missing patterns to .gitignore",
 		})

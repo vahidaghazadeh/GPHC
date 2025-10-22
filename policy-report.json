@@ -1,0 +1,16 @@
+{
+  "id": "GIT-POLICY",
+  "name": "Git Policy Validation",
+  "status": 1,
+  "score": 45,
+  "message": "Found 3 Git security policy violations",
+  "details": [
+    "Total Violations: 3",
+    "Signature Rate: 0.0%",
+    "Sensitive Files: 0",
+    "Push Policies: 0",
+    "Branch Protection: 1"
+  ],
+  "category": 0,
+  "timestamp": "2025-10-22T12:41:55.641415+03:30"
+}
