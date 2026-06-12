@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 	"gopkg.in/yaml.v2"
 )
 

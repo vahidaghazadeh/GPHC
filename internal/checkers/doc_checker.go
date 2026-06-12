@@ -3,7 +3,7 @@ package checkers
 import (
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // DocChecker checks for essential documentation files

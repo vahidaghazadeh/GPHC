@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // CodebaseSmellChecker performs lightweight codebase structure analysis

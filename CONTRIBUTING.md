@@ -35,12 +35,12 @@ Thank you for your interest in contributing to GPHC! This document provides guid
 ## 📋 How to Contribute
 
 ### Reporting Issues
-- Use the [GitHub Issues](https://github.com/opsource/gphc/issues) page
+- Use the [GitHub Issues](https://github.com/vahidaghazadeh/gphc/issues) page
 - Include detailed description, steps to reproduce, and expected behavior
 - Use appropriate labels (bug, enhancement, documentation, etc.)
 
 ### Suggesting Features
-- Open a [GitHub Discussion](https://github.com/opsource/gphc/discussions) for feature requests
+- Open a [GitHub Discussion](https://github.com/vahidaghazadeh/gphc/discussions) for feature requests
 - Describe the use case and expected behavior
 - Consider implementation complexity and maintainability
 
@@ -207,8 +207,8 @@ When suggesting features:
 
 ## 📞 Getting Help
 
-- 💬 [GitHub Discussions](https://github.com/opsource/gphc/discussions)
-- 🐛 [GitHub Issues](https://github.com/opsource/gphc/issues)
+- 💬 [GitHub Discussions](https://github.com/vahidaghazadeh/gphc/discussions)
+- 🐛 [GitHub Issues](https://github.com/vahidaghazadeh/gphc/issues)
 - 📧 Email: contributors@gphc.dev
 
 ## 🎉 Recognition

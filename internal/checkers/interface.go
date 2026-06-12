@@ -1,7 +1,7 @@
 package checkers
 
 import (
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // Checker defines the interface that all checkers must implement

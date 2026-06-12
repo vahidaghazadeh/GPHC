@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // LocalBranchChecker checks for stale local branches

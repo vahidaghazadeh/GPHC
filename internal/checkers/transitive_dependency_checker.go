@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // TransitiveDependencyChecker checks for vulnerabilities in transitive dependencies

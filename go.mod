@@ -1,4 +1,4 @@
-module github.com/opsource/gphc
+module github.com/vahidaghazadeh/gphc
 
 go 1.24.0
 

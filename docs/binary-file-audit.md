@@ -288,7 +288,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup GPHC
-        run: go install github.com/opsource/gphc/cmd/gphc@latest
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
       - name: Audit Binary Files
         run: |
           git hc security binaries --max-size 50mb --format json --output binary-audit.json
@@ -305,7 +305,7 @@ binary_file_audit:
   stage: security
   image: golang:1.19
   before_script:
-    - go install github.com/opsource/gphc/cmd/gphc@latest
+    - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
   script:
     - git hc security binaries --max-size 100mb --format json --output binary-audit.json
   artifacts:
@@ -323,7 +323,7 @@ pipeline {
     stages {
         stage('Binary File Audit') {
             steps {
-                sh 'go install github.com/opsource/gphc/cmd/gphc@latest'
+                sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
                 sh 'git hc security binaries --max-size 50mb --format json --output binary-audit.json'
                 archiveArtifacts artifacts: 'binary-audit.json'
             }

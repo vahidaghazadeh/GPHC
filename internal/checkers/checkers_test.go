@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 func TestDocChecker(t *testing.T) {

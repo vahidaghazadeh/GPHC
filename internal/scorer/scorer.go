@@ -3,7 +3,7 @@ package scorer
 import (
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // Scorer calculates the overall health score from check results

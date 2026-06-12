@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // IgnoreChecker checks for proper .gitignore usage

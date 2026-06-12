@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opsource/gphc/internal/integration"
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/internal/integration"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // GitHubIntegrationChecker checks GitHub-specific features

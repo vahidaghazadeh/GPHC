@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opsource/gphc/pkg/types"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 )
 
 // GitPolicyChecker validates Git security policies and configurations
@@ -19,22 +19,22 @@ type GitPolicyChecker struct {
 
 // PolicyViolation represents a security policy violation
 type PolicyViolation struct {
-	Type        string `json:"type"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	File        string `json:"file,omitempty"`
-	Line        int    `json:"line,omitempty"`
+	Type           string `json:"type"`
+	Severity       string `json:"severity"`
+	Description    string `json:"description"`
+	File           string `json:"file,omitempty"`
+	Line           int    `json:"line,omitempty"`
 	Recommendation string `json:"recommendation"`
 }
 
 // SignatureStats represents commit signature statistics
 type SignatureStats struct {
-	TotalCommits    int     `json:"total_commits"`
-	SignedCommits   int     `json:"signed_commits"`
-	UnsignedCommits int     `json:"unsigned_commits"`
-	SignatureRate   float64 `json:"signature_rate"`
-	ValidSignatures int     `json:"valid_signatures"`
-	InvalidSignatures int   `json:"invalid_signatures"`
+	TotalCommits      int     `json:"total_commits"`
+	SignedCommits     int     `json:"signed_commits"`
+	UnsignedCommits   int     `json:"unsigned_commits"`
+	SignatureRate     float64 `json:"signature_rate"`
+	ValidSignatures   int     `json:"valid_signatures"`
+	InvalidSignatures int     `json:"invalid_signatures"`
 }
 
 // SensitiveFile represents a detected sensitive file
@@ -49,12 +49,12 @@ type SensitiveFile struct {
 
 // GitPolicyReport represents the complete policy validation report
 type GitPolicyReport struct {
-	Violations      []PolicyViolation `json:"violations"`
-	SignatureStats  SignatureStats    `json:"signature_stats"`
-	SensitiveFiles  []SensitiveFile   `json:"sensitive_files"`
-	PushPolicies    []string          `json:"push_policies"`
+	Violations       []PolicyViolation `json:"violations"`
+	SignatureStats   SignatureStats    `json:"signature_stats"`
+	SensitiveFiles   []SensitiveFile   `json:"sensitive_files"`
+	PushPolicies     []string          `json:"push_policies"`
 	BranchProtection []string          `json:"branch_protection"`
-	Score           int               `json:"score"`
+	Score            int               `json:"score"`
 }
 
 // NewGitPolicyChecker creates a new GitPolicyChecker
@@ -82,10 +82,10 @@ func (c *GitPolicyChecker) Check(data *types.RepositoryData) *types.CheckResult 
 
 	// Initialize policy report
 	report := &GitPolicyReport{
-		Violations:      []PolicyViolation{},
-		SignatureStats:  SignatureStats{},
-		SensitiveFiles:  []SensitiveFile{},
-		PushPolicies:    []string{},
+		Violations:       []PolicyViolation{},
+		SignatureStats:   SignatureStats{},
+		SensitiveFiles:   []SensitiveFile{},
+		PushPolicies:     []string{},
 		BranchProtection: []string{},
 	}
 
@@ -150,11 +150,11 @@ func (c *GitPolicyChecker) checkGitConfig(repoPath string, report *GitPolicyRepo
 		// Check for dangerous push settings
 		if strings.Contains(line, "push.default") && strings.Contains(line, "matching") {
 			report.Violations = append(report.Violations, PolicyViolation{
-				Type:        "push_policy",
-				Severity:    "medium",
-				Description: "Push default is set to 'matching' which can be dangerous",
-				File:        configPath,
-				Line:        lineNum,
+				Type:           "push_policy",
+				Severity:       "medium",
+				Description:    "Push default is set to 'matching' which can be dangerous",
+				File:           configPath,
+				Line:           lineNum,
 				Recommendation: "Set push.default to 'simple' or 'current'",
 			})
 		}
@@ -162,11 +162,11 @@ func (c *GitPolicyChecker) checkGitConfig(repoPath string, report *GitPolicyRepo
 		// Check for unsafe credential storage
 		if strings.Contains(line, "credential.helper") && strings.Contains(line, "store") {
 			report.Violations = append(report.Violations, PolicyViolation{
-				Type:        "credential_storage",
-				Severity:    "high",
-				Description: "Credentials are stored in plain text",
-				File:        configPath,
-				Line:        lineNum,
+				Type:           "credential_storage",
+				Severity:       "high",
+				Description:    "Credentials are stored in plain text",
+				File:           configPath,
+				Line:           lineNum,
 				Recommendation: "Use credential.helper=cache or credential.helper=osxkeychain",
 			})
 		}
@@ -174,11 +174,11 @@ func (c *GitPolicyChecker) checkGitConfig(repoPath string, report *GitPolicyRepo
 		// Check for unsafe merge settings
 		if strings.Contains(line, "merge.ours") && strings.Contains(line, "true") {
 			report.Violations = append(report.Violations, PolicyViolation{
-				Type:        "merge_policy",
-				Severity:    "medium",
-				Description: "Merge strategy 'ours' can hide conflicts",
-				File:        configPath,
-				Line:        lineNum,
+				Type:           "merge_policy",
+				Severity:       "medium",
+				Description:    "Merge strategy 'ours' can hide conflicts",
+				File:           configPath,
+				Line:           lineNum,
 				Recommendation: "Use merge strategy 'recursive' or 'resolve'",
 			})
 		}
@@ -230,10 +230,10 @@ func (c *GitPolicyChecker) checkCommitSignatures(repoPath string, report *GitPol
 	}
 
 	report.SignatureStats = SignatureStats{
-		TotalCommits:     totalCommits,
-		SignedCommits:    signedCommits,
-		UnsignedCommits:  totalCommits - signedCommits,
-		SignatureRate:    float64(signedCommits) / float64(totalCommits) * 100,
+		TotalCommits:      totalCommits,
+		SignedCommits:     signedCommits,
+		UnsignedCommits:   totalCommits - signedCommits,
+		SignatureRate:     float64(signedCommits) / float64(totalCommits) * 100,
 		ValidSignatures:   validSignatures,
 		InvalidSignatures: invalidSignatures,
 	}
@@ -241,16 +241,16 @@ func (c *GitPolicyChecker) checkCommitSignatures(repoPath string, report *GitPol
 	// Add violations based on signature rate
 	if report.SignatureStats.SignatureRate < 50.0 {
 		report.Violations = append(report.Violations, PolicyViolation{
-			Type:        "signature_policy",
-			Severity:    "high",
-			Description: fmt.Sprintf("Low signature rate: %.1f%%", report.SignatureStats.SignatureRate),
+			Type:           "signature_policy",
+			Severity:       "high",
+			Description:    fmt.Sprintf("Low signature rate: %.1f%%", report.SignatureStats.SignatureRate),
 			Recommendation: "Enable commit signing and require signatures for important commits",
 		})
 	} else if report.SignatureStats.SignatureRate < 80.0 {
 		report.Violations = append(report.Violations, PolicyViolation{
-			Type:        "signature_policy",
-			Severity:    "medium",
-			Description: fmt.Sprintf("Moderate signature rate: %.1f%%", report.SignatureStats.SignatureRate),
+			Type:           "signature_policy",
+			Severity:       "medium",
+			Description:    fmt.Sprintf("Moderate signature rate: %.1f%%", report.SignatureStats.SignatureRate),
 			Recommendation: "Consider enabling commit signing for more commits",
 		})
 	}
@@ -258,9 +258,9 @@ func (c *GitPolicyChecker) checkCommitSignatures(repoPath string, report *GitPol
 	// Check for invalid signatures
 	if invalidSignatures > 0 {
 		report.Violations = append(report.Violations, PolicyViolation{
-			Type:        "signature_validation",
-			Severity:    "high",
-			Description: fmt.Sprintf("Found %d invalid signatures", invalidSignatures),
+			Type:           "signature_validation",
+			Severity:       "high",
+			Description:    fmt.Sprintf("Found %d invalid signatures", invalidSignatures),
 			Recommendation: "Review and fix invalid signatures",
 		})
 	}
@@ -351,7 +351,7 @@ func (c *GitPolicyChecker) scanDirectoryForSensitiveFiles(repoPath string, patte
 		// Check if file matches sensitive patterns exactly
 		relPath, _ := filepath.Rel(repoPath, path)
 		fileName := info.Name()
-		
+
 		for pattern, fileInfo := range patterns {
 			// Only check exact matches for specific file names
 			if pattern == fileName {
@@ -365,10 +365,10 @@ func (c *GitPolicyChecker) scanDirectoryForSensitiveFiles(repoPath string, patte
 				// Add violation if not in .gitignore
 				if !sensitiveFile.InGitignore {
 					report.Violations = append(report.Violations, PolicyViolation{
-						Type:        "sensitive_file",
-						Severity:    sensitiveFile.Severity,
-						Description: fmt.Sprintf("Sensitive file found: %s", relPath),
-						File:        relPath,
+						Type:           "sensitive_file",
+						Severity:       sensitiveFile.Severity,
+						Description:    fmt.Sprintf("Sensitive file found: %s", relPath),
+						File:           relPath,
 						Recommendation: fmt.Sprintf("Add %s to .gitignore", pattern),
 					})
 				}
@@ -428,10 +428,10 @@ func (c *GitPolicyChecker) checkGitHistoryForSensitiveFiles(repoPath string, pat
 
 				// Add violation for files in history
 				report.Violations = append(report.Violations, PolicyViolation{
-					Type:        "sensitive_file_history",
-					Severity:    sensitiveFile.Severity,
-					Description: fmt.Sprintf("Sensitive file found in Git history: %s", file),
-					File:        file,
+					Type:           "sensitive_file_history",
+					Severity:       sensitiveFile.Severity,
+					Description:    fmt.Sprintf("Sensitive file found in Git history: %s", file),
+					File:           file,
 					Recommendation: "Remove from Git history using git filter-repo or BFG",
 				})
 			}
@@ -444,9 +444,9 @@ func (c *GitPolicyChecker) checkGitignoreForSensitiveFiles(repoPath string, patt
 	gitignorePath := filepath.Join(repoPath, ".gitignore")
 	if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
 		report.Violations = append(report.Violations, PolicyViolation{
-			Type:        "gitignore_missing",
-			Severity:    "medium",
-			Description: ".gitignore file is missing",
+			Type:           "gitignore_missing",
+			Severity:       "medium",
+			Description:    ".gitignore file is missing",
 			Recommendation: "Create .gitignore file with sensitive file patterns",
 		})
 		return
@@ -462,7 +462,7 @@ func (c *GitPolicyChecker) checkGitignoreForSensitiveFiles(repoPath string, patt
 
 	// Only check for essential patterns
 	essentialPatterns := []string{".env", "*.key", "id_rsa", "id_dsa", "id_ed25519", "secrets.json", "credentials.json"}
-	
+
 	for _, pattern := range essentialPatterns {
 		if !strings.Contains(gitignoreContent, pattern) {
 			missingPatterns = append(missingPatterns, pattern)
@@ -471,10 +471,10 @@ func (c *GitPolicyChecker) checkGitignoreForSensitiveFiles(repoPath string, patt
 
 	if len(missingPatterns) > 0 {
 		report.Violations = append(report.Violations, PolicyViolation{
-			Type:        "gitignore_incomplete",
-			Severity:    "medium",
-			Description: fmt.Sprintf("Missing essential patterns in .gitignore: %s", strings.Join(missingPatterns, ", ")),
-			File:        ".gitignore",
+			Type:           "gitignore_incomplete",
+			Severity:       "medium",
+			Description:    fmt.Sprintf("Missing essential patterns in .gitignore: %s", strings.Join(missingPatterns, ", ")),
+			File:           ".gitignore",
 			Recommendation: "Add missing patterns to .gitignore",
 		})
 	}
@@ -500,9 +500,9 @@ func (c *GitPolicyChecker) checkPushPolicies(repoPath string, report *GitPolicyR
 
 		if pushDefault == "matching" {
 			report.Violations = append(report.Violations, PolicyViolation{
-				Type:        "push_policy",
-				Severity:    "medium",
-				Description: "Push default is set to 'matching'",
+				Type:           "push_policy",
+				Severity:       "medium",
+				Description:    "Push default is set to 'matching'",
 				Recommendation: "Set push.default to 'simple' for safer pushes",
 			})
 		}
@@ -516,9 +516,9 @@ func (c *GitPolicyChecker) checkPushPolicies(repoPath string, report *GitPolicyR
 		denyNonFastForwards := strings.TrimSpace(string(output))
 		if denyNonFastForwards != "true" {
 			report.Violations = append(report.Violations, PolicyViolation{
-				Type:        "push_policy",
-				Severity:    "high",
-				Description: "Force pushes are not denied",
+				Type:           "push_policy",
+				Severity:       "high",
+				Description:    "Force pushes are not denied",
 				Recommendation: "Set receive.denyNonFastForwards=true to prevent force pushes",
 			})
 		}
@@ -558,9 +558,9 @@ func (c *GitPolicyChecker) checkBranchProtection(repoPath string, report *GitPol
 				_, err := cmd.Output()
 				if err != nil {
 					report.Violations = append(report.Violations, PolicyViolation{
-						Type:        "branch_protection",
-						Severity:    "high",
-						Description: fmt.Sprintf("Protected branch '%s' has no protection rules", branchName),
+						Type:           "branch_protection",
+						Severity:       "high",
+						Description:    fmt.Sprintf("Protected branch '%s' has no protection rules", branchName),
 						Recommendation: "Configure branch protection rules for important branches",
 					})
 				}

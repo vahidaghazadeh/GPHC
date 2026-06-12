@@ -196,7 +196,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install GPHC
-        run: go install github.com/opsource/gphc/cmd/gphc@latest
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
       - name: Scan Dependencies
         run: |
           git hc security dependencies --severity medium --format json --output deps-report.json
@@ -213,7 +213,7 @@ dependency_scan:
   stage: security
   image: golang:1.19
   before_script:
-    - go install github.com/opsource/gphc/cmd/gphc@latest
+    - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
   script:
     - git hc security dependencies --severity high --format json --output deps-report.json
   artifacts:
@@ -231,7 +231,7 @@ pipeline {
     stages {
         stage('Dependency Scan') {
             steps {
-                sh 'go install github.com/opsource/gphc/cmd/gphc@latest'
+                sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
                 sh 'git hc security dependencies --severity medium --format json --output deps-report.json'
                 archiveArtifacts artifacts: 'deps-report.json'
             }

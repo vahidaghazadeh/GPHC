@@ -255,7 +255,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup GPHC
-        run: go install github.com/opsource/gphc/cmd/gphc@latest
+        run: go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
       - name: Validate Git Policies
         run: |
           git hc security policy --severity medium --format json --output policy-report.json
@@ -272,7 +272,7 @@ git_policy_validation:
   stage: security
   image: golang:1.19
   before_script:
-    - go install github.com/opsource/gphc/cmd/gphc@latest
+    - go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
   script:
     - git hc security policy --severity high --format json --output policy-report.json
   artifacts:
@@ -290,7 +290,7 @@ pipeline {
     stages {
         stage('Git Policy Validation') {
             steps {
-                sh 'go install github.com/opsource/gphc/cmd/gphc@latest'
+                sh 'go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest'
                 sh 'git hc security policy --severity medium --format json --output policy-report.json'
                 archiveArtifacts artifacts: 'policy-report.json'
             }
