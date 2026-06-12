@@ -126,8 +126,9 @@ suggest next semantic version, and optionally generate a changelog.`,
 }
 
 var suggestCmd = &cobra.Command{
-	Use:   "suggest [path]",
-	Short: "Suggest commit message based on staged changes",
+	Use:     "suggest [path]",
+	Aliases: []string{"comment"},
+	Short:   "Suggest commit message based on staged changes",
 	Long: `Analyze staged files and suggest conventional commit messages.
 This command examines the changes in staged files and suggests
 appropriate commit messages following conventional commit format.
@@ -542,16 +543,7 @@ func runDiff(cmd *cobra.Command, args []string) {
 }
 
 func runCommit(cmd *cobra.Command, args []string) {
-	if commitSuggest {
-		// If --suggest flag is used, delegate to runSuggest
-		runSuggest(cmd, args)
-		return
-	}
-
-	// Default behavior: show help
-	fmt.Println("Enhanced git commit command")
-	fmt.Println("Use --suggest flag to get commit message suggestions")
-	fmt.Println("Example: git hc commit --suggest")
+	runSuggest(cmd, args)
 }
 
 func runSuggest(cmd *cobra.Command, args []string) {
@@ -589,15 +581,13 @@ func runSuggest(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Printf("Analyzing %d staged files for commit message suggestion\n", len(stagedFiles))
-
-	// Analyze staged changes
 	suggestion := analyzeStagedChanges(path, stagedFiles)
 
-	fmt.Println("\nSuggested commit message:")
+	fmt.Printf("Staged changes: %d file(s)\n", len(stagedFiles))
+	fmt.Println("\nCommit suggestion:")
 	fmt.Printf("  %s\n", suggestion)
-	fmt.Println("\nYou can use this message with:")
-	fmt.Printf("  git commit -m \"%s\"\n", suggestion)
+	fmt.Println("\nCommit with:")
+	fmt.Printf("  git commit -m %s\n", shellQuote(suggestion))
 }
 
 func runCheck(cmd *cobra.Command, args []string) {
@@ -1306,128 +1296,256 @@ func checkCommitMessage(repoPath string) bool {
 }
 
 func analyzeStagedChanges(repoPath string, stagedFiles []string) string {
-	// Analyze file types and changes
-	var addedFiles, modifiedFiles, deletedFiles []string
-	var hasNewFeatures, hasBugFixes, hasDocs, hasRefactor bool
-	var changeSummary []string
+	changes, err := getStagedChanges(repoPath)
+	if err != nil || len(changes) == 0 {
+		changes = make([]stagedChange, 0, len(stagedFiles))
+		for _, file := range stagedFiles {
+			changes = append(changes, stagedChange{status: "M", path: file})
+		}
+	}
 
-	for _, file := range stagedFiles {
-		// Get file status
-		cmd := exec.Command("git", "status", "--porcelain", file)
-		cmd.Dir = repoPath
-		output, err := cmd.Output()
-		if err != nil {
+	return buildCommitSuggestion(changes)
+}
+
+type stagedChange struct {
+	status string
+	path   string
+}
+
+func getStagedChanges(repoPath string) ([]stagedChange, error) {
+	cmd := exec.Command("git", "diff", "--cached", "--name-status")
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var changes []stagedChange
+	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+		if line == "" {
 			continue
 		}
 
-		status := strings.TrimSpace(string(output))
-		if len(status) < 3 {
+		parts := strings.Split(line, "\t")
+		if len(parts) < 2 {
 			continue
 		}
 
-		fileStatus := status[:2]
-		fileName := status[3:]
+		status := parts[0][:1]
+		path := parts[len(parts)-1]
+		changes = append(changes, stagedChange{status: status, path: path})
+	}
+	return changes, nil
+}
 
-		switch {
-		case strings.HasPrefix(fileStatus, "A"):
-			addedFiles = append(addedFiles, fileName)
-		case strings.HasPrefix(fileStatus, "M"):
-			modifiedFiles = append(modifiedFiles, fileName)
-		case strings.HasPrefix(fileStatus, "D"):
-			deletedFiles = append(deletedFiles, fileName)
+func buildCommitSuggestion(changes []stagedChange) string {
+	if len(changes) == 0 {
+		return "chore: update project files"
+	}
+
+	commitType := inferCommitType(changes)
+	scope := inferCommitScope(changes)
+	subject := inferCommitSubject(changes, commitType)
+
+	if scope != "" {
+		return fmt.Sprintf("%s(%s): %s", commitType, scope, subject)
+	}
+	return fmt.Sprintf("%s: %s", commitType, subject)
+}
+
+func inferCommitType(changes []stagedChange) string {
+	allDocs, allTests, allCI, allDependencies := true, true, true, true
+	allAdded, allDeleted := true, true
+
+	for _, change := range changes {
+		allDocs = allDocs && isDocumentationPath(change.path)
+		allTests = allTests && isTestPath(change.path)
+		allCI = allCI && isCIPath(change.path)
+		allDependencies = allDependencies && isDependencyPath(change.path)
+		allAdded = allAdded && change.status == "A"
+		allDeleted = allDeleted && change.status == "D"
+	}
+
+	switch {
+	case allDocs:
+		return "docs"
+	case allTests:
+		return "test"
+	case allCI:
+		return "ci"
+	case allDependencies:
+		return "build"
+	case allAdded:
+		return "feat"
+	case allDeleted:
+		return "refactor"
+	default:
+		return "chore"
+	}
+}
+
+func inferCommitScope(changes []stagedChange) string {
+	scope := scopeForPath(changes[0].path)
+	if scope == "" {
+		return ""
+	}
+
+	for _, change := range changes[1:] {
+		if scopeForPath(change.path) != scope {
+			return ""
 		}
+	}
+	return scope
+}
 
-		// Analyze file type and content
-		fileExt := strings.ToLower(filepath.Ext(fileName))
-		fileName = strings.ToLower(fileName)
-		baseName := strings.ToLower(filepath.Base(fileName))
+func scopeForPath(path string) string {
+	cleanPath := filepath.ToSlash(path)
+	parts := strings.Split(cleanPath, "/")
+	if len(parts) == 1 {
+		return ""
+	}
 
-		// Check for new features
-		if strings.Contains(fileName, "feat") || strings.Contains(fileName, "feature") ||
-			strings.Contains(fileName, "add") || strings.Contains(fileName, "new") ||
-			strings.Contains(baseName, "feat") || strings.Contains(baseName, "feature") {
-			hasNewFeatures = true
+	switch parts[0] {
+	case "cmd":
+		if len(parts) > 1 {
+			return sanitizeScope(parts[1])
 		}
-
-		// Check for bug fixes
-		if strings.Contains(fileName, "fix") || strings.Contains(fileName, "bug") ||
-			strings.Contains(fileName, "error") || strings.Contains(fileName, "issue") ||
-			strings.Contains(fileName, "patch") || strings.Contains(baseName, "fix") {
-			hasBugFixes = true
+	case "internal", "pkg", "src", "lib":
+		if len(parts) > 1 {
+			return sanitizeScope(parts[1])
 		}
+	case ".github":
+		return "github"
+	case "docs":
+		return ""
+	default:
+		return sanitizeScope(parts[0])
+	}
+	return ""
+}
 
-		// Check for documentation
-		if strings.Contains(fileName, "readme") || strings.Contains(fileName, "doc") ||
-			strings.Contains(fileName, "guide") || strings.Contains(fileName, "manual") ||
-			fileExt == ".md" || fileExt == ".txt" || fileExt == ".rst" {
-			hasDocs = true
-		}
+func sanitizeScope(value string) string {
+	value = strings.TrimSuffix(strings.ToLower(value), filepath.Ext(value))
+	value = strings.NewReplacer("_", "-", " ", "-").Replace(value)
+	return strings.Trim(value, "-")
+}
 
-		// Check for refactoring
-		if strings.Contains(fileName, "refactor") || strings.Contains(fileName, "clean") ||
-			strings.Contains(fileName, "optimize") || strings.Contains(fileName, "improve") ||
-			strings.Contains(fileName, "restructure") || strings.Contains(baseName, "refactor") {
-			hasRefactor = true
-		}
-
-		// Analyze file changes for summary
-		summary := analyzeFileChanges(repoPath, file, fileStatus)
-		if summary != "" {
-			changeSummary = append(changeSummary, summary)
+func inferCommitSubject(changes []stagedChange, commitType string) string {
+	if len(changes) == 1 {
+		change := changes[0]
+		target := describePath(change.path)
+		switch change.status {
+		case "A":
+			return "add " + target
+		case "D":
+			return "remove " + target
+		default:
+			switch commitType {
+			case "docs":
+				return "update " + target
+			case "test":
+				return "update " + target
+			case "ci":
+				return "update " + target
+			case "build":
+				return "update " + target
+			default:
+				return "improve " + target
+			}
 		}
 	}
 
-	// Generate suggestion based on analysis
-	var prefix, description string
+	switch commitType {
+	case "docs":
+		return "update project documentation"
+	case "test":
+		return "update test coverage"
+	case "ci":
+		return "update CI workflows"
+	case "build":
+		return "update project dependencies"
+	case "feat":
+		return "add staged functionality"
+	case "refactor":
+		return "remove obsolete project files"
+	default:
+		if scope := inferCommitScope(changes); scope != "" {
+			return "update " + strings.ReplaceAll(scope, "-", " ") + " implementation"
+		}
+		return "update related project files"
+	}
+}
 
-	if hasNewFeatures && len(addedFiles) > 0 {
-		prefix = "feat"
-		if len(addedFiles) == 1 {
-			description = fmt.Sprintf("add %s", getFeatureDescription(addedFiles[0]))
-		} else {
-			description = fmt.Sprintf("add new features (%d files)", len(addedFiles))
-		}
-	} else if hasBugFixes {
-		prefix = "fix"
-		if len(modifiedFiles) == 1 {
-			description = fmt.Sprintf("fix %s", getFixDescription(modifiedFiles[0]))
-		} else {
-			description = fmt.Sprintf("fix bugs and issues (%d files)", len(modifiedFiles))
-		}
-	} else if hasDocs {
-		prefix = "docs"
-		if len(stagedFiles) == 1 {
-			description = fmt.Sprintf("update %s", getDocDescription(stagedFiles[0]))
-		} else {
-			description = fmt.Sprintf("update documentation (%d files)", len(stagedFiles))
-		}
-	} else if hasRefactor {
-		prefix = "refactor"
-		description = fmt.Sprintf("refactor %s (%d files)", getRefactorDescription(stagedFiles), len(stagedFiles))
-	} else if len(addedFiles) > 0 {
-		prefix = "feat"
-		description = fmt.Sprintf("add %s (%d files)", getGenericDescription(addedFiles), len(addedFiles))
-	} else if len(modifiedFiles) > 0 {
-		prefix = "chore"
-		description = fmt.Sprintf("update %s (%d files)", getGenericDescription(modifiedFiles), len(modifiedFiles))
-	} else if len(deletedFiles) > 0 {
-		prefix = "chore"
-		description = fmt.Sprintf("remove %s (%d files)", getGenericDescription(deletedFiles), len(deletedFiles))
-	} else {
-		prefix = "chore"
-		description = fmt.Sprintf("update project files (%d files)", len(stagedFiles))
+func describePath(path string) string {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+	lowerBase := strings.ToLower(base)
+
+	switch lowerBase {
+	case "readme.md", "readme.rst", "readme.txt":
+		return "README"
+	case "go.mod", "go.sum":
+		return "Go dependencies"
+	case "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml":
+		return "JavaScript dependencies"
+	case "dockerfile":
+		return "Docker configuration"
 	}
 
-	// Add change summary if available
-	if len(changeSummary) > 0 {
-		summaryText := strings.Join(changeSummary, ", ")
-		if len(summaryText) > 100 {
-			summaryText = summaryText[:97] + "..."
-		}
-		description += fmt.Sprintf(" - %s", summaryText)
+	name = strings.NewReplacer("_", " ", "-", " ", ".", " ").Replace(name)
+	name = strings.Join(strings.Fields(name), " ")
+	if name == "" {
+		return "project file"
 	}
 
-	return fmt.Sprintf("%s: %s", prefix, description)
+	if isTestPath(path) && !strings.Contains(strings.ToLower(name), "test") {
+		return name + " tests"
+	}
+	return name
+}
+
+func isDocumentationPath(path string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	ext := strings.ToLower(filepath.Ext(lower))
+	base := filepath.Base(lower)
+	return strings.HasPrefix(lower, "docs/") ||
+		strings.HasPrefix(base, "readme") ||
+		strings.HasPrefix(base, "changelog") ||
+		ext == ".md" || ext == ".rst" || ext == ".adoc"
+}
+
+func isTestPath(path string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	base := filepath.Base(lower)
+	return strings.Contains(lower, "/test/") ||
+		strings.Contains(lower, "/tests/") ||
+		strings.HasSuffix(base, "_test.go") ||
+		strings.Contains(base, ".test.") ||
+		strings.Contains(base, ".spec.")
+}
+
+func isCIPath(path string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	return strings.HasPrefix(lower, ".github/workflows/") ||
+		strings.HasPrefix(lower, ".gitlab/") ||
+		lower == ".gitlab-ci.yml" ||
+		lower == "jenkinsfile"
+}
+
+func isDependencyPath(path string) bool {
+	switch strings.ToLower(filepath.Base(path)) {
+	case "go.mod", "go.sum", "package.json", "package-lock.json", "yarn.lock",
+		"pnpm-lock.yaml", "cargo.toml", "cargo.lock", "requirements.txt",
+		"poetry.lock", "composer.json", "composer.lock", "gemfile", "gemfile.lock":
+		return true
+	default:
+		return false
+	}
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }
 
 // Helper functions for more specific descriptions

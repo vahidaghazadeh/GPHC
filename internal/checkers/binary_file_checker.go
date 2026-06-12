@@ -162,7 +162,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 
 		result.Details = append(result.Details, "└─────────────────┴──────────┴──────────┴──────────┴──────────┘")
 		result.Details = append(result.Details, "")
-		
+
 		// Add file listings in simple format (not table)
 		if len(report.ExecutableFiles) > 0 {
 			result.Details = append(result.Details, "🔧 Executable Files:")
@@ -192,7 +192,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 			}
 			result.Details = append(result.Details, "")
 		}
-		
+
 		if len(report.LargeFiles) > 0 {
 			result.Details = append(result.Details, "📦 Large Files:")
 			maxLarge := 15
@@ -221,7 +221,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 			}
 			result.Details = append(result.Details, "")
 		}
-		
+
 		if len(report.SuspiciousFiles) > 0 {
 			result.Details = append(result.Details, "⚠️ Suspicious Files:")
 			maxSuspicious := 20

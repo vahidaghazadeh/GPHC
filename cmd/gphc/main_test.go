@@ -25,3 +25,61 @@ func TestMainFunction(t *testing.T) {
 	// In a real test, you might test command line arguments
 	// or other functionality, but for now this ensures the package builds
 }
+
+func TestBuildCommitSuggestion(t *testing.T) {
+	tests := []struct {
+		name    string
+		changes []stagedChange
+		want    string
+	}{
+		{
+			name:    "single source file",
+			changes: []stagedChange{{status: "M", path: "internal/checkers/binary_file_checker.go"}},
+			want:    "chore(checkers): improve binary file checker",
+		},
+		{
+			name:    "documentation",
+			changes: []stagedChange{{status: "M", path: "README.md"}},
+			want:    "docs: update README",
+		},
+		{
+			name:    "new command",
+			changes: []stagedChange{{status: "A", path: "cmd/report/main.go"}},
+			want:    "feat(report): add main",
+		},
+		{
+			name:    "tests",
+			changes: []stagedChange{{status: "M", path: "internal/checkers/checkers_test.go"}},
+			want:    "test(checkers): update checkers test",
+		},
+		{
+			name: "shared package",
+			changes: []stagedChange{
+				{status: "M", path: "internal/reporter/reporter.go"},
+				{status: "M", path: "internal/reporter/reporter_test.go"},
+			},
+			want: "chore(reporter): update reporter implementation",
+		},
+		{
+			name:    "deleted file",
+			changes: []stagedChange{{status: "D", path: "internal/legacy/adapter.go"}},
+			want:    "refactor(legacy): remove adapter",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := buildCommitSuggestion(tt.changes); got != tt.want {
+				t.Fatalf("buildCommitSuggestion() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestShellQuote(t *testing.T) {
+	got := shellQuote("fix(cli): handle user's input")
+	want := "'fix(cli): handle user'\"'\"'s input'"
+	if got != want {
+		t.Fatalf("shellQuote() = %q, want %q", got, want)
+	}
+}
