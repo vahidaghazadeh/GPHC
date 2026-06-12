@@ -12,13 +12,13 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/opsource/gphc/internal/checkers"
-	"github.com/opsource/gphc/internal/exporter"
-	"github.com/opsource/gphc/internal/git"
-	"github.com/opsource/gphc/internal/reporter"
-	"github.com/opsource/gphc/internal/scorer"
-	"github.com/opsource/gphc/pkg/types"
 	"github.com/spf13/cobra"
+	"github.com/vahidaghazadeh/gphc/internal/checkers"
+	"github.com/vahidaghazadeh/gphc/internal/exporter"
+	"github.com/vahidaghazadeh/gphc/internal/git"
+	"github.com/vahidaghazadeh/gphc/internal/reporter"
+	"github.com/vahidaghazadeh/gphc/internal/scorer"
+	"github.com/vahidaghazadeh/gphc/pkg/types"
 	"gopkg.in/yaml.v2"
 )
 
