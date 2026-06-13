@@ -290,6 +290,8 @@ func TestGetWeightForCategory(t *testing.T) {
 		{types.CategoryDocs, 3},
 		{types.CategoryCommits, 4},
 		{types.CategoryHygiene, 2},
+		{types.CategoryStructure, 2},
+		{types.CategorySecurity, 5},
 	}
 
 	for _, tc := range testCases {

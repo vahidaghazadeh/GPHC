@@ -1,8 +1,8 @@
 # Git Project Health Checker (GPHC)
 
-[![Go Version](https://img.shields.io/badge/go-%3E%3D1.19-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/go-1.24-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange.svg)](https://github.com/vahidaghazadeh/gphc)
+[![Release](https://img.shields.io/github/v/release/vahidaghazadeh/gphc)](https://github.com/vahidaghazadeh/gphc/releases)
 
 **GPHC** (pronounced "githlth") is a Command-Line Interface (CLI) tool written in Go that audits local Git repositories against established Open Source best practices. It evaluates documentation quality, commit history standards, and repository hygiene, providing a comprehensive Health Score with actionable feedback.
 
@@ -200,13 +200,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Commit author insights
 - [x] Codebase smell detection
 
-### Phase 3: Team, Trends & Automation ✅
+### Phase 3: Team & Automation
 - [x] Multi-repository analysis
-- [x] Historical trend analysis
-- [x] Team collaboration metrics
 - [x] Integration with popular Git hosting platforms
 - [x] Interactive Terminal UI (TUI)
 - [x] Web Dashboard
+- [ ] Historical trend analysis
+- [ ] Team collaboration metrics
 
 ---
 

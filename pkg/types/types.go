@@ -46,6 +46,7 @@ const (
 	CategoryCommits
 	CategoryHygiene
 	CategoryStructure
+	CategorySecurity
 )
 
 func (c Category) String() string {
@@ -58,6 +59,8 @@ func (c Category) String() string {
 		return "Git Cleanup & Hygiene"
 	case CategoryStructure:
 		return "Codebase Structure"
+	case CategorySecurity:
+		return "Security"
 	default:
 		return "Unknown"
 	}

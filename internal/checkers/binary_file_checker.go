@@ -38,25 +38,28 @@ type BinaryAuditReport struct {
 	TotalSizeMB     float64      `json:"total_size_mb"`
 	FileCount       int          `json:"file_count"`
 	Score           int          `json:"score"`
+	Errors          []string     `json:"errors,omitempty"`
 }
 
 // NewBinaryFileChecker creates a new BinaryFileChecker
 func NewBinaryFileChecker() *BinaryFileChecker {
 	return &BinaryFileChecker{
-		BaseChecker: BaseChecker{
-			id:   "BINARY-AUDIT",
-			name: "Executable & Large File Audit",
-		},
+		BaseChecker: NewBaseChecker("Executable & Large File Audit", "BINARY-AUDIT", types.CategorySecurity, 6),
 	}
 }
 
 // Check performs binary and large file audit
 func (c *BinaryFileChecker) Check(data *types.RepositoryData) *types.CheckResult {
-	return c.CheckWithOptions(data, true, true, true, true, 10.0)
+	return c.CheckWithOptions(data, true, true, true, false, 10.0)
 }
 
 // CheckWithOptions performs binary and large file audit with specific options
 func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkExecutables, checkLarge, checkSuspicious, checkHistory bool, maxSizeMB float64) *types.CheckResult {
+	return c.CheckWithSeverity(data, checkExecutables, checkLarge, checkSuspicious, checkHistory, maxSizeMB, "low")
+}
+
+// CheckWithSeverity performs the audit and filters findings below minSeverity.
+func (c *BinaryFileChecker) CheckWithSeverity(data *types.RepositoryData, checkExecutables, checkLarge, checkSuspicious, checkHistory bool, maxSizeMB float64, minSeverity string) *types.CheckResult {
 	result := &types.CheckResult{
 		ID:        c.ID(),
 		Name:      c.Name(),
@@ -76,6 +79,7 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 		TotalSize:       0,
 		TotalSizeMB:     0,
 		FileCount:       0,
+		Errors:          []string{},
 	}
 
 	// Check current working directory
@@ -85,6 +89,17 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 	if checkHistory {
 		c.checkGitHistoryForBinaryFiles(data.Path, report, checkExecutables, checkSuspicious)
 	}
+	report.ExecutableFiles = filterBinaryFiles(report.ExecutableFiles, minSeverity)
+	report.LargeFiles = filterBinaryFiles(report.LargeFiles, minSeverity)
+	report.SuspiciousFiles = filterBinaryFiles(report.SuspiciousFiles, minSeverity)
+	report.FileCount = len(report.ExecutableFiles) + len(report.LargeFiles) + len(report.SuspiciousFiles)
+	report.TotalSize = 0
+	for _, files := range [][]BinaryFile{report.ExecutableFiles, report.LargeFiles, report.SuspiciousFiles} {
+		for _, file := range files {
+			report.TotalSize += file.Size
+		}
+	}
+	report.TotalSizeMB = float64(report.TotalSize) / (1024 * 1024)
 
 	// Calculate score based on findings
 	score := c.calculateScore(report)
@@ -106,6 +121,9 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 	result.Details = append(result.Details, fmt.Sprintf("Suspicious Files: %d", len(report.SuspiciousFiles)))
 	result.Details = append(result.Details, fmt.Sprintf("Total Size: %.1f MB", report.TotalSizeMB))
 	result.Details = append(result.Details, fmt.Sprintf("File Count: %d", report.FileCount))
+	for _, scanError := range report.Errors {
+		result.Details = append(result.Details, "Scan warning: "+scanError)
+	}
 
 	// Add summary table
 	if len(report.ExecutableFiles) > 0 || len(report.LargeFiles) > 0 || len(report.SuspiciousFiles) > 0 {
@@ -254,20 +272,43 @@ func (c *BinaryFileChecker) CheckWithOptions(data *types.RepositoryData, checkEx
 	return result
 }
 
+func filterBinaryFiles(files []BinaryFile, minSeverity string) []BinaryFile {
+	filtered := make([]BinaryFile, 0, len(files))
+	for _, file := range files {
+		if binarySeverityLevel(file.Severity) >= binarySeverityLevel(minSeverity) {
+			filtered = append(filtered, file)
+		}
+	}
+	return filtered
+}
+
+func binarySeverityLevel(severity string) int {
+	switch strings.ToLower(severity) {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
+}
+
 // scanDirectoryForBinaryFiles scans current directory for binary and large files
 func (c *BinaryFileChecker) scanDirectoryForBinaryFiles(repoPath string, report *BinaryAuditReport, checkExecutables, checkLarge, checkSuspicious bool, maxSizeMB float64) {
 	err := filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil
+			return err
 		}
 
-		// Skip .git directory and other common directories
-		if strings.Contains(path, ".git") || strings.Contains(path, "node_modules") || strings.Contains(path, "vendor") || strings.Contains(path, ".vscode") {
-			return nil
-		}
-
-		// Only check files, not directories
 		if info.IsDir() {
+			switch info.Name() {
+			case ".git", "node_modules", "vendor", ".vscode":
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -334,7 +375,7 @@ func (c *BinaryFileChecker) scanDirectoryForBinaryFiles(repoPath string, report 
 	})
 
 	if err != nil {
-		// Handle error silently
+		report.Errors = append(report.Errors, err.Error())
 	}
 
 	report.TotalSizeMB = float64(report.TotalSize) / (1024 * 1024)

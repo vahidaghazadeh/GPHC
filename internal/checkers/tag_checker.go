@@ -44,7 +44,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	// maxScore reserved for future granular scoring
 
 	// 1) Collect tags
-	tags, err := gitTags()
+	tags, err := gitTags(data.Path)
 	if err != nil {
 		result.Status = types.StatusWarning
 		result.Score = 10
@@ -85,7 +85,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	}
 
 	// 4) Get latest tag and date
-	latestTag, latestDate, err := latestTagAndDate()
+	latestTag, latestDate, err := latestTagAndDate(data.Path)
 	if err == nil {
 		days := int(time.Since(latestDate).Hours() / 24)
 		details = append(details, fmt.Sprintf("Last tag: %s (%d days ago)", latestTag, days))
@@ -99,7 +99,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	}
 
 	// 5) Unreleased commits
-	unreleased, err := unreleasedCommitCount()
+	unreleased, err := unreleasedCommitCount(data.Path)
 	if err == nil {
 		details = append(details, fmt.Sprintf("Unreleased commits since last tag: %d", unreleased))
 		if unreleased <= tc.maxUnreleasedCommits {
@@ -112,7 +112,7 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	}
 
 	// 6) Annotated vs Lightweight tags ratio
-	annotatedOK, annotatedPct, err := annotatedTagStats()
+	annotatedOK, annotatedPct, err := annotatedTagStats(data.Path)
 	if err == nil {
 		details = append(details, fmt.Sprintf("Annotated tags: %d%%", annotatedPct))
 		if annotatedOK || !tc.requireAnnotatedTags {
@@ -144,8 +144,10 @@ func (tc *TagChecker) Check(data *types.RepositoryData) *types.CheckResult {
 }
 
 // gitTags returns tag names sorted by version/date (as per git order)
-func gitTags() ([]string, error) {
-	out, err := exec.Command("git", "tag").CombinedOutput()
+func gitTags(repoPath string) ([]string, error) {
+	cmd := exec.Command("git", "tag")
+	cmd.Dir = repoPath
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +163,7 @@ func gitTags() ([]string, error) {
 }
 
 var semverRe = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`)
+var conventionalTypeRe = regexp.MustCompile(`^(feat|fix|docs|refactor)(?:\([^)]*\))?(!)?:`)
 
 func validateSemanticTags(tags []string) (bool, []string) {
 	invalid := make([]string, 0)
@@ -172,9 +175,11 @@ func validateSemanticTags(tags []string) (bool, []string) {
 	return len(invalid) == 0, invalid
 }
 
-func latestTagAndDate() (string, time.Time, error) {
-	// Use git for-each-ref to get tag and committerdate
-	out, err := exec.Command("bash", "-lc", `git for-each-ref --sort=-creatordate --format='%(refname:short)|%(creatordate:iso8601)' refs/tags | head -n1`).CombinedOutput()
+func latestTagAndDate(repoPath string) (string, time.Time, error) {
+	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--count=1",
+		"--format=%(refname:short)|%(creatordate:iso8601-strict)", "refs/tags")
+	cmd.Dir = repoPath
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -195,15 +200,19 @@ func latestTagAndDate() (string, time.Time, error) {
 	return tag, when, nil
 }
 
-func unreleasedCommitCount() (int, error) {
+func unreleasedCommitCount(repoPath string) (int, error) {
 	// Determine latest tag
-	tagOut, _ := exec.Command("bash", "-lc", "git describe --tags --abbrev=0").CombinedOutput()
+	describeCmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	describeCmd.Dir = repoPath
+	tagOut, _ := describeCmd.CombinedOutput()
 	latest := strings.TrimSpace(string(tagOut))
 	if latest == "" {
 		// no tags → consider all commits unreleased? Return 0 to avoid noise
 		return 0, nil
 	}
-	out, err := exec.Command("bash", "-lc", fmt.Sprintf("git rev-list %s..HEAD --count", latest)).CombinedOutput()
+	countCmd := exec.Command("git", "rev-list", latest+"..HEAD", "--count")
+	countCmd.Dir = repoPath
+	out, err := countCmd.CombinedOutput()
 	if err != nil {
 		return 0, err
 	}
@@ -219,8 +228,10 @@ func unreleasedCommitCount() (int, error) {
 	return n, nil
 }
 
-func annotatedTagStats() (bool, int, error) {
-	out, err := exec.Command("bash", "-lc", `git for-each-ref --format='%(refname:short) %(objecttype)' refs/tags`).CombinedOutput()
+func annotatedTagStats(repoPath string) (bool, int, error) {
+	cmd := exec.Command("git", "for-each-ref", "--format=%(refname:short) %(objecttype)", "refs/tags")
+	cmd.Dir = repoPath
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return false, 0, err
 	}
@@ -248,14 +259,18 @@ func annotatedTagStats() (bool, int, error) {
 }
 
 // SuggestNextTag suggests the next semantic version based on commit messages since last tag
-func SuggestNextTag() (string, error) {
+func SuggestNextTag(repoPath string) (string, error) {
 	// Get latest tag
-	tagOut, _ := exec.Command("bash", "-lc", "git describe --tags --abbrev=0").CombinedOutput()
+	describeCmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	describeCmd.Dir = repoPath
+	tagOut, _ := describeCmd.CombinedOutput()
 	latest := strings.TrimSpace(string(tagOut))
 	if latest == "" {
 		return "v0.1.0", nil
 	}
-	commitsOut, _ := exec.Command("bash", "-lc", fmt.Sprintf("git log %s..HEAD --pretty=format:%s", latest, `"%s"`)).CombinedOutput()
+	logCmd := exec.Command("git", "log", latest+"..HEAD", "--pretty=format:%s")
+	logCmd.Dir = repoPath
+	commitsOut, _ := logCmd.CombinedOutput()
 	messages := strings.Split(strings.TrimSpace(string(commitsOut)), "\n")
 
 	bumpMajor := false
@@ -263,13 +278,14 @@ func SuggestNextTag() (string, error) {
 	bumpPatch := false
 	for _, m := range messages {
 		mm := strings.ToLower(m)
-		if strings.Contains(mm, "breaking change") || strings.HasPrefix(mm, "feat!:") || strings.HasPrefix(mm, "fix!:") {
+		match := conventionalTypeRe.FindStringSubmatch(mm)
+		if strings.Contains(mm, "breaking change") || (len(match) > 2 && match[2] == "!") {
 			bumpMajor = true
 			break
 		}
-		if strings.HasPrefix(mm, "feat:") {
+		if len(match) > 1 && match[1] == "feat" {
 			bumpMinor = true
-		} else if strings.HasPrefix(mm, "fix:") {
+		} else if len(match) > 1 && match[1] == "fix" {
 			bumpPatch = true
 		}
 	}
@@ -309,9 +325,11 @@ func SuggestNextTag() (string, error) {
 }
 
 // GenerateChangelog creates a simple CHANGELOG.md between last tag and HEAD using conventional commit groups
-func GenerateChangelog(outputPath string) (string, error) {
+func GenerateChangelog(repoPath, outputPath string) (string, error) {
 	// Determine range
-	tagOut, _ := exec.Command("bash", "-lc", "git describe --tags --abbrev=0").CombinedOutput()
+	describeCmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	describeCmd.Dir = repoPath
+	tagOut, _ := describeCmd.CombinedOutput()
 	latest := strings.TrimSpace(string(tagOut))
 	rangeSpec := ""
 	if latest != "" {
@@ -320,7 +338,9 @@ func GenerateChangelog(outputPath string) (string, error) {
 		rangeSpec = "HEAD"
 	}
 
-	out, err := exec.Command("bash", "-lc", fmt.Sprintf("git log %s --pretty=format:%s", rangeSpec, `"%s"`)).CombinedOutput()
+	logCmd := exec.Command("git", "log", rangeSpec, "--pretty=format:%s")
+	logCmd.Dir = repoPath
+	out, err := logCmd.CombinedOutput()
 	if err != nil {
 		return "", err
 	}
@@ -330,13 +350,14 @@ func GenerateChangelog(outputPath string) (string, error) {
 	order := []string{"Features", "Fixes", "Docs", "Refactors", "Others"}
 	for _, l := range lines {
 		ll := strings.TrimSpace(l)
-		if strings.HasPrefix(strings.ToLower(ll), "feat:") {
+		match := conventionalTypeRe.FindStringSubmatch(strings.ToLower(ll))
+		if len(match) > 1 && match[1] == "feat" {
 			groups["Features"] = append(groups["Features"], ll)
-		} else if strings.HasPrefix(strings.ToLower(ll), "fix:") {
+		} else if len(match) > 1 && match[1] == "fix" {
 			groups["Fixes"] = append(groups["Fixes"], ll)
-		} else if strings.HasPrefix(strings.ToLower(ll), "docs:") {
+		} else if len(match) > 1 && match[1] == "docs" {
 			groups["Docs"] = append(groups["Docs"], ll)
-		} else if strings.HasPrefix(strings.ToLower(ll), "refactor:") {
+		} else if len(match) > 1 && match[1] == "refactor" {
 			groups["Refactors"] = append(groups["Refactors"], ll)
 		} else if ll != "" {
 			groups["Others"] = append(groups["Others"], ll)

@@ -16,8 +16,10 @@ import (
 
 // RepositoryAnalyzer analyzes git repositories
 type RepositoryAnalyzer struct {
-	repo *git.Repository
-	path string
+	repo                     *git.Repository
+	path                     string
+	maxCommits               int
+	staleBranchThresholdDays int
 }
 
 // NewRepositoryAnalyzer creates a new repository analyzer
@@ -27,10 +29,31 @@ func NewRepositoryAnalyzer(path string) (*RepositoryAnalyzer, error) {
 		return nil, fmt.Errorf("failed to open repository: %w", err)
 	}
 
+	return newRepositoryAnalyzer(repo, path, 50, 60), nil
+}
+
+// NewRepositoryAnalyzerWithOptions creates an analyzer with configurable limits.
+func NewRepositoryAnalyzerWithOptions(path string, maxCommits, staleBranchThresholdDays int) (*RepositoryAnalyzer, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open repository: %w", err)
+	}
+	return newRepositoryAnalyzer(repo, path, maxCommits, staleBranchThresholdDays), nil
+}
+
+func newRepositoryAnalyzer(repo *git.Repository, path string, maxCommits, staleBranchThresholdDays int) *RepositoryAnalyzer {
+	if maxCommits <= 0 {
+		maxCommits = 50
+	}
+	if staleBranchThresholdDays <= 0 {
+		staleBranchThresholdDays = 60
+	}
 	return &RepositoryAnalyzer{
-		repo: repo,
-		path: path,
-	}, nil
+		repo:                     repo,
+		path:                     path,
+		maxCommits:               maxCommits,
+		staleBranchThresholdDays: staleBranchThresholdDays,
+	}
 }
 
 // Analyze performs a comprehensive analysis of the repository
@@ -86,16 +109,14 @@ func (ra *RepositoryAnalyzer) analyzeCommits() ([]types.CommitInfo, error) {
 
 	var commits []types.CommitInfo
 	count := 0
-	maxCommits := 50
-
 	err = cIter.ForEach(func(c *object.Commit) error {
-		if count >= maxCommits {
+		if count >= ra.maxCommits {
 			return nil
 		}
 
 		// Calculate diff stats
 		var linesAdded, linesDeleted int
-		if count > 0 && len(c.ParentHashes) > 0 {
+		if len(c.ParentHashes) > 0 {
 			parent := c.ParentHashes[0]
 			pCommit, err := ra.repo.CommitObject(parent)
 			if err == nil {
@@ -161,7 +182,7 @@ func (ra *RepositoryAnalyzer) analyzeBranches() ([]types.BranchInfo, error) {
 			commitCount := ra.countBranchCommits(ref.Hash())
 
 			// Check if branch is stale (older than 60 days)
-			isStale := time.Since(commit.Author.When) > 60*24*time.Hour
+			isStale := time.Since(commit.Author.When) > time.Duration(ra.staleBranchThresholdDays)*24*time.Hour
 
 			branchInfos = append(branchInfos, types.BranchInfo{
 				Name:        branchName,

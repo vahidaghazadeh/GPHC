@@ -49,7 +49,6 @@ The dashboard displays:
 
 ### Export Options
 - **JSON Export**: Download health report as JSON
-- **PDF Export**: Download health report as PDF (placeholder)
 - **API Access**: Direct API access for integration
 
 ## Server Configuration
@@ -62,40 +61,15 @@ git hc serve --host localhost --port 8080
 # Authentication
 git hc serve --auth --username admin --password secret
 
-# CORS settings
-git hc serve --cors  # Enable CORS (default: true)
-git hc serve --no-cors  # Disable CORS
+# CORS settings (disabled by default)
+git hc serve --cors
 
 # Dashboard customization
 git hc serve --title "My Custom Dashboard"
 ```
 
-### Configuration File
-Create a `git-hc.yml` file for persistent configuration:
-
-```yaml
-# Server configuration
-server:
-  port: 8080
-  host: "localhost"
-  auth:
-    enabled: true
-    username: "admin"
-    password: "secret"
-  cors:
-    enabled: true
-    origins: ["http://localhost:3000"]
-
-# Dashboard settings
-dashboard:
-  title: "Project Health Monitor"
-  theme: "dark"  # dark, light, auto
-  refresh_interval: "30s"
-  auto_refresh: true
-  show_timestamps: true
-  max_projects: 50
-  default_view: "overview"  # overview, trends, details
-```
+Server options are configured through command-line flags. Run
+`git hc serve --help` for the authoritative list.
 
 ## API Endpoints
 
@@ -124,11 +98,11 @@ GET /api/health
 # Export to JSON
 GET /api/export/json
 
-# Export to PDF (placeholder)
-GET /api/export/pdf
+# Inspect changed files
+GET /api/diff
 
-# Export trends (future)
-GET /api/export/trends.csv
+# Inspect repository tags
+GET /api/tags
 ```
 
 ### CORS Support
@@ -137,7 +111,7 @@ The dashboard supports CORS for integration with other applications:
 # CORS headers are automatically added when enabled
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, OPTIONS
-Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Headers: Content-Type, Authorization
 ```
 
 ## Team Collaboration
@@ -194,7 +168,7 @@ Use the API endpoints in your CI/CD pipeline:
 │ Failed: 2                                                   │
 │ Warnings: 2                                                 │
 │                                                             │
-│ [Refresh] [Export JSON] [Export PDF]                        │
+│ [Refresh] [Export JSON]                                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -204,29 +178,12 @@ The dashboard is fully responsive and works on:
 - **Tablet**: Optimized layout
 - **Mobile**: Touch-friendly interface
 
-## Advanced Features
+## Repository Selection
 
-### Multi-Project Monitoring
+Pass the repository path when starting the server:
+
 ```bash
-# Scan multiple repositories
-git hc scan ~/projects --recursive
-
-# Start dashboard for multiple projects
-git hc serve --multi-project ~/projects
-```
-
-### Custom Themes
-```yaml
-# git-hc.yml
-dashboard:
-  theme: "dark"  # dark, light, auto
-  colors:
-    score_excellent: "#00ff00"  # Green
-    score_good: "#ffff00"       # Yellow
-    score_poor: "#ff0000"      # Red
-    status_pass: "#00ff00"
-    status_fail: "#ff0000"
-    status_warn: "#ffaa00"
+git hc serve /path/to/repository
 ```
 
 ### Notifications

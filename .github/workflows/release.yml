@@ -15,22 +15,25 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.24.x'
         
     - name: Build for Linux
       run: |
-        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o gphc-linux-amd64 cmd/gphc/main.go
+        VERSION="${GITHUB_REF_NAME#v}"
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${VERSION}" -o gphc-linux-amd64 ./cmd/gphc
         
     - name: Build for macOS
       run: |
-        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o gphc-darwin-amd64 cmd/gphc/main.go
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o gphc-darwin-arm64 cmd/gphc/main.go
+        VERSION="${GITHUB_REF_NAME#v}"
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.version=${VERSION}" -o gphc-darwin-amd64 ./cmd/gphc
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${VERSION}" -o gphc-darwin-arm64 ./cmd/gphc
         
     - name: Build for Windows
       run: |
-        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o gphc-windows-amd64.exe cmd/gphc/main.go
+        VERSION="${GITHUB_REF_NAME#v}"
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -X main.version=${VERSION}" -o gphc-windows-amd64.exe ./cmd/gphc
         
     - name: Create Release
       uses: softprops/action-gh-release@v1

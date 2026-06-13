@@ -60,15 +60,17 @@ type GitPolicyReport struct {
 // NewGitPolicyChecker creates a new GitPolicyChecker
 func NewGitPolicyChecker() *GitPolicyChecker {
 	return &GitPolicyChecker{
-		BaseChecker: BaseChecker{
-			id:   "GIT-POLICY",
-			name: "Git Policy Validation",
-		},
+		BaseChecker: NewBaseChecker("Git Policy Validation", "GIT-POLICY", types.CategorySecurity, 8),
 	}
 }
 
 // Check performs Git security policy validation
 func (c *GitPolicyChecker) Check(data *types.RepositoryData) *types.CheckResult {
+	return c.CheckWithOptions(data, true, true, true, true, "low")
+}
+
+// CheckWithOptions performs selected policy checks and applies a severity threshold.
+func (c *GitPolicyChecker) CheckWithOptions(data *types.RepositoryData, checkSigning, checkFiles, checkPush, checkBranches bool, minSeverity string) *types.CheckResult {
 	result := &types.CheckResult{
 		ID:        c.ID(),
 		Name:      c.Name(),
@@ -93,16 +95,27 @@ func (c *GitPolicyChecker) Check(data *types.RepositoryData) *types.CheckResult 
 	c.checkGitConfig(data.Path, report)
 
 	// Check commit signatures
-	c.checkCommitSignatures(data.Path, report)
+	if checkSigning {
+		c.checkCommitSignatures(data.Path, report)
+	}
 
 	// Check sensitive files
-	c.checkSensitiveFiles(data.Path, report)
+	if checkFiles {
+		c.checkSensitiveFiles(data.Path, report)
+	}
 
 	// Check push policies
-	c.checkPushPolicies(data.Path, report)
+	if checkPush {
+		c.checkPushPolicies(data.Path, report)
+	}
 
 	// Check branch protection
-	c.checkBranchProtection(data.Path, report)
+	if checkBranches {
+		c.checkBranchProtection(data.Path, report)
+	}
+
+	report.Violations = filterPolicyViolations(report.Violations, minSeverity)
+	report.SensitiveFiles = filterSensitiveFiles(report.SensitiveFiles, minSeverity)
 
 	// Calculate score based on violations
 	score := c.calculateScore(report)
@@ -127,9 +140,53 @@ func (c *GitPolicyChecker) Check(data *types.RepositoryData) *types.CheckResult 
 	return result
 }
 
+func filterPolicyViolations(violations []PolicyViolation, minSeverity string) []PolicyViolation {
+	filtered := make([]PolicyViolation, 0, len(violations))
+	for _, violation := range violations {
+		if policySeverityLevel(violation.Severity) >= policySeverityLevel(minSeverity) {
+			filtered = append(filtered, violation)
+		}
+	}
+	return filtered
+}
+
+func filterSensitiveFiles(files []SensitiveFile, minSeverity string) []SensitiveFile {
+	filtered := make([]SensitiveFile, 0, len(files))
+	for _, file := range files {
+		if policySeverityLevel(file.Severity) >= policySeverityLevel(minSeverity) {
+			filtered = append(filtered, file)
+		}
+	}
+	return filtered
+}
+
+func policySeverityLevel(severity string) int {
+	switch strings.ToLower(severity) {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
+}
+
 // checkGitConfig checks Git configuration for security issues
 func (c *GitPolicyChecker) checkGitConfig(repoPath string, report *GitPolicyReport) {
 	configPath := filepath.Join(repoPath, ".git", "config")
+	cmd := exec.Command("git", "rev-parse", "--git-path", "config")
+	cmd.Dir = repoPath
+	if output, err := cmd.Output(); err == nil {
+		resolved := strings.TrimSpace(string(output))
+		if !filepath.IsAbs(resolved) {
+			resolved = filepath.Join(repoPath, resolved)
+		}
+		configPath = filepath.Clean(resolved)
+	}
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return
 	}
@@ -335,16 +392,14 @@ func (c *GitPolicyChecker) checkSensitiveFiles(repoPath string, report *GitPolic
 func (c *GitPolicyChecker) scanDirectoryForSensitiveFiles(repoPath string, patterns map[string]SensitiveFile, report *GitPolicyReport) {
 	err := filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil
+			return err
 		}
 
-		// Skip .git directory and other common directories
-		if strings.Contains(path, ".git") || strings.Contains(path, "node_modules") || strings.Contains(path, "vendor") {
-			return nil
-		}
-
-		// Only check files, not directories
 		if info.IsDir() {
+			switch info.Name() {
+			case ".git", "node_modules", "vendor":
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -379,7 +434,12 @@ func (c *GitPolicyChecker) scanDirectoryForSensitiveFiles(repoPath string, patte
 	})
 
 	if err != nil {
-		// Handle error silently
+		report.Violations = append(report.Violations, PolicyViolation{
+			Type:           "scan_error",
+			Severity:       "low",
+			Description:    "Could not scan all files: " + err.Error(),
+			Recommendation: "Check repository file permissions and retry",
+		})
 	}
 }
 

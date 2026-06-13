@@ -174,3 +174,17 @@ func TestBareRepoChecker(t *testing.T) {
 		t.Errorf("Expected ID 'BARE', got '%s'", checker.ID())
 	}
 }
+
+func TestSecurityCheckersUseSecurityCategory(t *testing.T) {
+	checkers := []Checker{
+		NewSecretChecker(),
+		NewTransitiveDependencyChecker(),
+		NewGitPolicyChecker(),
+		NewBinaryFileChecker(),
+	}
+	for _, checker := range checkers {
+		if checker.Category() != types.CategorySecurity {
+			t.Errorf("%s category = %v, want security", checker.Name(), checker.Category())
+		}
+	}
+}

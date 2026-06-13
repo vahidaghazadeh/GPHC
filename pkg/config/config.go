@@ -1,6 +1,9 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -29,6 +32,8 @@ type Weights struct {
 	Documentation int `mapstructure:"documentation"`
 	Commits       int `mapstructure:"commits"`
 	Hygiene       int `mapstructure:"hygiene"`
+	Structure     int `mapstructure:"structure"`
+	Security      int `mapstructure:"security"`
 }
 
 // DefaultConfig returns the default configuration
@@ -42,6 +47,8 @@ func DefaultConfig() *Config {
 			Documentation: 3,
 			Commits:       4,
 			Hygiene:       2,
+			Structure:     2,
+			Security:      5,
 		},
 	}
 }
@@ -49,28 +56,35 @@ func DefaultConfig() *Config {
 // LoadConfig loads configuration from file and environment
 func LoadConfig(configPath string) (*Config, error) {
 	config := DefaultConfig()
+	v := viper.New()
 
 	if configPath != "" {
-		viper.SetConfigFile(configPath)
+		v.SetConfigFile(configPath)
 	} else {
-		viper.SetConfigName("gphc")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME/.gphc")
-		viper.AddConfigPath("/etc/gphc")
+		v.SetConfigName("gphc")
+		v.SetConfigType("yaml")
+		v.AddConfigPath(".")
+		if home, err := os.UserHomeDir(); err == nil {
+			v.AddConfigPath(filepath.Join(home, ".gphc"))
+		}
+		v.AddConfigPath("/etc/gphc")
 	}
 
-	// Set default values
-	viper.SetDefault("max_commits_to_analyze", 50)
-	viper.SetDefault("stale_branch_threshold_days", 60)
-	viper.SetDefault("max_commit_message_length", 72)
-	viper.SetDefault("max_commit_size_lines", 500)
-	viper.SetDefault("weights.documentation", 3)
-	viper.SetDefault("weights.commits", 4)
-	viper.SetDefault("weights.hygiene", 2)
+	v.SetEnvPrefix("GPHC")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+	v.SetDefault("max_commits_to_analyze", 50)
+	v.SetDefault("stale_branch_threshold_days", 60)
+	v.SetDefault("max_commit_message_length", 72)
+	v.SetDefault("max_commit_size_lines", 500)
+	v.SetDefault("weights.documentation", 3)
+	v.SetDefault("weights.commits", 4)
+	v.SetDefault("weights.hygiene", 2)
+	v.SetDefault("weights.structure", 2)
+	v.SetDefault("weights.security", 5)
 
 	// Read config file
-	if err := viper.ReadInConfig(); err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, err
 		}
@@ -78,7 +92,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	// Unmarshal config
-	if err := viper.Unmarshal(config); err != nil {
+	if err := v.Unmarshal(config); err != nil {
 		return nil, err
 	}
 

@@ -54,15 +54,18 @@ type DependencyTree struct {
 // NewTransitiveDependencyChecker creates a new TransitiveDependencyChecker
 func NewTransitiveDependencyChecker() *TransitiveDependencyChecker {
 	return &TransitiveDependencyChecker{
-		BaseChecker: BaseChecker{
-			id:   "TRANSITIVE-DEPS",
-			name: "Transitive Dependency Vetting",
-		},
+		BaseChecker: NewBaseChecker("Transitive Dependency Vetting", "TRANSITIVE-DEPS", types.CategorySecurity, 9),
 	}
 }
 
 // Check performs transitive dependency vulnerability scanning
 func (c *TransitiveDependencyChecker) Check(data *types.RepositoryData) *types.CheckResult {
+	result, _ := c.CheckWithOptions(data, false, "deep")
+	return result
+}
+
+// CheckWithOptions inventories dependencies using the requested depth.
+func (c *TransitiveDependencyChecker) CheckWithOptions(data *types.RepositoryData, directOnly bool, depth string) (*types.CheckResult, *DependencyTree) {
 	result := &types.CheckResult{
 		ID:        c.ID(),
 		Name:      c.Name(),
@@ -80,7 +83,7 @@ func (c *TransitiveDependencyChecker) Check(data *types.RepositoryData) *types.C
 		result.Status = types.StatusPass
 		result.Message = "No supported dependency manifest found"
 		result.Score = 100
-		return result
+		return result, nil
 	}
 
 	// Build dependency tree
@@ -89,61 +92,152 @@ func (c *TransitiveDependencyChecker) Check(data *types.RepositoryData) *types.C
 		result.Status = types.StatusFail
 		result.Message = fmt.Sprintf("Failed to build dependency tree: %v", err)
 		result.Score = 0
-		return result
+		return result, tree
 	}
 
-	// Check for vulnerabilities
-	c.checkVulnerabilities(tree)
-
-	// Calculate score based on vulnerabilities
-	score := c.calculateScore(tree)
-	result.Score = score
-
-	// Update result based on findings
-	if tree.Vulnerable > 0 {
-		result.Status = types.StatusFail
-		result.Message = fmt.Sprintf("Found %d vulnerable dependencies (%d critical, %d high)",
-			tree.Vulnerable, tree.Critical, tree.High)
-	} else {
-		result.Status = types.StatusPass
-		result.Message = "All dependencies are secure"
+	if directOnly || depth == "shallow" {
+		for _, dependency := range tree.Root.Children {
+			dependency.Children = nil
+		}
 	}
+	tree.Total = countDependencies(tree.Root)
+
+	result.Status = types.StatusWarning
+	result.Score = 100
+	result.Message = "Dependency inventory built; vulnerability database scan is unavailable"
 
 	// Add detailed information
 	result.Details = append(result.Details, fmt.Sprintf("Project Type: %s", projectType))
 	result.Details = append(result.Details, fmt.Sprintf("Total Dependencies: %d", tree.Total))
-	result.Details = append(result.Details, fmt.Sprintf("Vulnerable Dependencies: %d", tree.Vulnerable))
-	result.Details = append(result.Details, fmt.Sprintf("Critical Vulnerabilities: %d", tree.Critical))
-	result.Details = append(result.Details, fmt.Sprintf("High Vulnerabilities: %d", tree.High))
-	result.Details = append(result.Details, fmt.Sprintf("Medium Vulnerabilities: %d", tree.Medium))
-	result.Details = append(result.Details, fmt.Sprintf("Low Vulnerabilities: %d", tree.Low))
+	result.Details = append(result.Details, "Run an ecosystem scanner for authoritative results:")
+	result.Details = append(result.Details, vulnerabilityScannerHint(projectType))
 
+	return result, tree
+}
+
+func countDependencies(root *Dependency) int {
+	total := 0
+	for _, child := range root.Children {
+		total += 1 + countDependencies(child)
+	}
+	return total
+}
+
+func vulnerabilityScannerHint(projectType string) string {
+	switch projectType {
+	case "go":
+		return "govulncheck ./..."
+	case "nodejs":
+		return "npm audit"
+	case "python":
+		return "pip-audit"
+	case "rust":
+		return "cargo audit"
+	case "java":
+		return "Use OWASP Dependency-Check or a Maven security plugin"
+	default:
+		return "Use an ecosystem-specific vulnerability scanner"
+	}
+}
+
+// ScanVulnerabilities runs the installed authoritative scanner for the detected ecosystem.
+func (c *TransitiveDependencyChecker) ScanVulnerabilities(data *types.RepositoryData, minSeverity string) *types.CheckResult {
+	result := &types.CheckResult{
+		ID:        c.ID(),
+		Name:      c.Name(),
+		Status:    types.StatusWarning,
+		Score:     100,
+		Category:  c.Category(),
+		Timestamp: time.Now(),
+	}
+
+	projectType := c.detectProjectType(data.Path)
+	command, args := vulnerabilityCommand(projectType, minSeverity)
+	if command == "" {
+		result.Message = "No supported vulnerability scanner is configured for this project"
+		return result
+	}
+	if _, err := exec.LookPath(command); err != nil {
+		result.Message = fmt.Sprintf("%s is not installed", command)
+		result.Details = []string{vulnerabilityScannerHint(projectType)}
+		return result
+	}
+
+	cmd := exec.Command(command, args...)
+	cmd.Dir = data.Path
+	output, err := cmd.CombinedOutput()
+	result.Details = compactScannerOutput(string(output), 40)
+	if err == nil {
+		result.Status = types.StatusPass
+		result.Score = 100
+		result.Message = "No known vulnerabilities reported by " + command
+		return result
+	}
+
+	if _, ok := err.(*exec.ExitError); ok {
+		result.Status = types.StatusFail
+		result.Score = 0
+		result.Message = command + " reported dependency vulnerabilities or audit failures"
+		return result
+	}
+
+	result.Message = fmt.Sprintf("Could not run %s: %v", command, err)
 	return result
+}
+
+func vulnerabilityCommand(projectType, minSeverity string) (string, []string) {
+	switch projectType {
+	case "go":
+		return "govulncheck", []string{"./..."}
+	case "nodejs":
+		return "npm", []string{"audit", "--audit-level=" + strings.ToLower(minSeverity)}
+	case "python":
+		return "pip-audit", nil
+	case "rust":
+		return "cargo", []string{"audit"}
+	default:
+		return "", nil
+	}
+}
+
+func compactScannerOutput(output string, maxLines int) []string {
+	var details []string
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		details = append(details, line)
+		if len(details) == maxLines {
+			details = append(details, "Scanner output truncated")
+			break
+		}
+	}
+	return details
 }
 
 // detectProjectType detects the type of project based on manifest files
 func (c *TransitiveDependencyChecker) detectProjectType(repoPath string) string {
-	manifestFiles := map[string]string{
-		"go.mod":            "go",
-		"package.json":      "nodejs",
-		"yarn.lock":         "nodejs",
-		"package-lock.json": "nodejs",
-		"requirements.txt":  "python",
-		"Pipfile":           "python",
-		"Pipfile.lock":      "python",
-		"composer.json":     "php",
-		"composer.lock":     "php",
-		"Cargo.toml":        "rust",
-		"Cargo.lock":        "rust",
-		"pom.xml":           "java",
-		"build.gradle":      "java",
-		"Gemfile":           "ruby",
-		"Gemfile.lock":      "ruby",
+	manifestFiles := []struct {
+		name        string
+		projectType string
+	}{
+		{name: "go.mod", projectType: "go"},
+		{name: "package.json", projectType: "nodejs"},
+		{name: "package-lock.json", projectType: "nodejs"},
+		{name: "yarn.lock", projectType: "nodejs"},
+		{name: "requirements.txt", projectType: "python"},
+		{name: "Pipfile", projectType: "python"},
+		{name: "Pipfile.lock", projectType: "python"},
+		{name: "Cargo.toml", projectType: "rust"},
+		{name: "Cargo.lock", projectType: "rust"},
+		{name: "pom.xml", projectType: "java"},
+		{name: "build.gradle", projectType: "java"},
 	}
 
-	for manifest, projectType := range manifestFiles {
-		if _, err := os.Stat(filepath.Join(repoPath, manifest)); err == nil {
-			return projectType
+	for _, manifest := range manifestFiles {
+		if _, err := os.Stat(filepath.Join(repoPath, manifest.name)); err == nil {
+			return manifest.projectType
 		}
 	}
 
@@ -292,8 +386,8 @@ func (c *TransitiveDependencyChecker) parseNpmTree(node map[string]interface{}, 
 		for name, depInfo := range dependencies {
 			if depMap, ok := depInfo.(map[string]interface{}); ok {
 				version := "unknown"
-				if v, exists := depMap["version"]; exists {
-					version = v.(string)
+				if v, exists := depMap["version"].(string); exists {
+					version = v
 				}
 
 				dep := &Dependency{
@@ -340,8 +434,8 @@ func (c *TransitiveDependencyChecker) parsePackageLockDeps(deps map[string]inter
 	for name, depInfo := range deps {
 		if depMap, ok := depInfo.(map[string]interface{}); ok {
 			version := "unknown"
-			if v, exists := depMap["version"]; exists {
-				version = v.(string)
+			if v, exists := depMap["version"].(string); exists {
+				version = v
 			}
 
 			dep := &Dependency{
@@ -439,36 +533,40 @@ func (c *TransitiveDependencyChecker) parseRequirementsTxt(repoPath string, tree
 
 // buildRustDependencyTree builds dependency tree for Rust projects
 func (c *TransitiveDependencyChecker) buildRustDependencyTree(repoPath string, tree *DependencyTree) (*DependencyTree, error) {
-	// Run cargo tree --format json
-	cmd := exec.Command("cargo", "tree", "--format", "json")
+	cmd := exec.Command("cargo", "metadata", "--format-version", "1")
 	cmd.Dir = repoPath
 	output, err := cmd.Output()
 	if err != nil {
-		return tree, fmt.Errorf("failed to run cargo tree: %v", err)
+		return tree, fmt.Errorf("failed to run cargo metadata: %v", err)
 	}
 
-	var cargoTree []map[string]interface{}
-	if err := json.Unmarshal(output, &cargoTree); err != nil {
-		return tree, fmt.Errorf("failed to parse cargo tree output: %v", err)
+	var metadata struct {
+		Packages []struct {
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"packages"`
+		WorkspaceMembers []string `json:"workspace_members"`
+	}
+	if err := json.Unmarshal(output, &metadata); err != nil {
+		return tree, fmt.Errorf("failed to parse cargo metadata output: %v", err)
 	}
 
-	for _, dep := range cargoTree {
-		if name, ok := dep["name"].(string); ok {
-			version := "unknown"
-			if v, exists := dep["version"].(string); exists {
-				version = v
-			}
-
-			dependency := &Dependency{
-				Name:     name,
-				Version:  version,
-				Direct:   false, // Cargo tree shows all dependencies
-				Children: []*Dependency{},
-			}
-
-			tree.Root.Children = append(tree.Root.Children, dependency)
-			tree.Total++
+	workspace := make(map[string]bool, len(metadata.WorkspaceMembers))
+	for _, id := range metadata.WorkspaceMembers {
+		workspace[id] = true
+	}
+	for _, pkg := range metadata.Packages {
+		if workspace[pkg.ID] {
+			continue
 		}
+		tree.Root.Children = append(tree.Root.Children, &Dependency{
+			Name:     pkg.Name,
+			Version:  pkg.Version,
+			Direct:   false,
+			Children: []*Dependency{},
+		})
+		tree.Total++
 	}
 
 	return tree, nil
@@ -503,18 +601,18 @@ func (c *TransitiveDependencyChecker) parseMavenTree(node map[string]interface{}
 				name := ""
 				version := "unknown"
 
-				if n, exists := depMap["groupId"]; exists {
-					name = n.(string)
+				if n, exists := depMap["groupId"].(string); exists {
+					name = n
 				}
-				if a, exists := depMap["artifactId"]; exists {
+				if a, exists := depMap["artifactId"].(string); exists {
 					if name != "" {
-						name += ":" + a.(string)
+						name += ":" + a
 					} else {
-						name = a.(string)
+						name = a
 					}
 				}
-				if v, exists := depMap["version"]; exists {
-					version = v.(string)
+				if v, exists := depMap["version"].(string); exists {
+					version = v
 				}
 
 				if name != "" {
@@ -624,92 +722,6 @@ func (c *TransitiveDependencyChecker) extractXmlValue(line string) string {
 		return line[start+1 : end]
 	}
 	return ""
-}
-
-// checkVulnerabilities checks for known vulnerabilities in dependencies
-func (c *TransitiveDependencyChecker) checkVulnerabilities(tree *DependencyTree) {
-	c.checkDependencyVulnerabilities(tree.Root)
-	c.updateTreeCounts(tree)
-}
-
-// checkDependencyVulnerabilities recursively checks vulnerabilities
-func (c *TransitiveDependencyChecker) checkDependencyVulnerabilities(dep *Dependency) {
-	// Simulate vulnerability checking (in real implementation, this would query vulnerability databases)
-	vulnerabilities := c.getKnownVulnerabilities(dep.Name, dep.Version)
-
-	if len(vulnerabilities) > 0 {
-		dep.Vulnerable = true
-		dep.Vulnerabilities = vulnerabilities
-
-		// Set severity based on highest severity vulnerability
-		highestSeverity := "low"
-		for _, vuln := range vulnerabilities {
-			if c.getSeverityLevel(vuln.Severity) > c.getSeverityLevel(highestSeverity) {
-				highestSeverity = vuln.Severity
-			}
-		}
-		dep.Severity = highestSeverity
-	}
-
-	// Recursively check children
-	for _, child := range dep.Children {
-		c.checkDependencyVulnerabilities(child)
-	}
-}
-
-// getKnownVulnerabilities returns known vulnerabilities for a dependency
-func (c *TransitiveDependencyChecker) getKnownVulnerabilities(name, version string) []Vulnerability {
-	// This is a simplified implementation
-	// In a real implementation, this would query vulnerability databases like:
-	// - GitHub Advisory Database
-	// - NVD (National Vulnerability Database)
-	// - OSS Index
-	// - Snyk Vulnerability Database
-
-	vulnerabilities := []Vulnerability{}
-
-	// Simulate some known vulnerabilities for demonstration
-	knownVulns := map[string][]Vulnerability{
-		"log4j": {
-			{
-				ID:          "CVE-2021-44228",
-				Severity:    "critical",
-				Description: "Log4Shell - Remote Code Execution",
-				CVSS:        10.0,
-				Published:   time.Date(2021, 12, 9, 0, 0, 0, 0, time.UTC),
-				Fixed:       "2.17.0",
-			},
-		},
-		"lodash": {
-			{
-				ID:          "CVE-2021-23337",
-				Severity:    "high",
-				Description: "Command Injection",
-				CVSS:        8.8,
-				Published:   time.Date(2021, 3, 8, 0, 0, 0, 0, time.UTC),
-				Fixed:       "4.17.21",
-			},
-		},
-		"axios": {
-			{
-				ID:          "CVE-2020-28168",
-				Severity:    "medium",
-				Description: "Server-Side Request Forgery",
-				CVSS:        6.5,
-				Published:   time.Date(2020, 12, 10, 0, 0, 0, 0, time.UTC),
-				Fixed:       "0.21.1",
-			},
-		},
-	}
-
-	// Check if this dependency has known vulnerabilities
-	for vulnName, vulns := range knownVulns {
-		if strings.Contains(strings.ToLower(name), strings.ToLower(vulnName)) {
-			vulnerabilities = append(vulnerabilities, vulns...)
-		}
-	}
-
-	return vulnerabilities
 }
 
 // getSeverityLevel returns numeric severity level

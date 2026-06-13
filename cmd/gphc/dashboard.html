@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>{{TITLE}}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #20b2aa 0%, #008b8b 50%, #006666 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .header { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: #2c3e50; 
+            padding: 30px; 
+            border-radius: 20px; 
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #20b2aa, #008b8b, #006666);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p { 
+            font-size: 1.2em; 
+            opacity: 0.8;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 { 
+            color: #2c3e50; 
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            color: #20b2aa;
+        }
+        
+        .score-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .score { 
+            font-size: 3em; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+        }
+        
+        .score.excellent { color: #27ae60; }
+        .score.good { color: #f39c12; }
+        .score.poor { color: #e74c3c; }
+        
+        .grade {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+        
+        .grade.excellent { background: #27ae60; color: white; }
+        .grade.good { background: #f39c12; color: white; }
+        .grade.poor { background: #e74c3c; color: white; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            background: rgba(32, 178, 170, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #20b2aa;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .feature-item {
+            background: rgba(32, 178, 170, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: background 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .feature-item:hover {
+            background: rgba(32, 178, 170, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .feature-item:nth-child(1) .feature-icon { color: #e74c3c; } /* Documentation - Red */
+        .feature-item:nth-child(2) .feature-icon { color: #3498db; } /* Commit Quality - Blue */
+        .feature-item:nth-child(3) .feature-icon { color: #2ecc71; } /* Git Hygiene - Green */
+        .feature-item:nth-child(4) .feature-icon { color: #f39c12; } /* Tag Management - Orange */
+        .feature-item:nth-child(5) .feature-icon { color: #9b59b6; } /* Historical Tracking - Purple */
+        .feature-item:nth-child(6) .feature-icon { color: #1abc9c; } /* Multi-Repo Scan - Turquoise */
+        .feature-item:nth-child(7) .feature-icon { color: #34495e; } /* CI/CD Integration - Dark Gray */
+        .feature-item:nth-child(8) .feature-icon { color: #e67e22; } /* Notifications - Dark Orange */
+        .feature-item:nth-child(9) .feature-icon { color: #27ae60; } /* Terminal UI - Dark Green */
+        .feature-item:nth-child(10) .feature-icon { color: #2980b9; } /* Web Dashboard - Dark Blue */
+        .feature-item:nth-child(11) .feature-icon { color: #333; } /* GitHub Integration - Black */
+        .feature-item:nth-child(12) .feature-icon { color: #fc6d26; } /* GitLab Integration - GitLab Orange */
+        
+        /* Diff styling */
+        .diff-container {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #555;
+        }
+        
+        /* Full screen diff styling */
+        .diff-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .diff-fullscreen-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .diff-fullscreen-title {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .diff-fullscreen-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .diff-fullscreen-close {
+            background: rgba(231, 76, 60, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
+        }
+        
+        .diff-fullscreen-close:hover {
+            background: rgba(231, 76, 60, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .diff-fullscreen-content {
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding: 30px;
+            background: transparent;
+        }
+        
+        .diff-fullscreen .diff-line {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ffffff;
+        }
+        
+        .diff-fullscreen .diff-line.addition {
+            background: rgba(46, 204, 113, 0.3);
+            border-left: 3px solid #2ecc71;
+            color: #2ecc71;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .diff-line.deletion {
+            background: rgba(231, 76, 60, 0.3);
+            border-left: 3px solid #e74c3c;
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .diff-line.hunk {
+            background: rgba(52, 152, 219, 0.3);
+            border-left: 3px solid #3498db;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .diff-fullscreen .diff-line.file_header {
+            background: rgba(155, 89, 182, 0.3);
+            border-left: 3px solid #9b59b6;
+            color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .diff-fullscreen .diff-line.index {
+            background: rgba(149, 165, 166, 0.3);
+            border-left: 3px solid #95a5a6;
+            color: #95a5a6;
+        }
+        
+        .diff-fullscreen .diff-line.file_name {
+            background: rgba(241, 196, 15, 0.3);
+            border-left: 3px solid #f1c40f;
+            color: #f1c40f;
+        }
+        
+        .diff-fullscreen .diff-line.context {
+            color: #ecf0f1;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .diff-fullscreen .diff-container {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .diff-fullscreen .file-diff-container {
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .diff-fullscreen .file-diff-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diff-fullscreen .file-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        
+        .diff-fullscreen .file-name i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        
+        .diff-fullscreen .file-stats {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .diff-fullscreen .file-stat {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .diff-fullscreen .file-stat.additions {
+            background: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+        
+        .diff-fullscreen .file-stat.deletions {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        
+        .diff-fullscreen .file-stat.total {
+            background: rgba(52, 152, 219, 0.3);
+            color: #3498db;
+        }
+        
+         .diff-fullscreen .file-diff-content {
+             padding: 0;
+             max-height: 400px;
+             overflow-y: auto;
+         }
+         
+         .diff-fullscreen .file-language-selector {
+             background: rgba(0, 0, 0, 0.3);
+             padding: 8px 15px;
+             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+             display: flex;
+             align-items: center;
+             gap: 10px;
+         }
+         
+         .diff-fullscreen .file-language-selector label {
+             color: #ffffff;
+             font-size: 12px;
+             font-weight: 500;
+             margin: 0;
+         }
+         
+         .diff-fullscreen .file-language-selector select {
+             background: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255, 255, 255, 0.3);
+             border-radius: 4px;
+             color: #ffffff;
+             padding: 4px 8px;
+             font-size: 12px;
+             min-width: 120px;
+         }
+         
+         .diff-fullscreen .file-language-selector select option {
+             background: #2c3e50;
+             color: #ffffff;
+         }
+        
+         .diff-fullscreen .file-diff-content .diff-line {
+             padding: 2px 15px;
+             margin: 0;
+             border-radius: 0;
+             font-family: 'Courier New', monospace;
+             font-size: 13px;
+             line-height: 1.4;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
+        
+        .diff-fullscreen .file-diff-content .diff-line:first-child {
+            padding-top: 8px;
+        }
+        
+        .diff-fullscreen .file-diff-content .diff-line:last-child {
+            padding-bottom: 8px;
+        }
+        
+         .diff-fullscreen .file-diff-content .diff-line.addition {
+             background: rgba(46, 204, 113, 0.4) !important;
+             border-left: 3px solid #2ecc71;
+             color: #ffffff !important;
+             font-weight: 500;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.deletion {
+             background: rgba(231, 76, 60, 0.4) !important;
+             border-left: 3px solid #e74c3c;
+             color: #ffffff !important;
+             font-weight: 500;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.hunk {
+             background: rgba(52, 152, 219, 0.4) !important;
+             border-left: 3px solid #3498db;
+             color: #ffffff !important;
+             font-weight: bold;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.file_header {
+             background: rgba(155, 89, 182, 0.4) !important;
+             border-left: 3px solid #9b59b6;
+             color: #ffffff !important;
+             font-weight: bold;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.index {
+             background: rgba(149, 165, 166, 0.4) !important;
+             border-left: 3px solid #95a5a6;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.file_name {
+             background: rgba(241, 196, 15, 0.4) !important;
+             border-left: 3px solid #f1c40f;
+             color: #ffffff !important;
+             opacity: 1 !important;
+         }
+         
+         .diff-fullscreen .file-diff-content .diff-line.context {
+             color: #ffffff !important;
+             background: rgba(255, 255, 255, 0.1) !important;
+             opacity: 1 !important;
+         }
+        
+        .diff-fullscreen .diff-stats {
+            background: rgba(0, 0, 0, 0.6) !important;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 1 !important;
+        }
+        
+        .diff-fullscreen .diff-stats .stat {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            opacity: 1 !important;
+        }
+        
+        .diff-fullscreen .diff-stats .stat.additions {
+            background: rgba(46, 204, 113, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+        
+        .diff-fullscreen .diff-stats .stat.deletions {
+            background: rgba(231, 76, 60, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+        }
+        
+        .diff-fullscreen .diff-stats .stat.files {
+            background: rgba(52, 152, 219, 0.3) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(52, 152, 219, 0.5);
+        }
+        
+        .diff-fullscreen .diff-stats .stat:not(.additions):not(.deletions):not(.files) {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .diff-line {
+            padding: 2px 8px;
+            margin: 1px 0;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .diff-line.addition {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 3px solid #2ecc71;
+            color: #2ecc71;
+        }
+        
+        .diff-line.deletion {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 3px solid #e74c3c;
+            color: #e74c3c;
+        }
+        
+        .diff-line.hunk {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 3px solid #3498db;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .diff-line.file_header {
+            background: rgba(155, 89, 182, 0.2);
+            border-left: 3px solid #9b59b6;
+            color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .diff-line.index {
+            background: rgba(149, 165, 166, 0.2);
+            border-left: 3px solid #95a5a6;
+            color: #95a5a6;
+        }
+        
+        .diff-line.file_name {
+            background: rgba(241, 196, 15, 0.2);
+            border-left: 3px solid #f1c40f;
+            color: #f1c40f;
+        }
+        
+        .diff-line.context {
+            color: #bdc3c7;
+        }
+        
+        .diff-stats {
+            background: rgba(52, 73, 94, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .diff-stats .stat {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        
+        .diff-stats .stat.additions {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+        
+        .diff-stats .stat.deletions {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .diff-stats .stat.files {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+        
+        .file-diff-container {
+            margin-bottom: 20px;
+            border: 1px solid rgba(52, 73, 94, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .file-diff-header {
+            background: rgba(52, 73, 94, 0.1);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(52, 73, 94, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .file-name i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        
+        .file-stats {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-stat {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .file-stat.additions {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .file-stat.deletions {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .file-stat.total {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+        
+        .file-diff-content {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .file-diff-content .diff-line {
+            padding: 2px 15px;
+            margin: 0;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .file-diff-content .diff-line:first-child {
+            padding-top: 8px;
+        }
+        
+        .file-diff-content .diff-line:last-child {
+            padding-bottom: 8px;
+        }
+        
+        .feature-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .btn { 
+            background: linear-gradient(45deg, #20b2aa, #008b8b, #006666);
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 1em;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(32, 178, 170, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading i {
+            font-size: 2em;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .warning {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .feature-item {
+                min-height: 100px;
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-heartbeat"></i> {{TITLE}}</h1>
+            <p>Modern Repository Health Monitoring Dashboard</p>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2><i class="fas fa-chart-line"></i> Health Overview</h2>
+                <div id="health-data" class="loading">
+                    <i class="fas fa-spinner"></i><br>
+                    Loading health data...
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-download"></i> Export Options</h2>
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="exportJSON()">
+                        <i class="fas fa-file-code"></i> Export JSON
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-tags"></i> Tag Management</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="checkTags()">
+                        <i class="fas fa-tag"></i> Check Tags
+                    </button>
+                    <button class="btn btn-secondary" onclick="suggestTag()">
+                        <i class="fas fa-lightbulb"></i> Suggest Version
+                    </button>
+                </div>
+                <div id="tag-data" style="margin-top: 20px;"></div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-code-branch"></i> Code Changes</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="showDiff('all')">
+                        <i class="fas fa-eye"></i> Show All Changes
+                    </button>
+                    <button class="btn btn-success" onclick="showDiff('staged')">
+                        <i class="fas fa-check-circle"></i> Staged Changes
+                    </button>
+                    <button class="btn btn-warning" onclick="showDiff('unstaged')">
+                        <i class="fas fa-edit"></i> Unstaged Changes
+                    </button>
+                    <button class="btn btn-info" onclick="showDiffFullscreen('all')">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                </div>
+                <div id="diff-data" style="margin-top: 20px;"></div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-search"></i> Multi-Repository Scan</h2>
+                <div style="text-align: center;">
+                    <button class="btn" onclick="scanRepos()">
+                        <i class="fas fa-search"></i> Scan Projects
+                    </button>
+                </div>
+                <div id="scan-data" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-rocket"></i> Available Features</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="feature-name">Documentation</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="feature-name">Commit Quality</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-broom"></i></div>
+                    <div class="feature-name">Git Hygiene</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-tags"></i></div>
+                    <div class="feature-name">Tag Management</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-history"></i></div>
+                    <div class="feature-name">Historical Tracking</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-search"></i></div>
+                    <div class="feature-name">Multi-Repo Scan</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="feature-name">CI/CD Integration</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <div class="feature-name">Notifications</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <div class="feature-name">Terminal UI</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-globe"></i></div>
+                    <div class="feature-name">Web Dashboard</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fab fa-github"></i></div>
+                    <div class="feature-name">GitHub Integration</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fab fa-gitlab"></i></div>
+                    <div class="feature-name">GitLab Integration</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><i class="fas fa-heart"></i> Powered by GPHC - Git Project Health Checker</p>
+        </div>
+    </div>
+    
+    <!-- Fullscreen Diff Modal -->
+    <div id="diff-fullscreen" class="diff-fullscreen">
+        <div class="diff-fullscreen-header">
+            <div class="diff-fullscreen-title">Code Changes - Fullscreen View</div>
+            <div class="diff-fullscreen-controls">
+                <button class="diff-fullscreen-close" onclick="closeDiffFullscreen()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+        <div class="diff-fullscreen-content" id="diff-fullscreen-content">
+            <!-- Diff content will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        function refreshData() {
+            const healthData = document.getElementById('health-data');
+            healthData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading...</div>';
+            
+            fetch('/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    const scoreClass = getScoreClass(data.overall_score);
+                    const gradeClass = getGradeClass(data.grade);
+                    
+                    healthData.innerHTML = 
+                        '<div class="score-container">' +
+                            '<div class="score ' + scoreClass + '">' + data.overall_score + '/100</div>' +
+                            '<div class="grade ' + gradeClass + '">' + data.grade + '</div>' +
+                        '</div>' +
+                        '<div class="stats-grid">' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number">' + data.summary.total_checks + '</div>' +
+                                '<div class="stat-label">Total Checks</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #27ae60;">' + data.summary.passed_checks + '</div>' +
+                                '<div class="stat-label">Passed</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #e74c3c;">' + data.summary.failed_checks + '</div>' +
+                                '<div class="stat-label">Failed</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-number" style="color: #f39c12;">' + data.summary.warning_checks + '</div>' +
+                                '<div class="stat-label">Warnings</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="text-align: center; margin-top: 15px; color: #666;">' +
+                            '<small>Last updated: ' + new Date().toLocaleTimeString() + '</small>' +
+                        '</div>';
+                })
+                .catch(error => {
+                    healthData.innerHTML = '<div class="error">Error loading data: ' + error + '</div>';
+                });
+        }
+        
+        function getScoreClass(score) {
+            if (score >= 80) return 'excellent';
+            if (score >= 60) return 'good';
+            return 'poor';
+        }
+        
+        function getGradeClass(grade) {
+            if (grade.includes('A') || grade.includes('B')) return 'excellent';
+            if (grade.includes('C')) return 'good';
+            return 'poor';
+        }
+        
+        function getStatusClass(status) {
+            if (status === 'PASS') return 'excellent';
+            if (status === 'WARNING') return 'good';
+            return 'poor';
+        }
+        
+        function exportJSON() {
+            window.open('/api/export/json', '_blank');
+        }
+        
+        function checkTags() {
+            const tagData = document.getElementById('tag-data');
+            tagData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Checking tags...</div>';
+            
+            fetch('/api/tags')
+                .then(response => response.json())
+                .then(data => {
+                    const statusClass = getStatusClass(data.status);
+                    const scoreClass = getScoreClass(data.score);
+                    
+                    tagData.innerHTML = 
+                        '<div class="score-container">' +
+                            '<div class="score ' + scoreClass + '">' + data.score + '/100</div>' +
+                            '<div class="grade ' + statusClass + '">' + data.status + '</div>' +
+                        '</div>' +
+                        '<div style="margin-top: 15px;">' +
+                            '<p><strong>' + data.message + '</strong></p>' +
+                            '<ul style="margin-top: 10px; padding-left: 20px;">';
+                    
+                    data.details.forEach(detail => {
+                        tagData.innerHTML += '<li>' + detail + '</li>';
+                    });
+                    
+                    tagData.innerHTML += 
+                            '</ul>' +
+                        '</div>';
+                })
+                .catch(error => {
+                    tagData.innerHTML = '<div class="error">Error loading tag data: ' + error + '</div>';
+                });
+        }
+        
+        function suggestTag() {
+            const tagData = document.getElementById('tag-data');
+            tagData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Analyzing commits...</div>';
+            
+            // Simulate tag suggestion
+            setTimeout(() => {
+                tagData.innerHTML = '<div class="success"><i class="fas fa-lightbulb"></i> Suggested: v1.2.5. Use CLI: git hc tags --suggest</div>';
+            }, 1000);
+        }
+        
+        function scanRepos() {
+            const scanData = document.getElementById('scan-data');
+            scanData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Scanning repositories...</div>';
+            
+            // Simulate repo scan
+            setTimeout(() => {
+                scanData.innerHTML = '<div class="success"><i class="fas fa-search"></i> Scan completed. Use CLI: git hc scan ~/projects --recursive</div>';
+            }, 1500);
+        }
+        
+        function showDiff(type) {
+            const diffData = document.getElementById('diff-data');
+            diffData.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
+            
+            fetch('/api/diff?type=' + type)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDiff(data);
+                    } else {
+                        diffData.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
+                    }
+                })
+                .catch(error => {
+                    diffData.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
+                });
+        }
+        
+        function renderDiff(data) {
+            const diffData = document.getElementById('diff-data');
+            
+            if (!data.files || data.files.length === 0) {
+                diffData.innerHTML = '<div class="info" style="text-align: center; padding: 20px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3);"><i class="fas fa-check-circle" style="color: #3498db; font-size: 24px; margin-bottom: 10px;"></i><br><strong>No changes found</strong><br><span style="color: #7f8c8d; font-size: 14px;">Repository is clean - no staged or unstaged changes</span></div>';
+                return;
+            }
+            
+            // Calculate total stats
+            let totalAdditions = 0, totalDeletions = 0;
+            data.files.forEach(file => {
+                totalAdditions += file.additions || 0;
+                totalDeletions += file.deletions || 0;
+            });
+            
+            let html = '<div class="diff-stats">';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + totalAdditions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + totalDeletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + data.files.length + ' files</div>';
+            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
+            html += '</div>';
+            
+            // Render each file separately
+            data.files.forEach(file => {
+                html += '<div class="file-diff-container">';
+                html += '<div class="file-diff-header">';
+                html += '<div class="file-name"><i class="fas fa-file-code"></i> ' + escapeHtml(file.name) + '</div>';
+                html += '<div class="file-stats">';
+                html += '<span class="file-stat additions">+' + (file.additions || 0) + '</span>';
+                html += '<span class="file-stat deletions">-' + (file.deletions || 0) + '</span>';
+                html += '<span class="file-stat total">' + (file.totalLines || 0) + ' lines</span>';
+                html += '</div>';
+                html += '</div>';
+                
+                html += '<div class="file-diff-content">';
+                if (file.error) {
+                    html += '<div class="error">Error: ' + escapeHtml(file.error) + '</div>';
+                } else if (!file.lines || file.lines.length === 0) {
+                    html += '<div class="info">No changes in this file</div>';
+                } else {
+                    file.lines.forEach(line => {
+                        html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+                    });
+                }
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            diffData.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showDiffFullscreen(type) {
+            const fullscreenModal = document.getElementById('diff-fullscreen');
+            const fullscreenContent = document.getElementById('diff-fullscreen-content');
+            
+            fullscreenContent.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><br>Loading diff...</div>';
+            fullscreenModal.style.display = 'block';
+            
+            fetch('/api/diff?type=' + type)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDiffFullscreen(data);
+                        autoDetectLanguage(data);
+                    } else {
+                        fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + data.message + '</div>';
+                    }
+                })
+                .catch(error => {
+                    fullscreenContent.innerHTML = '<div class="error">Error loading diff: ' + error + '</div>';
+                });
+        }
+        
+        function renderDiffFullscreen(data) {
+            const fullscreenContent = document.getElementById('diff-fullscreen-content');
+            
+            if (!data.files || data.files.length === 0) {
+                fullscreenContent.innerHTML = '<div class="info" style="text-align: center; padding: 40px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.3); margin: 20px;"><i class="fas fa-check-circle" style="color: #3498db; font-size: 48px; margin-bottom: 20px;"></i><br><strong style="font-size: 24px; color: #2c3e50;">No changes found</strong><br><span style="color: #7f8c8d; font-size: 16px;">Repository is clean - no staged or unstaged changes</span></div>';
+                return;
+            }
+            
+            // Calculate total stats
+            let totalAdditions = 0, totalDeletions = 0;
+            data.files.forEach(file => {
+                totalAdditions += file.additions || 0;
+                totalDeletions += file.deletions || 0;
+            });
+            
+            let html = '<div class="diff-stats">';
+            html += '<div class="stat additions"><i class="fas fa-plus"></i> +' + totalAdditions + '</div>';
+            html += '<div class="stat deletions"><i class="fas fa-minus"></i> -' + totalDeletions + '</div>';
+            html += '<div class="stat files"><i class="fas fa-file"></i> ' + data.files.length + ' files</div>';
+            html += '<div class="stat"><i class="fas fa-clock"></i> ' + new Date(data.timestamp).toLocaleTimeString() + '</div>';
+            html += '</div>';
+            
+            // Render each file separately
+            data.files.forEach(file => {
+                html += '<div class="file-diff-container">';
+                html += '<div class="file-diff-header">';
+                html += '<div class="file-name"><i class="fas fa-file-code"></i> ' + escapeHtml(file.name) + '</div>';
+                html += '<div class="file-stats">';
+                html += '<span class="file-stat additions">+' + (file.additions || 0) + '</span>';
+                html += '<span class="file-stat deletions">-' + (file.deletions || 0) + '</span>';
+                html += '<span class="file-stat total">' + (file.totalLines || 0) + ' lines</span>';
+                html += '</div>';
+                html += '</div>';
+                
+                // Add language selector for each file
+                html += '<div class="file-language-selector">';
+                html += '<label for="language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-') + '">Language:</label>';
+                html += '<select id="language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-') + '" onchange="changeFileLanguage(this, \'' + escapeHtml(file.name) + '\')">';
+                html += '<option value="">Auto-detect</option>';
+                html += '<option value="go">Go</option>';
+                html += '<option value="javascript">JavaScript</option>';
+                html += '<option value="typescript">TypeScript</option>';
+                html += '<option value="python">Python</option>';
+                html += '<option value="java">Java</option>';
+                html += '<option value="cpp">C++</option>';
+                html += '<option value="c">C</option>';
+                html += '<option value="rust">Rust</option>';
+                html += '<option value="php">PHP</option>';
+                html += '<option value="ruby">Ruby</option>';
+                html += '<option value="swift">Swift</option>';
+                html += '<option value="kotlin">Kotlin</option>';
+                html += '<option value="scala">Scala</option>';
+                html += '<option value="html">HTML</option>';
+                html += '<option value="css">CSS</option>';
+                html += '<option value="json">JSON</option>';
+                html += '<option value="yaml">YAML</option>';
+                html += '<option value="xml">XML</option>';
+                html += '<option value="markdown">Markdown</option>';
+                html += '<option value="sql">SQL</option>';
+                html += '<option value="bash">Bash</option>';
+                html += '<option value="powershell">PowerShell</option>';
+                html += '</select>';
+                html += '</div>';
+                
+                html += '<div class="file-diff-content">';
+                if (file.error) {
+                    html += '<div class="error">Error: ' + escapeHtml(file.error) + '</div>';
+                } else if (!file.lines || file.lines.length === 0) {
+                    html += '<div class="info">No changes in this file</div>';
+                } else {
+                    file.lines.forEach(line => {
+                        html += '<div class="diff-line ' + line.type + '">' + escapeHtml(line.content) + '</div>';
+                    });
+                }
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            fullscreenContent.innerHTML = html;
+            
+            // Auto-detect language for each file after rendering
+            data.files.forEach(file => {
+                const detectedLanguage = detectLanguageFromFileName(file.name);
+                if (detectedLanguage) {
+                    const selector = document.getElementById('language-' + file.name.replace(/[^a-zA-Z0-9]/g, '-'));
+                    if (selector) {
+                        selector.value = detectedLanguage;
+                        const fileContainer = selector.closest('.file-diff-container');
+                        const diffContent = fileContainer.querySelector('.file-diff-content');
+                        applyFileSyntaxHighlighting(diffContent, detectedLanguage);
+                    }
+                }
+            });
+        }
+        
+        function autoDetectLanguage(data) {
+            // This function is no longer needed as each file has its own language selector
+            // Language detection is now handled per-file in changeFileLanguage function
+        }
+        
+        function changeLanguage() {
+            // This function is no longer needed as each file has its own language selector
+            // Language selection is now handled per-file in changeFileLanguage function
+        }
+        
+        function changeFileLanguage(selector, fileName) {
+            const selectedLanguage = selector.value;
+            const fileContainer = selector.closest('.file-diff-container');
+            const diffContent = fileContainer.querySelector('.file-diff-content');
+            
+            if (selectedLanguage) {
+                // Apply syntax highlighting based on selected language
+                applyFileSyntaxHighlighting(diffContent, selectedLanguage);
+            } else {
+                // Auto-detect language from file name
+                const detectedLanguage = detectLanguageFromFileName(fileName);
+                if (detectedLanguage) {
+                    applyFileSyntaxHighlighting(diffContent, detectedLanguage);
+                    selector.value = detectedLanguage;
+                }
+            }
+        }
+        
+        function detectLanguageFromFileName(fileName) {
+            const fileNameLower = fileName.toLowerCase();
+            
+            if (fileNameLower.includes('.go')) return 'go';
+            else if (fileNameLower.includes('.js')) return 'javascript';
+            else if (fileNameLower.includes('.ts')) return 'typescript';
+            else if (fileNameLower.includes('.py')) return 'python';
+            else if (fileNameLower.includes('.java')) return 'java';
+            else if (fileNameLower.includes('.cpp') || fileNameLower.includes('.cc') || fileNameLower.includes('.cxx')) return 'cpp';
+            else if (fileNameLower.includes('.c') && !fileNameLower.includes('.cpp')) return 'c';
+            else if (fileNameLower.includes('.rs')) return 'rust';
+            else if (fileNameLower.includes('.php')) return 'php';
+            else if (fileNameLower.includes('.rb')) return 'ruby';
+            else if (fileNameLower.includes('.swift')) return 'swift';
+            else if (fileNameLower.includes('.kt')) return 'kotlin';
+            else if (fileNameLower.includes('.scala')) return 'scala';
+            else if (fileNameLower.includes('.html') || fileNameLower.includes('.htm')) return 'html';
+            else if (fileNameLower.includes('.css')) return 'css';
+            else if (fileNameLower.includes('.json')) return 'json';
+            else if (fileNameLower.includes('.yaml') || fileNameLower.includes('.yml')) return 'yaml';
+            else if (fileNameLower.includes('.xml')) return 'xml';
+            else if (fileNameLower.includes('.md')) return 'markdown';
+            else if (fileNameLower.includes('.sql')) return 'sql';
+            else if (fileNameLower.includes('.sh')) return 'bash';
+            else if (fileNameLower.includes('.ps1')) return 'powershell';
+            
+            return '';
+        }
+        
+        function applyFileSyntaxHighlighting(diffContent, language) {
+            // This is a placeholder for syntax highlighting
+            // In a real implementation, you would use a syntax highlighting library
+            // like Prism.js or highlight.js
+            
+            // For now, we'll just add a data attribute for potential future use
+            diffContent.setAttribute('data-language', language);
+            
+            // You could add actual syntax highlighting here
+            // Example with Prism.js:
+            // Prism.highlightAllUnder(diffContent);
+        }
+        
+        function applySyntaxHighlighting(language) {
+            const diffLines = document.querySelectorAll('.diff-fullscreen .diff-line');
+            
+            diffLines.forEach(line => {
+                const content = line.textContent;
+                if (content.startsWith('+') || content.startsWith('-')) {
+                    // Apply language-specific syntax highlighting
+                    line.innerHTML = highlightSyntax(content, language);
+                }
+            });
+        }
+        
+        function highlightSyntax(content, language) {
+            // Basic syntax highlighting patterns
+            let highlighted = escapeHtml(content);
+            
+            switch (language) {
+                case 'go':
+                    highlighted = highlighted.replace(/\b(func|package|import|var|const|type|struct|interface|if|else|for|range|return|defer|go|chan|select|case|default)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|nil)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'javascript':
+                case 'typescript':
+                    highlighted = highlighted.replace(/\b(function|const|let|var|if|else|for|while|return|class|interface|type|enum)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|null|undefined)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'python':
+                    highlighted = highlighted.replace(/\b(def|class|if|else|elif|for|while|return|import|from|try|except|finally|with|as|lambda)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(True|False|None)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+                case 'java':
+                    highlighted = highlighted.replace(/\b(public|private|protected|static|final|class|interface|extends|implements|if|else|for|while|return|import|package)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    highlighted = highlighted.replace(/\b(true|false|null)\b/g, '<span style="color: #569cd6;">$1</span>');
+                    break;
+            }
+            
+            return highlighted;
+        }
+        
+        function closeDiffFullscreen() {
+            const fullscreenModal = document.getElementById('diff-fullscreen');
+            fullscreenModal.style.display = 'none';
+        }
+        
+        // Load data on page load
+        refreshData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>

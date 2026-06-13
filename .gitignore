@@ -6,9 +6,12 @@
 *.dylib
 
 # GPHC binary (built with go build -o gphc cmd/gphc/main.go)
-gphc
+/gphc
 gphc.exe
 gphc.exe~
+*.bak
+*.bak[0-9]*
+/test-repo/
 
 # Test binary, built with `go test -c`
 *.test

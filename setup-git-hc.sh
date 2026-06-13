@@ -93,8 +93,9 @@ if [ -z "$GPHC_BINARY" ]; then
     exit 1
 fi
 
-# Check if we're in a git repository
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
+# Commands that do not inspect a repository should work from anywhere.
+if [[ "$1" != "version" && "$1" != "update" && "$1" != "help" && "$1" != "--help" && "$1" != "--version" ]] &&
+   ! git rev-parse --git-dir >/dev/null 2>&1; then
     echo "Error: Not in a git repository!"
     echo "Please run 'git hc' from within a git repository."
     exit 1

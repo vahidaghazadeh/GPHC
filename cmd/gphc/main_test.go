@@ -12,9 +12,8 @@ func TestVersion(t *testing.T) {
 		t.Error("Version should not be empty")
 	}
 
-	expectedVersion := "1.0.0"
-	if version != expectedVersion {
-		t.Errorf("Expected version %s, got %s", expectedVersion, version)
+	if effectiveVersion() == "" {
+		t.Error("Effective version should not be empty")
 	}
 }
 
@@ -65,6 +64,29 @@ func TestBuildCommitSuggestion(t *testing.T) {
 			changes: []stagedChange{{status: "D", path: "internal/legacy/adapter.go"}},
 			want:    "refactor(legacy): remove adapter",
 		},
+		{
+			name: "kubernetes and nginx configuration",
+			changes: []stagedChange{
+				{status: "M", path: "Laravel/Offl/Prod/Admin/StatefulSet/Secret.yaml"},
+				{status: "M", path: "Laravel/Offl/Prod/Admin/StatefulSet/env.yaml"},
+				{status: "M", path: "Laravel/Offl/Prod/Core/StatefulSet/env.yaml"},
+				{status: "M", path: "ReversProxyNginx/sites-available/iwcs-kibana.conf"},
+			},
+			want: "chore(deploy): update Laravel deployment and Kibana proxy config",
+		},
+		{
+			name: "deployment secrets and environment",
+			changes: []stagedChange{
+				{status: "M", path: "services/api/k8s/Secret.yaml"},
+				{status: "M", path: "services/api/k8s/env.yaml"},
+			},
+			want: "chore(deploy): update deployment secrets and environment config",
+		},
+		{
+			name:    "nginx configuration",
+			changes: []stagedChange{{status: "M", path: "nginx/sites-available/api.conf"}},
+			want:    "chore(deploy): update reverse proxy config",
+		},
 	}
 
 	for _, tt := range tests {
@@ -81,5 +103,13 @@ func TestShellQuote(t *testing.T) {
 	want := "'fix(cli): handle user'\"'\"'s input'"
 	if got != want {
 		t.Fatalf("shellQuote() = %q, want %q", got, want)
+	}
+}
+
+func TestFilterRepositories(t *testing.T) {
+	repos := []string{"/work/api", "/work/web", "/work/legacy-api"}
+	got := filterRepositories(repos, []string{"*api"}, []string{"legacy"})
+	if len(got) != 1 || got[0] != "/work/api" {
+		t.Fatalf("filterRepositories() = %#v", got)
 	}
 }

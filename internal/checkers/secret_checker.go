@@ -2,9 +2,12 @@ package checkers
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"math"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -15,6 +18,9 @@ import (
 // SecretChecker checks for secrets in Git history
 type SecretChecker struct {
 	BaseChecker
+	scanEntropy   bool
+	minSeverity   string
+	minConfidence float64
 }
 
 // Secret represents a found secret
@@ -47,7 +53,7 @@ func NewSecretChecker() *SecretChecker {
 		BaseChecker: NewBaseChecker(
 			"Secret Scanning",
 			"secret-scanning",
-			types.CategoryStructure,
+			types.CategorySecurity,
 			25,
 		),
 	}
@@ -55,18 +61,35 @@ func NewSecretChecker() *SecretChecker {
 
 // Check performs secret scanning
 func (c *SecretChecker) Check(data *types.RepositoryData) *types.CheckResult {
+	return c.CheckWithOptions(data, false, false, true, "high", 0.8)
+}
+
+// CheckWithOptions performs a configurable secret scan.
+func (c *SecretChecker) CheckWithOptions(data *types.RepositoryData, scanHistory, scanStashes, scanEntropy bool, minSeverity string, minConfidence float64) *types.CheckResult {
 	result := &types.CheckResult{
 		ID:        "secret-scanning",
 		Name:      c.Name(),
 		Status:    types.StatusPass,
 		Score:     100,
-		Message:   "No secrets found in Git history",
+		Message:   "No secrets found",
 		Details:   []string{},
-		Category:  types.CategoryStructure,
+		Category:  types.CategorySecurity,
 		Timestamp: time.Now(),
 	}
 
-	secrets, err := c.scanGitHistory(data.Path)
+	c.scanEntropy = scanEntropy
+	c.minSeverity = minSeverity
+	c.minConfidence = minConfidence
+
+	secrets, err := c.scanWorkingTree(data.Path)
+	if err == nil && (scanHistory || scanStashes) {
+		historySecrets, historyErr := c.scanGitHistory(data.Path, scanHistory, scanStashes)
+		if historyErr != nil {
+			err = historyErr
+		} else {
+			secrets = append(secrets, historySecrets...)
+		}
+	}
 	if err != nil {
 		result.Status = types.StatusFail
 		result.Score = 0
@@ -78,7 +101,7 @@ func (c *SecretChecker) Check(data *types.RepositoryData) *types.CheckResult {
 	if len(secrets) > 0 {
 		result.Status = types.StatusFail
 		result.Score = 0
-		result.Message = fmt.Sprintf("Found %d secrets in Git history", len(secrets))
+		result.Message = fmt.Sprintf("Found %d potential secrets", len(secrets))
 
 		// Add details about found secrets
 		details := []string{
@@ -94,46 +117,66 @@ func (c *SecretChecker) Check(data *types.RepositoryData) *types.CheckResult {
 
 		result.Details = details
 	} else {
-		result.Details = []string{"No secrets found in Git history"}
+		result.Details = []string{"No secrets found"}
 	}
 
 	return result
 }
 
 // scanGitHistory scans the entire Git history for secrets
-func (c *SecretChecker) scanGitHistory(repoPath string) ([]Secret, error) {
+func (c *SecretChecker) scanGitHistory(repoPath string, scanHistory, scanStashes bool) ([]Secret, error) {
 	var secrets []Secret
 
-	// Get all commits
-	commits, err := c.getAllCommits(repoPath)
+	if scanHistory {
+		commits, err := c.getAllCommits(repoPath)
+		if err != nil {
+			return nil, err
+		}
+		for _, commit := range commits {
+			commitSecrets, err := c.scanCommit(repoPath, commit)
+			if err != nil {
+				continue
+			}
+			secrets = append(secrets, commitSecrets...)
+		}
+	}
+
+	if scanStashes {
+		stashes, err := c.getAllStashes(repoPath)
+		if err != nil {
+			return nil, err
+		}
+		for _, stash := range stashes {
+			stashSecrets, err := c.scanStash(repoPath, stash)
+			if err != nil {
+				continue
+			}
+			secrets = append(secrets, stashSecrets...)
+		}
+	}
+
+	return secrets, nil
+}
+
+func (c *SecretChecker) scanWorkingTree(repoPath string) ([]Secret, error) {
+	cmd := exec.Command("git", "ls-files", "-z")
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
 
-	// Get all stashes
-	stashes, err := c.getAllStashes(repoPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Scan commits
-	for _, commit := range commits {
-		commitSecrets, err := c.scanCommit(repoPath, commit)
-		if err != nil {
-			continue // Skip failed commits
+	var secrets []Secret
+	for _, filePath := range strings.Split(string(output), "\x00") {
+		if filePath == "" {
+			continue
 		}
-		secrets = append(secrets, commitSecrets...)
-	}
-
-	// Scan stashes
-	for _, stash := range stashes {
-		stashSecrets, err := c.scanStash(repoPath, stash)
-		if err != nil {
-			continue // Skip failed stashes
+		content, err := os.ReadFile(filepath.Join(repoPath, filePath))
+		if err != nil || bytes.IndexByte(content, 0) >= 0 {
+			continue
 		}
-		secrets = append(secrets, stashSecrets...)
+		secrets = append(secrets, c.scanContent(string(content), filePath, "working-tree", "file")...)
 	}
-
 	return secrets, nil
 }
 
@@ -270,11 +313,39 @@ func (c *SecretChecker) scanContent(content, filePath, ref, refType string) []Se
 		secrets = append(secrets, patternSecrets...)
 
 		// Check entropy for random-looking strings
-		entropySecrets := c.checkEntropy(line, filePath, ref, refType, lineNum+1)
-		secrets = append(secrets, entropySecrets...)
+		if c.scanEntropy {
+			entropySecrets := c.checkEntropy(line, filePath, ref, refType, lineNum+1)
+			secrets = append(secrets, entropySecrets...)
+		}
 	}
 
-	return secrets
+	return c.filterSecrets(secrets)
+}
+
+func (c *SecretChecker) filterSecrets(secrets []Secret) []Secret {
+	filtered := make([]Secret, 0, len(secrets))
+	for _, secret := range secrets {
+		if secret.Confidence < c.minConfidence || severityLevel(secret.Severity) < severityLevel(c.minSeverity) {
+			continue
+		}
+		filtered = append(filtered, secret)
+	}
+	return filtered
+}
+
+func severityLevel(severity string) int {
+	switch strings.ToLower(severity) {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
 }
 
 // checkPatterns checks content against known secret patterns

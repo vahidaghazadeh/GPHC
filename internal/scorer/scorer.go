@@ -9,12 +9,21 @@ import (
 // Scorer calculates the overall health score from check results
 type Scorer struct {
 	results []types.CheckResult
+	weights map[types.Category]int
 }
 
 // NewScorer creates a new scorer
 func NewScorer() *Scorer {
 	return &Scorer{
 		results: make([]types.CheckResult, 0),
+	}
+}
+
+// NewScorerWithWeights creates a scorer with category weight overrides.
+func NewScorerWithWeights(weights map[types.Category]int) *Scorer {
+	return &Scorer{
+		results: make([]types.CheckResult, 0),
+		weights: weights,
 	}
 }
 
@@ -51,6 +60,9 @@ func (s *Scorer) CalculateHealthReport() *types.HealthReport {
 	for _, result := range s.results {
 		// Weight the score based on the checker's importance
 		weight := getWeightForCategory(result.Category)
+		if configuredWeight := s.weights[result.Category]; configuredWeight > 0 {
+			weight = configuredWeight
+		}
 		totalWeight += weight
 		totalWeightedScore += result.Score * weight
 
@@ -92,6 +104,10 @@ func getWeightForCategory(category types.Category) int {
 		return 4 // Commit quality is very important
 	case types.CategoryHygiene:
 		return 2 // Hygiene is important but less critical
+	case types.CategoryStructure:
+		return 2
+	case types.CategorySecurity:
+		return 5
 	default:
 		return 1
 	}

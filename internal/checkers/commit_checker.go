@@ -91,12 +91,21 @@ func (ccc *ConventionalCommitChecker) Check(data *types.RepositoryData) *types.C
 // MsgLengthChecker checks commit message length
 type MsgLengthChecker struct {
 	BaseChecker
+	maxLength int
 }
 
 // NewMsgLengthChecker creates a new message length checker
 func NewMsgLengthChecker() *MsgLengthChecker {
+	return NewMsgLengthCheckerWithLimit(72)
+}
+
+func NewMsgLengthCheckerWithLimit(maxLength int) *MsgLengthChecker {
+	if maxLength <= 0 {
+		maxLength = 72
+	}
 	return &MsgLengthChecker{
 		BaseChecker: NewBaseChecker("Message Length Checker", "LENGTH", types.CategoryCommits, 6),
+		maxLength:   maxLength,
 	}
 }
 
@@ -117,7 +126,6 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 		return result
 	}
 
-	maxLength := 72
 	validCommits := 0
 	totalLength := 0
 	var longCommits []string
@@ -126,7 +134,7 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 		length := len(commit.Subject)
 		totalLength += length
 
-		if length <= maxLength {
+		if length <= mlc.maxLength {
 			validCommits++
 		} else {
 			longCommits = append(longCommits, commit.Subject)
@@ -140,7 +148,7 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 	var details []string
 	details = append(details, fmt.Sprintf("Average commit message length: %.1f characters", avgLength))
 	details = append(details, fmt.Sprintf("%d of %d commits are within %d character limit",
-		validCommits, len(data.Commits), maxLength))
+		validCommits, len(data.Commits), mlc.maxLength))
 
 	if len(longCommits) > 0 {
 		details = append(details, "Long commit messages:")
@@ -174,12 +182,21 @@ func (mlc *MsgLengthChecker) Check(data *types.RepositoryData) *types.CheckResul
 // CommitSizeChecker checks for oversized commits
 type CommitSizeChecker struct {
 	BaseChecker
+	maxLines int
 }
 
 // NewCommitSizeChecker creates a new commit size checker
 func NewCommitSizeChecker() *CommitSizeChecker {
+	return NewCommitSizeCheckerWithLimit(500)
+}
+
+func NewCommitSizeCheckerWithLimit(maxLines int) *CommitSizeChecker {
+	if maxLines <= 0 {
+		maxLines = 500
+	}
 	return &CommitSizeChecker{
 		BaseChecker: NewBaseChecker("Commit Size Checker", "SIZE", types.CategoryCommits, 5),
+		maxLines:    maxLines,
 	}
 }
 
@@ -202,11 +219,9 @@ func (csc *CommitSizeChecker) Check(data *types.RepositoryData) *types.CheckResu
 
 	totalLines := 0
 	largeCommits := 0
-	maxLines := 500 // Threshold for large commits
-
 	for _, commit := range data.Commits {
 		totalLines += commit.LinesAdded + commit.LinesDeleted
-		if commit.LinesAdded+commit.LinesDeleted > maxLines {
+		if commit.LinesAdded+commit.LinesDeleted > csc.maxLines {
 			largeCommits++
 		}
 	}
@@ -222,7 +237,7 @@ func (csc *CommitSizeChecker) Check(data *types.RepositoryData) *types.CheckResu
 
 	if largeCommits > 0 {
 		details = append(details, fmt.Sprintf("%d commits exceed %d lines (may indicate 'God Commits')",
-			largeCommits, maxLines))
+			largeCommits, csc.maxLines))
 	}
 
 	result.Score = score

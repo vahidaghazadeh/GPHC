@@ -18,3 +18,5 @@ weights:
   documentation: 3
   commits: 4
   hygiene: 2
+  structure: 2
+  security: 5
