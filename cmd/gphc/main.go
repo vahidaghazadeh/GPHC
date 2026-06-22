@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -397,10 +398,9 @@ var updateCmd = &cobra.Command{
 	Short: "Update GPHC to the latest version",
 	Long: `Update GPHC to the latest version from GitHub.
 This command will:
-1. Pull the latest changes from the repository
-2. Update dependencies with go mod tidy
-3. Rebuild and reinstall GPHC
-4. Show the new version`,
+1. Install the latest published GPHC version with go install
+2. Prefer the directory of the currently running gphc binary
+3. Show how to verify the installed version`,
 	Run: runUpdate,
 }
 
@@ -556,10 +556,40 @@ func runDiff(cmd *cobra.Command, args []string) {
 }
 
 func runCommit(cmd *cobra.Command, args []string) {
-	runSuggest(cmd, args)
+	path, suggestion, stagedCount, ok := suggestedCommitForArgs(args)
+	if !ok {
+		return
+	}
+
+	printCommitSuggestion(stagedCount, suggestion)
+	fmt.Print("\nCreate commit with this message? [y/N]: ")
+
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		fmt.Printf("\nCould not read confirmation: %v\n", err)
+		return
+	}
+
+	if !isAffirmativeAnswer(answer) {
+		fmt.Println("Commit cancelled.")
+		return
+	}
+
+	if err := commitStagedChanges(path, suggestion); err != nil {
+		fmt.Printf("Error creating commit: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runSuggest(cmd *cobra.Command, args []string) {
+	_, suggestion, stagedCount, ok := suggestedCommitForArgs(args)
+	if !ok {
+		return
+	}
+	printCommitSuggestion(stagedCount, suggestion)
+}
+
+func suggestedCommitForArgs(args []string) (string, string, int, bool) {
 	var path string
 
 	// Check for --path flag first
@@ -591,16 +621,37 @@ func runSuggest(cmd *cobra.Command, args []string) {
 
 	if len(stagedFiles) == 0 {
 		fmt.Println("No staged files to analyze")
-		return
+		return path, "", 0, false
 	}
 
 	suggestion := analyzeStagedChanges(path, stagedFiles)
+	return path, suggestion, len(stagedFiles), true
+}
 
-	fmt.Printf("Staged changes: %d file(s)\n", len(stagedFiles))
+func printCommitSuggestion(stagedCount int, suggestion string) {
+	fmt.Printf("Staged changes: %d file(s)\n", stagedCount)
 	fmt.Println("\nCommit suggestion:")
 	fmt.Printf("  %s\n", suggestion)
 	fmt.Println("\nCommit with:")
 	fmt.Printf("  git commit -m %s\n", shellQuote(suggestion))
+}
+
+func isAffirmativeAnswer(answer string) bool {
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "y", "yes", "بله", "آره", "اره":
+		return true
+	default:
+		return false
+	}
+}
+
+func commitStagedChanges(path, message string) error {
+	cmd := exec.Command("git", "commit", "-m", message)
+	cmd.Dir = path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
 
 func runCheck(cmd *cobra.Command, args []string) {
@@ -1028,9 +1079,19 @@ func runCodebase(cmd *cobra.Command, args []string) {
 
 func runUpdate(cmd *cobra.Command, args []string) {
 	fmt.Println("Updating GPHC...")
+
+	installDir := ""
+	if exePath, err := os.Executable(); err == nil {
+		installDir = filepath.Dir(exePath)
+	}
+
 	installCmd := exec.Command("go", "install", "github.com/vahidaghazadeh/gphc/cmd/gphc@latest")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
+	if installDir != "" {
+		installCmd.Env = append(os.Environ(), "GOBIN="+installDir)
+		fmt.Printf("Installing into: %s\n", installDir)
+	}
 
 	if err := installCmd.Run(); err != nil {
 		fmt.Printf("Error installing GPHC: %v\n", err)

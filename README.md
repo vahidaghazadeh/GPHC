@@ -22,6 +22,22 @@ go install ./cmd/gphc
 ./setup-git-hc.sh
 ```
 
+### Updating
+```bash
+# Preferred: update the binary used by git hc
+git hc update
+
+# If your installed version does not have update yet, install into the
+# directory used by the git hc wrapper.
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+
+# Verify the active version
+git hc version
+```
+
+`@latest` installs the latest published tag/release. Local changes are not
+available on other machines until they are committed, tagged, and pushed.
+
 ### Basic Usage
 ```bash
 # Check current directory (must be a git repository)

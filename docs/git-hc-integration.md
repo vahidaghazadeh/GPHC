@@ -71,6 +71,31 @@ git hc version
 git hc --help
 ```
 
+### Updating Git HC
+
+For normal installations, use:
+
+```bash
+git hc update
+git hc version
+```
+
+`git hc update` installs the latest published version into the directory of the
+currently running `gphc` binary. This avoids a common mismatch where
+`go install ...@latest` updates `~/go/bin/gphc` but `git hc` is still running
+`~/.local/bin/gphc`.
+
+If your installed version is too old to include `git hc update`, run:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+git hc version
+```
+
+`@latest` resolves to the latest published tag/release. New changes must be
+committed, tagged, and pushed before another machine can install them with
+`@latest`.
+
 ### Advanced Usage
 ```bash
 # Check with specific options

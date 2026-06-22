@@ -27,6 +27,34 @@ go install ./cmd/gphc
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
+## Updating
+
+Use the built-in update command when `git hc` is already available:
+
+```bash
+git hc update
+git hc version
+```
+
+If the installed version is old and does not include `git hc update`, install
+directly into the directory that your `git hc` wrapper uses:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+git hc version
+```
+
+If you use `gphc` directly from Go's default install location instead of the
+wrapper, this is enough:
+
+```bash
+go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+gphc version
+```
+
+`@latest` means the latest published tag/release. Changes from another machine
+will not be installed until they are committed, tagged, and pushed.
+
 ## Basic Commands
 
 ### Health Check

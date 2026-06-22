@@ -72,7 +72,7 @@ func TestBuildCommitSuggestion(t *testing.T) {
 				{status: "M", path: "Laravel/Offl/Prod/Core/StatefulSet/env.yaml"},
 				{status: "M", path: "ReversProxyNginx/sites-available/iwcs-kibana.conf"},
 			},
-			want: "chore(deploy): update Laravel deployment and Kibana proxy config",
+			want: "chore(laravel): update Laravel deployment and Kibana proxy config",
 		},
 		{
 			name: "deployment secrets and environment",
@@ -80,12 +80,32 @@ func TestBuildCommitSuggestion(t *testing.T) {
 				{status: "M", path: "services/api/k8s/Secret.yaml"},
 				{status: "M", path: "services/api/k8s/env.yaml"},
 			},
-			want: "chore(deploy): update deployment secrets and environment config",
+			want: "chore(api): update API deployment secrets and environment config",
 		},
 		{
 			name:    "nginx configuration",
 			changes: []stagedChange{{status: "M", path: "nginx/sites-available/api.conf"}},
-			want:    "chore(deploy): update reverse proxy config",
+			want:    "chore(api): update API proxy config",
+		},
+		{
+			name:    "clickhouse operator bundle",
+			changes: []stagedChange{{status: "M", path: "Kubernetes/ClickHouse/clickhouse-operator-install-bundle.yaml"}},
+			want:    "chore(clickhouse): update clickhouse operator install bundle",
+		},
+		{
+			name: "signoz stack manifests",
+			changes: []stagedChange{
+				{status: "A", path: "ArgoCD/applications/infra/signoz.yaml"},
+				{status: "A", path: "Signoz/Deployment/clickhouse-ha.yaml"},
+				{status: "A", path: "Signoz/Deployment/clickhouse-operator-install-bundle.yaml"},
+				{status: "A", path: "Signoz/Deployment/namespaces.yaml"},
+				{status: "A", path: "Signoz/Deployment/signoz-otel-collector.yaml"},
+				{status: "A", path: "Signoz/Deployment/signoz-secrets.yaml"},
+				{status: "A", path: "Signoz/Deployment/signoz-values.yaml"},
+				{status: "A", path: "Signoz/Deployment/traefik-ingressroutes.yaml"},
+				{status: "A", path: "Signoz/Deployment/zookeeper.yaml"},
+			},
+			want: "feat(signoz): add Signoz deployment and ArgoCD application manifests",
 		},
 	}
 
@@ -103,6 +123,22 @@ func TestShellQuote(t *testing.T) {
 	want := "'fix(cli): handle user'\"'\"'s input'"
 	if got != want {
 		t.Fatalf("shellQuote() = %q, want %q", got, want)
+	}
+}
+
+func TestIsAffirmativeAnswer(t *testing.T) {
+	yesAnswers := []string{"y", "Y", "yes", "YES", " yes \n", "بله", "آره", "اره"}
+	for _, answer := range yesAnswers {
+		if !isAffirmativeAnswer(answer) {
+			t.Fatalf("isAffirmativeAnswer(%q) = false, want true", answer)
+		}
+	}
+
+	noAnswers := []string{"", "n", "no", "خیر", "random"}
+	for _, answer := range noAnswers {
+		if isAffirmativeAnswer(answer) {
+			t.Fatalf("isAffirmativeAnswer(%q) = true, want false", answer)
+		}
 	}
 }
 

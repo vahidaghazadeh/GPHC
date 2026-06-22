@@ -88,10 +88,12 @@ func inferCommitType(changes []stagedChange) string {
 		return "ci"
 	case allDependencies:
 		return "build"
-	case allDeployment:
-		return "chore"
+	case allDeployment && allAdded:
+		return "feat"
 	case allAdded:
 		return "feat"
+	case allDeployment:
+		return "chore"
 	case allDeleted:
 		return "refactor"
 	default:
@@ -101,6 +103,9 @@ func inferCommitType(changes []stagedChange) string {
 
 func inferCommitScope(changes []stagedChange) string {
 	if allChangesMatch(changes, isDeploymentPath) {
+		if scope := deploymentScopeForChanges(changes); scope != "" {
+			return scope
+		}
 		return "deploy"
 	}
 
@@ -151,7 +156,7 @@ func sanitizeScope(value string) string {
 
 func inferCommitSubject(changes []stagedChange, commitType string) string {
 	if allChangesMatch(changes, isDeploymentPath) {
-		return describeDeploymentChanges(changes)
+		return describeDeploymentChanges(changes, commitType)
 	}
 
 	if len(changes) == 1 {
@@ -211,8 +216,12 @@ func allChangesMatch(changes []stagedChange, match func(string) bool) bool {
 	return true
 }
 
-func describeDeploymentChanges(changes []stagedChange) string {
-	var hasKubernetes, hasProxy, hasSecret, hasEnvironment bool
+func describeDeploymentChanges(changes []stagedChange, commitType string) string {
+	if len(changes) == 1 {
+		return describeSingleDeploymentChange(changes[0])
+	}
+
+	var hasArgoCD, hasKubernetes, hasProxy, hasSecret, hasEnvironment bool
 	var deploymentName, proxyName string
 	for _, change := range changes {
 		lower := strings.ToLower(filepath.ToSlash(change.path))
@@ -223,17 +232,26 @@ func describeDeploymentChanges(changes []stagedChange) string {
 				strings.Contains(lower, "/deployment/") ||
 				strings.Contains(lower, "/kubernetes/") ||
 				strings.Contains(lower, "/k8s/") ||
-				strings.Contains(lower, "/helm/")
+				strings.Contains(lower, "/helm/") ||
+				strings.HasPrefix(lower, "statefulset/") ||
+				strings.HasPrefix(lower, "deployment/") ||
+				strings.HasPrefix(lower, "kubernetes/") ||
+				strings.HasPrefix(lower, "k8s/") ||
+				strings.HasPrefix(lower, "helm/")
+		isArgoCD := strings.Contains(lower, "/argocd/") ||
+			strings.Contains(lower, "/applications/") ||
+			strings.HasPrefix(lower, "argocd/")
 		isProxy :=
 			strings.Contains(lower, "nginx") ||
 				strings.Contains(lower, "sites-available") ||
 				strings.Contains(lower, "reverseproxy") ||
 				strings.Contains(lower, "reversproxy")
 
+		hasArgoCD = hasArgoCD || isArgoCD
 		hasKubernetes = hasKubernetes || isKubernetes
 		hasProxy = hasProxy || isProxy
-		if isKubernetes && deploymentName == "" {
-			deploymentName = topLevelComponent(change.path)
+		if (isKubernetes || isArgoCD) && deploymentName == "" {
+			deploymentName = deploymentPathComponent(change.path)
 		}
 		if isProxy && proxyName == "" {
 			proxyName = proxyTarget(change.path)
@@ -244,33 +262,156 @@ func describeDeploymentChanges(changes []stagedChange) string {
 			strings.HasPrefix(base, ".env")
 	}
 
+	action := deploymentAction(changes, commitType)
+	if name := humanizeScope(inferCommitScope(changes)); name != "" {
+		deploymentName = name
+	}
+
 	switch {
+	case hasArgoCD && hasKubernetes:
+		if deploymentName != "" {
+			return fmt.Sprintf("%s %s deployment and ArgoCD application manifests", action, deploymentName)
+		}
+		return action + " deployment and ArgoCD application manifests"
 	case hasKubernetes && hasProxy:
 		if deploymentName != "" && proxyName != "" {
-			return fmt.Sprintf("update %s deployment and %s proxy config", deploymentName, proxyName)
+			return fmt.Sprintf("%s %s deployment and %s proxy config", action, deploymentName, proxyName)
 		}
-		return "update deployment and reverse proxy configs"
+		return action + " deployment and reverse proxy configs"
 	case hasSecret && hasEnvironment:
-		return "update deployment secrets and environment config"
+		if deploymentName != "" {
+			return fmt.Sprintf("%s %s deployment secrets and environment config", action, deploymentName)
+		}
+		return action + " deployment secrets and environment config"
 	case hasSecret:
-		return "update deployment secrets"
+		return action + " deployment secrets"
 	case hasEnvironment:
-		return "update deployment environment config"
+		return action + " deployment environment config"
 	case hasKubernetes:
-		return "update Kubernetes deployment config"
+		if deploymentName != "" {
+			return fmt.Sprintf("%s %s deployment manifests", action, deploymentName)
+		}
+		return action + " Kubernetes deployment manifests"
+	case hasArgoCD:
+		if deploymentName != "" {
+			return fmt.Sprintf("%s %s ArgoCD application manifest", action, deploymentName)
+		}
+		return action + " ArgoCD application manifest"
 	case hasProxy:
-		return "update reverse proxy config"
+		return action + " reverse proxy config"
 	default:
-		return "update deployment config"
+		return action + " deployment config"
 	}
 }
 
-func topLevelComponent(path string) string {
+func deploymentAction(changes []stagedChange, commitType string) string {
+	allAdded, allDeleted := true, true
+	for _, change := range changes {
+		allAdded = allAdded && change.status == "A"
+		allDeleted = allDeleted && change.status == "D"
+	}
+	switch {
+	case allAdded || commitType == "feat":
+		return "add"
+	case allDeleted:
+		return "remove"
+	default:
+		return "update"
+	}
+}
+
+func describeSingleDeploymentChange(change stagedChange) string {
+	target := deploymentTarget(change.path)
+	if target == "" {
+		target = "deployment config"
+	}
+
+	switch change.status {
+	case "A":
+		return "add " + target
+	case "D":
+		return "remove " + target
+	default:
+		return "update " + target
+	}
+}
+
+func deploymentScopeForChanges(changes []stagedChange) string {
+	counts := map[string]int{}
+	for _, change := range changes {
+		candidate := deploymentScopeCandidate(change.path)
+		if candidate == "" {
+			continue
+		}
+		candidate = sanitizeScope(candidate)
+		counts[candidate]++
+	}
+
+	var best string
+	bestCount := 0
+	for candidate, count := range counts {
+		if count > bestCount || (count == bestCount && (best == "" || candidate < best)) {
+			best = candidate
+			bestCount = count
+		}
+	}
+	if bestCount == len(changes) || bestCount > len(changes)/2 {
+		return best
+	}
+	return ""
+}
+
+func deploymentScopeCandidate(path string) string {
+	if component := deploymentPathComponent(path); component != "" {
+		return component
+	}
+
+	target := deploymentTarget(path)
+	words := strings.Fields(target)
+	if len(words) > 0 && !isGenericDeploymentWord(words[0]) {
+		return words[0]
+	}
+
+	return ""
+}
+
+func deploymentPathComponent(path string) string {
 	parts := strings.Split(filepath.ToSlash(path), "/")
-	if len(parts) == 0 {
+	for i := 0; i < len(parts)-1; i++ {
+		part := strings.TrimSpace(parts[i])
+		if part == "" || isGenericDeploymentWord(part) {
+			continue
+		}
+		return humanizeIdentifier(part)
+	}
+	return ""
+}
+
+func humanizeScope(scope string) string {
+	if scope == "" {
 		return ""
 	}
-	return humanizeIdentifier(parts[0])
+	return humanizeIdentifier(scope)
+}
+
+func deploymentTarget(path string) string {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	base := strings.ToLower(filepath.Base(lower))
+
+	switch {
+	case strings.HasPrefix(base, "secret."):
+		return "deployment secrets"
+	case strings.HasPrefix(base, "env.") || strings.HasPrefix(base, ".env"):
+		return "deployment environment config"
+	case strings.Contains(lower, "sites-available") || strings.Contains(lower, "nginx") ||
+		strings.Contains(lower, "reverseproxy") || strings.Contains(lower, "reversproxy"):
+		if target := proxyTarget(path); target != "" {
+			return target + " proxy config"
+		}
+		return "reverse proxy config"
+	default:
+		return describePath(path)
+	}
 }
 
 func proxyTarget(path string) string {
@@ -286,12 +427,30 @@ func proxyTarget(path string) string {
 	return humanizeIdentifier(parts[len(parts)-1])
 }
 
+func isGenericDeploymentWord(value string) bool {
+	value = sanitizeScope(value)
+	switch value {
+	case "", "app", "apps", "service", "services", "deploy", "deployment", "deployments",
+		"statefulset", "statefulsets", "k8s", "kubernetes", "helm", "chart", "charts",
+		"manifest", "manifests", "config", "configs", "prod", "production", "dev",
+		"development", "stage", "staging", "admin", "core", "operator", "install",
+		"bundle", "secret", "env", "nginx", "reverseproxy", "reversproxy",
+		"argocd", "applications", "application", "infra", "sites-available":
+		return true
+	default:
+		return false
+	}
+}
+
 func humanizeIdentifier(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return ""
 	}
 	if value == strings.ToLower(value) || value == strings.ToUpper(value) {
+		if len(value) <= 4 {
+			return strings.ToUpper(value)
+		}
 		return strings.ToUpper(value[:1]) + strings.ToLower(value[1:])
 	}
 	return value
@@ -374,6 +533,14 @@ func isDeploymentPath(path string) bool {
 		strings.Contains(lower, "/kubernetes/") ||
 		strings.Contains(lower, "/k8s/") ||
 		strings.Contains(lower, "/helm/") ||
+		strings.Contains(lower, "/argocd/") ||
+		strings.Contains(lower, "/applications/") ||
+		strings.HasPrefix(lower, "statefulset/") ||
+		strings.HasPrefix(lower, "deployment/") ||
+		strings.HasPrefix(lower, "kubernetes/") ||
+		strings.HasPrefix(lower, "k8s/") ||
+		strings.HasPrefix(lower, "helm/") ||
+		strings.HasPrefix(lower, "argocd/") ||
 		strings.Contains(lower, "sites-available") ||
 		strings.Contains(lower, "nginx") ||
 		strings.Contains(lower, "reverseproxy") ||
