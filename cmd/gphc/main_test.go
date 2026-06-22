@@ -107,6 +107,18 @@ func TestBuildCommitSuggestion(t *testing.T) {
 			},
 			want: "feat(signoz): add Signoz deployment and ArgoCD application manifests",
 		},
+		{
+			name: "cli suggestion and update docs",
+			changes: []stagedChange{
+				{status: "M", path: "README.md"},
+				{status: "M", path: "cmd/gphc/main.go"},
+				{status: "M", path: "cmd/gphc/main_test.go"},
+				{status: "M", path: "cmd/gphc/suggestion.go"},
+				{status: "M", path: "docs/basic-usage.md"},
+				{status: "M", path: "docs/git-hc-integration.md"},
+			},
+			want: "feat(cli): improve commit suggestions and update flow docs",
+		},
 	}
 
 	for _, tt := range tests {

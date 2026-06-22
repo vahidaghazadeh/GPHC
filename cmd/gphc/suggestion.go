@@ -68,6 +68,7 @@ func buildCommitSuggestion(changes []stagedChange) string {
 func inferCommitType(changes []stagedChange) string {
 	allDocs, allTests, allCI, allDependencies, allDeployment := true, true, true, true, true
 	allAdded, allDeleted := true, true
+	hasCLIBehaviorChange := false
 
 	for _, change := range changes {
 		allDocs = allDocs && isDocumentationPath(change.path)
@@ -77,6 +78,7 @@ func inferCommitType(changes []stagedChange) string {
 		allDeployment = allDeployment && isDeploymentPath(change.path)
 		allAdded = allAdded && change.status == "A"
 		allDeleted = allDeleted && change.status == "D"
+		hasCLIBehaviorChange = hasCLIBehaviorChange || isCLIBehaviorPath(change.path)
 	}
 
 	switch {
@@ -96,6 +98,8 @@ func inferCommitType(changes []stagedChange) string {
 		return "chore"
 	case allDeleted:
 		return "refactor"
+	case hasCLIBehaviorChange:
+		return "feat"
 	default:
 		return "chore"
 	}
@@ -107,6 +111,10 @@ func inferCommitScope(changes []stagedChange) string {
 			return scope
 		}
 		return "deploy"
+	}
+
+	if scope := dominantCodeScope(changes); scope != "" {
+		return scope
 	}
 
 	scope := scopeForPath(changes[0].path)
@@ -159,6 +167,10 @@ func inferCommitSubject(changes []stagedChange, commitType string) string {
 		return describeDeploymentChanges(changes, commitType)
 	}
 
+	if subject := describeMixedCLIChanges(changes); subject != "" {
+		return subject
+	}
+
 	if len(changes) == 1 {
 		change := changes[0]
 		target := describePath(change.path)
@@ -202,6 +214,75 @@ func inferCommitSubject(changes []stagedChange, commitType string) string {
 		}
 		return "update related project files"
 	}
+}
+
+func dominantCodeScope(changes []stagedChange) string {
+	var scope string
+	hasCode := false
+
+	for _, change := range changes {
+		if isDocumentationPath(change.path) || isTestPath(change.path) {
+			continue
+		}
+
+		next := scopeForPath(change.path)
+		if next == "" {
+			continue
+		}
+		if next == "gphc" {
+			next = "cli"
+		}
+		hasCode = true
+		if scope == "" {
+			scope = next
+			continue
+		}
+		if scope != next {
+			return ""
+		}
+	}
+
+	if !hasCode {
+		return ""
+	}
+	return scope
+}
+
+func describeMixedCLIChanges(changes []stagedChange) string {
+	hasCLI, hasSuggestion, hasUpdate, hasDocs := false, false, false, false
+	for _, change := range changes {
+		cleanPath := filepath.ToSlash(change.path)
+		hasCLI = hasCLI || strings.HasPrefix(cleanPath, "cmd/gphc/")
+		hasSuggestion = hasSuggestion || cleanPath == "cmd/gphc/suggestion.go"
+		hasUpdate = hasUpdate || cleanPath == "cmd/gphc/main.go"
+		hasDocs = hasDocs || isDocumentationPath(cleanPath)
+	}
+
+	if !hasCLI {
+		return ""
+	}
+
+	switch {
+	case hasSuggestion && hasUpdate && hasDocs:
+		return "improve commit suggestions and update flow docs"
+	case hasSuggestion && hasDocs:
+		return "improve commit suggestions and docs"
+	case hasSuggestion:
+		return "improve commit suggestions"
+	case hasUpdate && hasDocs:
+		return "improve CLI update flow and docs"
+	case hasUpdate:
+		return "improve CLI update flow"
+	default:
+		return ""
+	}
+}
+
+func isCLIBehaviorPath(path string) bool {
+	cleanPath := filepath.ToSlash(path)
+	return cleanPath == "cmd/gphc/main.go" ||
+		cleanPath == "cmd/gphc/suggestion.go" ||
+		strings.HasPrefix(cleanPath, "cmd/gphc/")
 }
 
 func allChangesMatch(changes []stagedChange, match func(string) bool) bool {
