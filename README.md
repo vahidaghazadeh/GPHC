@@ -35,6 +35,26 @@ GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@late
 git hc version
 ```
 
+If `git hc update` fails with an old updater error such as
+`Could not find GPHC source directory`, install the new binary directly into the
+wrapper directory:
+
+```bash
+mkdir -p ~/.local/bin
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
+git hc version
+```
+
+If the latest changes are pushed to `main` but have not been released/tagged
+yet, install from `main`:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@main
+hash -r
+git hc version
+```
+
 `@latest` installs the latest published tag/release. Local changes are not
 available on other machines until they are committed, tagged, and pushed.
 

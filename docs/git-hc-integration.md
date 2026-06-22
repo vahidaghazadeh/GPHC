@@ -88,7 +88,18 @@ currently running `gphc` binary. This avoids a common mismatch where
 If your installed version is too old to include `git hc update`, run:
 
 ```bash
+mkdir -p ~/.local/bin
 GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
+git hc version
+```
+
+If a change has been pushed to `main` but no release/tag has been created yet,
+install from `main`:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@main
+hash -r
 git hc version
 ```
 
@@ -192,6 +203,44 @@ go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
 
 # Add to PATH
 export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+#### Update Installs But Git HC Still Uses Old Version
+```bash
+# Inspect the git alias and active binary
+git config --global --get alias.hc
+command -v gphc
+which gphc
+git hc version
+
+# Install into the wrapper directory used by git hc
+mkdir -p ~/.local/bin
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
+git hc version
+```
+
+This happens when `go install ...@latest` updates `~/go/bin/gphc`, but the
+`git hc` wrapper resolves `~/.local/bin/gphc` first.
+
+#### Old Updater Requires Source Directory
+```bash
+# Error:
+# Error: Could not find GPHC source directory
+# Please run this command from the GPHC project directory
+
+# Fix by replacing the old installed binary directly:
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
+git hc version
+```
+
+#### Update Before a Release Is Tagged
+```bash
+# Use this only when you intentionally want the latest main branch build.
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@main
+hash -r
+git hc version
 ```
 
 ### Debugging

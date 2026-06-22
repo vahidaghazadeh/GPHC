@@ -40,7 +40,9 @@ If the installed version is old and does not include `git hc update`, install
 directly into the directory that your `git hc` wrapper uses:
 
 ```bash
+mkdir -p ~/.local/bin
 GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
 git hc version
 ```
 
@@ -50,6 +52,33 @@ wrapper, this is enough:
 ```bash
 go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
 gphc version
+```
+
+If `git hc update` prints an old updater error like
+`Could not find GPHC source directory`, it means `git hc` is still running an
+old binary. Reinstall into the wrapper directory:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@latest
+hash -r
+git hc version
+```
+
+If a fix has been pushed to `main` but no new release/tag exists yet, use:
+
+```bash
+GOBIN="$HOME/.local/bin" go install github.com/vahidaghazadeh/gphc/cmd/gphc@main
+hash -r
+git hc version
+```
+
+To see which executable is active:
+
+```bash
+git config --global --get alias.hc
+command -v gphc
+which gphc
+git hc version
 ```
 
 `@latest` means the latest published tag/release. Changes from another machine
